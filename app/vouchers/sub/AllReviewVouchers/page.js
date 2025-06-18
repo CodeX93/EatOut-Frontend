@@ -1,112 +1,137 @@
-import { Box, Typography, Grid } from "@mui/material"
+"use client"
+
+import { Box, Typography } from "@mui/material"
 import SideNavbar from "../../../components/SideNavbar"
 import VoucherCard from "../../_components/VoucherCard"
 
-// Mock data for vouchers - creating 20 vouchers with some expired
-const voucherData = Array.from({ length: 20 }, (_, index) => ({
-    discount: "30%",
-    minimumSpend: "RM 100",
-    restaurantName: "Ruby Restaurant & Bars",
-    branch: "Kuala Lumpur Branch",
-    voucherCode: "1XQ135412A",
-    usedDate: "Dec 23, 2024",
-    type: index >= 10 ? "expired" : "review", // Make the last row expired
-    id: index + 1,
-  }))
-  
-  const AllReviewVouchers = () => {
-    return (
+// Mock data for review vouchers - creating many review vouchers to match the design
+const voucherData = Array.from({ length: 24 }, (_, index) => ({
+  discount: "30%",
+  minimumSpend: "RM 100",
+  restaurantName: "Ruby Restaurant & Bars",
+  branch: "Kuala Lumpur Branch",
+  voucherCode: `1XQ135412A`,
+  usedDate: "Dec 23, 2024",
+  type: "review",
+  id: index + 1,
+}))
+
+const AllReviewVouchers = () => {
+  const validVouchers = voucherData.filter((voucher, index) => {
+    if (!voucher || typeof voucher !== "object") {
+      console.error(`AllReviewVouchers: Invalid voucher at index ${index}:`, voucher)
+      return false
+    }
+
+    const isValid =
+      voucher.hasOwnProperty("discount") &&
+      typeof voucher.discount === "string" &&
+      voucher.hasOwnProperty("minimumSpend") &&
+      typeof voucher.minimumSpend === "string" &&
+      voucher.hasOwnProperty("restaurantName") &&
+      typeof voucher.restaurantName === "string" &&
+      voucher.hasOwnProperty("branch") &&
+      typeof voucher.branch === "string" &&
+      voucher.hasOwnProperty("voucherCode") &&
+      typeof voucher.voucherCode === "string" &&
+      voucher.hasOwnProperty("usedDate") &&
+      typeof voucher.usedDate === "string" &&
+      voucher.hasOwnProperty("type") &&
+      voucher.type === "review" &&
+      voucher.hasOwnProperty("id") &&
+      voucher.id
+
+    if (!isValid) {
+      console.error(`AllReviewVouchers: Voucher validation failed at index ${index}:`, voucher)
+    }
+
+    return isValid
+  })
+
+  return (
+    <Box
+      sx={{
+        display: "flex",
+        minHeight: "100vh",
+        backgroundColor: "#ffffff",
+      }}
+    >
+      {/* SideNavbar component */}
+      <SideNavbar />
+
+      {/* Main content area */}
       <Box
+        component="main"
         sx={{
-          display: "flex",
+          flexGrow: 1,
+          marginLeft: "240px",
+          padding: "24px 32px",
           minHeight: "100vh",
-          backgroundColor: "#ffffff", // White background to match the semi-circles
+          backgroundColor: "#ffffff",
         }}
       >
-        {/* SideNavbar component */}
-        <SideNavbar />
-  
-        {/* Main content area */}
-        <Box
-          component="main"
-          sx={{
-            flexGrow: 1,
-            marginLeft: "240px", // Adjust based on sidebar width
-            padding: "32px",
-            minHeight: "100vh",
-          }}
-        >
-          {/* Page Header */}
-          <Box sx={{ marginBottom: "24px" }}>
-            <Typography
-              variant="h4"
-              sx={{
-                fontSize: "24px",
-                fontWeight: 700,
-                color: "#d32f2f",
-                marginBottom: "8px",
-              }}
-            >
-              All Review Vouchers
-            </Typography>
-          </Box>
-  
-          {/* White container for voucher cards */}
-          <Box
+        {/* Page Header */}
+        <Box sx={{ marginBottom: "24px" }}>
+          <Typography
+            variant="h4"
             sx={{
-              backgroundColor: "#ffffff",
-              borderRadius: "12px",
-              padding: "24px",
-              boxShadow: "0px 1px 4px rgba(0, 0, 0, 0.05)",
+              fontSize: "24px",
+              fontWeight: 600,
+              color: "#ff2d55",
+              marginBottom: "8px",
+              fontFamily: "system-ui, -apple-system, sans-serif",
             }}
           >
-            {/* Using flexbox directly for more control */}
-            <Box
-              sx={{
-                display: "flex",
-                flexWrap: "wrap",
-                margin: "-2px", // Compensate for the padding on card wrappers
-              }}
-            >
-              {voucherData.map((voucher) => (
-                <Box
-                  key={voucher.id}
-                  sx={{
-                    width: "25%", // Exactly 4 cards per row (100% ÷ 4 = 25%)
-                    padding: "2px",
-                    boxSizing: "border-box",
-                    // Responsive adjustments
-                    "@media (max-width: 1200px)": {
-                      width: "25%", // Still 4 cards on medium-large screens
-                    },
-                    "@media (max-width: 900px)": {
-                      width: "33.333%", // 3 cards on medium screens
-                    },
-                    "@media (max-width: 600px)": {
-                      width: "50%", // 2 cards on small screens
-                    },
-                    "@media (max-width: 480px)": {
-                      width: "100%", // 1 card on very small screens
-                    },
-                  }}
-                >
-                  <VoucherCard
-                    discount={voucher.discount}
-                    minimumSpend={voucher.minimumSpend}
-                    restaurantName={voucher.restaurantName}
-                    branch={voucher.branch}
-                    voucherCode={voucher.voucherCode}
-                    usedDate={voucher.usedDate}
-                    type={voucher.type}
-                  />
-                </Box>
-              ))}
-            </Box>
-          </Box>
+            All Review Vouchers
+          </Typography>
         </Box>
+
+        {/* Voucher Cards Grid */}
+        {validVouchers.length === 0 ? (
+          <Typography sx={{ textAlign: "center", color: "#8a8a8f", padding: "40px" }}>
+            No review vouchers found.
+          </Typography>
+        ) : (
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: "repeat(4, 1fr)",
+              gap: "16px",
+              "@media (max-width: 1400px)": {
+                gridTemplateColumns: "repeat(3, 1fr)",
+              },
+              "@media (max-width: 1024px)": {
+                gridTemplateColumns: "repeat(2, 1fr)",
+              },
+              "@media (max-width: 640px)": {
+                gridTemplateColumns: "repeat(1, 1fr)",
+              },
+            }}
+          >
+            {validVouchers.map((voucher, index) => {
+              if (!voucher || typeof voucher !== "object") {
+                console.error(`AllReviewVouchers: Undefined voucher found in map at index ${index}:`, voucher)
+                return null
+              }
+
+              return (
+                <VoucherCard
+                  key={voucher.id || `voucher-${index}`}
+                  discount={voucher.discount}
+                  minimumSpend={voucher.minimumSpend}
+                  restaurantName={voucher.restaurantName}
+                  branch={voucher.branch}
+                  voucherCode={voucher.voucherCode}
+                  usedDate={voucher.usedDate}
+                  type={voucher.type}
+                />
+              )
+            })}
+          </Box>
+        )}
       </Box>
-    )
-  }
-  
-  export default AllReviewVouchers
-  
+    </Box>
+  )
+}
+
+export default AllReviewVouchers

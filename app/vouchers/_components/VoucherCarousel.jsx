@@ -6,7 +6,7 @@ import { ChevronLeft, ChevronRight } from "@mui/icons-material"
 import VoucherCard from "./VoucherCard"
 import { useRouter } from "next/navigation"
 
-export default function VoucherCarousel({ title, vouchers, type = "review" }) {
+export default function VoucherCarousel({ title, vouchers = [], type = "review" }) {
   const router = useRouter()
   const theme = useTheme()
   const carouselRef = useRef(null)
@@ -15,7 +15,40 @@ export default function VoucherCarousel({ title, vouchers, type = "review" }) {
   const [showLeftArrow, setShowLeftArrow] = useState(false)
   const [showRightArrow, setShowRightArrow] = useState(true)
 
+  // Debug logging
+  console.log("VoucherCarousel received props:", { title, vouchers, type })
+
+  // Enhanced safety check for vouchers array and validate each voucher
+  const safeVouchers = Array.isArray(vouchers)
+    ? vouchers.filter((voucher, index) => {
+        // Check if voucher exists and is an object
+        if (!voucher || typeof voucher !== "object") {
+          console.warn(`VoucherCarousel: Invalid voucher at index ${index}:`, voucher)
+          return false
+        }
+
+        // Ensure all required properties exist (they can be any type, we'll handle conversion in VoucherCard)
+        const hasRequiredProps =
+          voucher.hasOwnProperty("discount") &&
+          voucher.hasOwnProperty("minimumSpend") &&
+          voucher.hasOwnProperty("restaurantName") &&
+          voucher.hasOwnProperty("branch") &&
+          voucher.hasOwnProperty("voucherCode") &&
+          voucher.hasOwnProperty("usedDate")
+
+        if (!hasRequiredProps) {
+          console.warn(`VoucherCarousel: Voucher missing required properties at index ${index}:`, voucher)
+        }
+
+        return hasRequiredProps
+      })
+    : []
+
+  // Debug logging for filtered vouchers
+  console.log("VoucherCarousel filtered vouchers:", safeVouchers)
+
   const handleViewAll = () => {
+    // Ensure we have a valid type before navigation
     if (type === "review") {
       router.push("/vouchers/sub/AllReviewVouchers")
     } else if (type === "expired") {
@@ -42,10 +75,10 @@ export default function VoucherCarousel({ title, vouchers, type = "review" }) {
 
       return () => {
         carousel.removeEventListener("scroll", updateScrollButtons)
-        window.addEventListener("resize", updateScrollButtons)
+        window.removeEventListener("resize", updateScrollButtons)
       }
     }
-  }, [])
+  }, [safeVouchers])
 
   const scrollCarousel = (direction) => {
     if (carouselRef.current) {
@@ -55,30 +88,65 @@ export default function VoucherCarousel({ title, vouchers, type = "review" }) {
     }
   }
 
+  // Early return if no valid vouchers
+  if (!safeVouchers || safeVouchers.length === 0) {
+    return (
+      <Box component="div" sx={{ mb: 3, width: "100%" }}>
+        <Box
+          component="div"
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            flexDirection: "row",
+            mb: 2,
+          }}
+        >
+          <Typography
+            component="div"
+            variant="h6"
+            sx={{
+              fontWeight: 600,
+              color: "#da1818",
+              fontSize: "1.25rem",
+            }}
+          >
+            {title}
+          </Typography>
+        </Box>
+        <Typography component="div" color="text.secondary" sx={{ textAlign: "center", py: 4 }}>
+          No vouchers available
+        </Typography>
+      </Box>
+    )
+  }
+
   return (
-    <Box sx={{ mb: { xs: 3, md: 4 }, width: "100%", position: "relative" }}>
+    <Box component="div" sx={{ mb: 3, width: "100%", position: "relative" }}>
       {/* Header */}
       <Box
+        component="div"
         sx={{
           display: "flex",
           justifyContent: "space-between",
-          alignItems: { xs: "flex-start", sm: "center" },
-          flexDirection: { xs: "column", sm: "row" },
-          gap: { xs: 1, sm: 0 },
+          alignItems: "center",
+          flexDirection: "row",
           mb: 2,
         }}
       >
         <Typography
+          component="div"
           variant="h6"
           sx={{
             fontWeight: 600,
             color: "#da1818",
-            fontSize: { xs: "1rem", sm: "1.25rem" },
+            fontSize: "1.25rem",
           }}
         >
           {title}
         </Typography>
         <Button
+          component="div"
           variant="contained"
           onClick={handleViewAll}
           sx={{
@@ -86,14 +154,13 @@ export default function VoucherCarousel({ title, vouchers, type = "review" }) {
             color: "white",
             borderRadius: "8px",
             textTransform: "none",
-            px: { xs: 1.5, sm: 2 },
-            py: { xs: 0.5, sm: 0.5 },
-            fontSize: { xs: "0.75rem", sm: "0.875rem" },
+            px: 2,
+            py: 0.5,
+            fontSize: "0.875rem",
             "&:hover": {
               bgcolor: "#c41515",
             },
             cursor: "pointer",
-            alignSelf: { xs: "flex-start", sm: "auto" },
           }}
         >
           View All
@@ -101,19 +168,20 @@ export default function VoucherCarousel({ title, vouchers, type = "review" }) {
       </Box>
 
       {/* Carousel Container with Scroll Indicators */}
-      <Box sx={{ position: "relative", overflow: "visible" }}>
+      <Box component="div" sx={{ position: "relative", overflow: "visible" }}>
         {/* Left scroll button */}
         <IconButton
+          component="div"
           sx={{
             position: "absolute",
-            left: { xs: -8, sm: -16 },
+            left: -16,
             top: "50%",
             transform: "translateY(-50%)",
             bgcolor: "white",
             boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
             zIndex: 2,
-            width: { xs: 32, sm: 40 },
-            height: { xs: 32, sm: 40 },
+            width: 40,
+            height: 40,
             "&:hover": { bgcolor: "white" },
             opacity: showLeftArrow ? 1 : 0,
             transition: "opacity 0.3s ease",
@@ -121,63 +189,76 @@ export default function VoucherCarousel({ title, vouchers, type = "review" }) {
           }}
           onClick={() => scrollCarousel("left")}
         >
-          <ChevronLeft sx={{ fontSize: { xs: "1rem", sm: "1.5rem" } }} />
+          <ChevronLeft sx={{ fontSize: "1.5rem" }} />
         </IconButton>
 
         {/* Carousel container */}
         <Box
+          component="div"
           ref={carouselRef}
           sx={{
             display: "flex",
-            gap: { xs: 1.5, sm: 2 },
+            gap: 2,
             overflowX: "auto",
             pb: 2,
             pt: 1,
-            px: { xs: 0.5, sm: 1 },
+            px: 1,
             scrollbarWidth: "none",
             "&::-webkit-scrollbar": { display: "none" },
             scrollSnapType: "x mandatory",
-            maskImage: {
-              xs: "none",
-              sm: "linear-gradient(to right, rgba(0,0,0,1) 80%, rgba(0,0,0,0))",
-            },
-            WebkitMaskImage: {
-              xs: "none",
-              sm: "linear-gradient(to right, rgba(0,0,0,1) 80%, rgba(0,0,0,0))",
-            },
+            maskImage: "linear-gradient(to right, rgba(0,0,0,1) 80%, rgba(0,0,0,0))",
+            WebkitMaskImage: "linear-gradient(to right, rgba(0,0,0,1) 80%, rgba(0,0,0,0))",
           }}
         >
-          {vouchers.map((voucher, index) => (
-            <Box
-              key={index}
-              sx={{
-                minWidth: { xs: "260px", sm: "280px", md: "300px" },
-                maxWidth: { xs: "260px", sm: "280px", md: "300px" },
-                flexShrink: 0,
-                scrollSnapAlign: "start",
-                transition: "transform 0.2s ease",
-                "&:hover": {
-                  transform: "translateY(-4px)",
-                },
-              }}
-            >
-              <VoucherCard voucher={voucher} type={type} />
-            </Box>
-          ))}
+          {safeVouchers.map((voucher, index) => {
+            // Additional safety check in the map function
+            if (!voucher || typeof voucher !== "object") {
+              console.error(`VoucherCarousel: Invalid voucher in map at index ${index}:`, voucher)
+              return null
+            }
+
+            return (
+              <Box
+                component="div"
+                key={voucher.voucherCode || voucher.id || `voucher-${index}`}
+                sx={{
+                  minWidth: "300px",
+                  maxWidth: "300px",
+                  flexShrink: 0,
+                  scrollSnapAlign: "start",
+                  transition: "transform 0.2s ease",
+                  "&:hover": {
+                    transform: "translateY(-4px)",
+                  },
+                }}
+              >
+                <VoucherCard
+                  discount={voucher.discount}
+                  minimumSpend={voucher.minimumSpend}
+                  restaurantName={voucher.restaurantName}
+                  branch={voucher.branch}
+                  voucherCode={voucher.voucherCode}
+                  usedDate={voucher.usedDate}
+                  type={type}
+                />
+              </Box>
+            )
+          })}
         </Box>
 
         {/* Right scroll button */}
         <IconButton
+          component="div"
           sx={{
             position: "absolute",
-            right: { xs: -8, sm: -16 },
+            right: -16,
             top: "50%",
             transform: "translateY(-50%)",
             bgcolor: "white",
             boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
             zIndex: 2,
-            width: { xs: 32, sm: 40 },
-            height: { xs: 32, sm: 40 },
+            width: 40,
+            height: 40,
             "&:hover": { bgcolor: "white" },
             opacity: showRightArrow ? 1 : 0,
             transition: "opacity 0.3s ease",
@@ -185,32 +266,8 @@ export default function VoucherCarousel({ title, vouchers, type = "review" }) {
           }}
           onClick={() => scrollCarousel("right")}
         >
-          <ChevronRight sx={{ fontSize: { xs: "1rem", sm: "1.5rem" } }} />
+          <ChevronRight sx={{ fontSize: "1.5rem" }} />
         </IconButton>
-      </Box>
-
-      {/* Scroll Progress Indicator */}
-      <Box
-        sx={{
-          display: { xs: "flex", md: "none" },
-          justifyContent: "center",
-          alignItems: "center",
-          mt: 1,
-          gap: 0.5,
-        }}
-      >
-        {Array.from({ length: Math.min(5, Math.ceil(vouchers.length / 2)) }).map((_, i) => (
-          <Box
-            key={i}
-            sx={{
-              width: 8,
-              height: 8,
-              borderRadius: "50%",
-              bgcolor: i === Math.floor((scrollPosition / maxScroll) * 5) ? "#da1818" : "#e0e0e0",
-              transition: "background-color 0.3s ease",
-            }}
-          />
-        ))}
       </Box>
     </Box>
   )

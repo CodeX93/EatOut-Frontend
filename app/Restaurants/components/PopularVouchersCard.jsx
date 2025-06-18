@@ -11,7 +11,7 @@ import {
   MenuItem,
 } from "@mui/material"
 
-import VoucherCard from "./VoucherCard"
+import VoucherCard from "../../vouchers/_components/VoucherCard"
 
 export default function PopularVouchersCard({ 
   vouchers = [], 
@@ -21,9 +21,33 @@ export default function PopularVouchersCard({
   const [selectedPeriod, setSelectedPeriod] = useState("Today")
 
   const defaultVouchers = [
-    { restaurant: "Al Baik", discount: "30% off", expiry: "30-02-2025" },
-    { restaurant: "Al Baik", discount: "10% off", expiry: "30-02-2025" },
-    { restaurant: "Al Baik", discount: "30% off", expiry: "30-02-2025" },
+    {
+      discount: "30%",
+      minimumSpend: "RM 100",
+      restaurantName: "Al Baik",
+      branch: "Main Branch",
+      voucherCode: "BAIK001",
+      usedDate: "Dec 23, 2024",
+      type: "review"
+    },
+    {
+      discount: "10%",
+      minimumSpend: "RM 50",
+      restaurantName: "Al Baik",
+      branch: "Main Branch",
+      voucherCode: "BAIK002",
+      usedDate: "Dec 23, 2024",
+      type: "review"
+    },
+    {
+      discount: "30%",
+      minimumSpend: "RM 100",
+      restaurantName: "Al Baik",
+      branch: "Main Branch",
+      voucherCode: "BAIK003",
+      usedDate: "Dec 23, 2024",
+      type: "review"
+    },
   ]
 
   const displayVouchers = vouchers.length > 0 ? vouchers : defaultVouchers
@@ -88,7 +112,13 @@ export default function PopularVouchersCard({
           {displayVouchers.map((voucher, index) => (
             <VoucherCard
               key={index}
-              voucher={voucher}
+              discount={voucher.discount}
+              minimumSpend={voucher.minimumSpend}
+              restaurantName={voucher.restaurantName}
+              branch={voucher.branch}
+              voucherCode={voucher.voucherCode}
+              usedDate={voucher.usedDate}
+              type={voucher.type}
               onView={handleVoucherView}
             />
           ))}

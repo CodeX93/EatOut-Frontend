@@ -4,197 +4,212 @@ import { Box, Typography, Button, IconButton } from "@mui/material"
 import MoreHorizIcon from "@mui/icons-material/MoreHoriz"
 import AccessTimeIcon from "@mui/icons-material/AccessTime"
 
-const VoucherCard = ({ voucher, type }) => {
+const VoucherCard = ({
+  discount = "30%",
+  minimumSpend = "RM 100",
+  restaurantName = "Ruby Restaurant & Bars",
+  branch = "Kuala Lumpur Branch",
+  voucherCode = "1XQ135412A",
+  usedDate = "Dec 23, 2024",
+  type = "review",
+  ...rest
+}) => {
+  const safeDiscount = typeof discount === "string" ? discount : "30%"
+  const safeMinimumSpend = typeof minimumSpend === "string" ? minimumSpend : "RM 100"
+  const safeRestaurantName = typeof restaurantName === "string" ? restaurantName : "Ruby Restaurant & Bars"
+  const safeBranch = typeof branch === "string" ? branch : "Kuala Lumpur Branch"
+  const safeVoucherCode = typeof voucherCode === "string" ? voucherCode : "1XQ135412A"
+  const safeUsedDate = typeof usedDate === "string" ? usedDate : "Dec 23, 2024"
+  const safeType = typeof type === "string" ? type : "review"
+
   return (
     <Box
       sx={{
         position: "relative",
         width: "100%",
-        minHeight: { xs: "160px", sm: "180px" },
-        backgroundColor: "#eeeeee",
-        borderRadius: "12px",
-        padding: { xs: "12px", sm: "16px" },
+        height: "180px",
+        backgroundColor: "#f5f5f5",
+        borderRadius: "8px",
+        padding: "16px",
         display: "flex",
         flexDirection: "column",
         justifyContent: "space-between",
-        boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
-        transition: "all 0.3s ease",
-        "&:hover": {
-          boxShadow: "0 4px 12px rgba(0,0,0,0.12)",
-        },
-        // Create the left semi-circle cutout
+        boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
+        overflow: "visible",
+        // Left semi-circle cutout
         "&::before": {
           content: '""',
           position: "absolute",
-          left: { xs: "-8px", sm: "-10px" },
+          left: "-12px",
           top: "50%",
           transform: "translateY(-50%)",
-          width: { xs: "16px", sm: "20px" },
-          height: { xs: "16px", sm: "20px" },
+          width: "24px",
+          height: "24px",
           backgroundColor: "#ffffff",
           borderRadius: "50%",
-          zIndex: 1,
+          zIndex: 2,
+          border: "1px solid #e0e0e0",
         },
-        // Create the right semi-circle cutout
+        // Right semi-circle cutout
         "&::after": {
           content: '""',
           position: "absolute",
-          right: { xs: "-8px", sm: "-10px" },
+          right: "-12px",
           top: "50%",
           transform: "translateY(-50%)",
-          width: { xs: "16px", sm: "20px" },
-          height: { xs: "16px", sm: "20px" },
+          width: "24px",
+          height: "24px",
           backgroundColor: "#ffffff",
           borderRadius: "50%",
-          zIndex: 1,
+          zIndex: 2,
+          border: "1px solid #e0e0e0",
         },
       }}
     >
-      {/* Three dots menu */}
+      {/* More options icon */}
       <IconButton
         sx={{
           position: "absolute",
-          top: { xs: "8px", sm: "12px" },
-          right: { xs: "8px", sm: "12px" },
-          padding: "4px",
-          width: { xs: "20px", sm: "24px" },
-          height: { xs: "20px", sm: "24px" },
-          backgroundColor: "rgba(0, 0, 0, 0.08)",
+          top: "8px",
+          right: "8px",
+          padding: "2px",
+          width: "20px",
+          height: "20px",
+          backgroundColor: "#c7c7cc",
           borderRadius: "50%",
           "&:hover": {
-            backgroundColor: "rgba(0, 0, 0, 0.12)",
+            backgroundColor: "#b0b0b5",
           },
         }}
       >
-        <MoreHorizIcon sx={{ color: "#888888", fontSize: { xs: "14px", sm: "16px" } }} />
+        <MoreHorizIcon sx={{ color: "#666666", fontSize: "14px" }} />
       </IconButton>
 
-      {/* Top section */}
-      <Box sx={{ paddingRight: { xs: "24px", sm: "30px" }, mb: 1 }}>
+      {/* Top section with discount info */}
+      <Box sx={{ paddingRight: "24px", marginBottom: "4px" }}>
         <Typography
           sx={{
-            fontSize: { xs: "14px", sm: "18px" },
-            fontWeight: 700,
-            color: "#333333",
-            marginBottom: "4px",
-            lineHeight: 1.2,
-          }}
-        >
-          {voucher.discount || "30%"} off Total Bill
-        </Typography>
-        <Typography
-          sx={{
-            fontSize: { xs: "10px", sm: "12px" },
-            color: "#666666",
-            marginBottom: { xs: "8px", sm: "12px" },
-            lineHeight: 1.3,
-          }}
-        >
-          {voucher.condition || "Valid with Minimum Spending of RM 100 and above"}
-        </Typography>
-        <Typography
-          sx={{
-            fontSize: { xs: "14px", sm: "16px" },
-            fontWeight: 700,
+            fontSize: "14px",
+            fontWeight: 600,
             color: "#333333",
             marginBottom: "2px",
             lineHeight: 1.2,
           }}
         >
-          {voucher.restaurant || "Ruby Restaurant & Bars"}
+          {safeDiscount} off Total Bill
         </Typography>
         <Typography
           sx={{
-            fontSize: { xs: "11px", sm: "13px" },
+            fontSize: "10px",
+            color: "#666666",
+            marginBottom: "8px",
+            lineHeight: 1.3,
+          }}
+        >
+          Valid with Minimum Spending of {safeMinimumSpend} and above
+        </Typography>
+        <Typography
+          sx={{
+            fontSize: "13px",
+            fontWeight: 600,
+            color: "#333333",
+            marginBottom: "1px",
+            lineHeight: 1.2,
+          }}
+        >
+          {safeRestaurantName}
+        </Typography>
+        <Typography
+          sx={{
+            fontSize: "11px",
             color: "#666666",
             lineHeight: 1.2,
           }}
         >
-          {voucher.branch || "Kuala Lumpur Branch"}
+          {safeBranch}
         </Typography>
       </Box>
 
-      {/* Middle section with dashed line and voucher code */}
-      <Box sx={{ flex: "1 0 auto", display: "flex", flexDirection: "column" }}>
-        {/* Dashed separator line */}
-        <Box
-          sx={{
-            width: { xs: "calc(100% + 24px)", sm: "calc(100% + 32px)" },
-            height: "0px",
-            marginLeft: { xs: "-12px", sm: "-16px" },
-            marginRight: { xs: "-12px", sm: "-16px" },
-            borderTop: "1px dashed #cccccc",
-            marginBottom: { xs: "8px", sm: "12px" },
-          }}
-        />
+      {/* Dashed line separator */}
+      <Box
+        sx={{
+          width: "calc(100% + 32px)",
+          height: "0px",
+          marginLeft: "-16px",
+          marginRight: "-16px",
+          borderTop: "1px dashed #cccccc",
+          marginBottom: "8px",
+        }}
+      />
 
-        {/* Voucher code - centered */}
-        <Box sx={{ textAlign: "center", mb: { xs: 1.5, sm: 2 } }}>
-          <Typography
-            sx={{
-              fontSize: { xs: "14px", sm: "16px" },
-              fontWeight: 700,
-              color: "#333333",
-              letterSpacing: "1.5px",
-              fontFamily: "monospace",
-            }}
-          >
-            {voucher.code || "1XQ135412A"}
-          </Typography>
-        </Box>
+      {/* Voucher code */}
+      <Box
+        sx={{
+          textAlign: "center",
+          marginBottom: "12px",
+          flex: 1,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <Typography
+          sx={{
+            fontSize: "16px",
+            fontWeight: 700,
+            color: "#333333",
+            letterSpacing: "1.5px",
+            fontFamily: "monospace",
+          }}
+        >
+          {safeVoucherCode}
+        </Typography>
       </Box>
 
-      {/* Bottom section */}
+      {/* Bottom section with date and button */}
       <Box
         sx={{
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          width: "100%",
           marginTop: "auto",
-          paddingTop: { xs: "6px", sm: "8px" },
-          flexDirection: { xs: "column", sm: "row" },
-          gap: { xs: 1, sm: 0 },
         }}
       >
-        {/* Used date with clock icon */}
-        <Box sx={{ display: "flex", alignItems: "center", order: { xs: 2, sm: 1 } }}>
+        <Box sx={{ display: "flex", alignItems: "center" }}>
           <AccessTimeIcon
             sx={{
-              fontSize: { xs: "12px", sm: "14px" },
+              fontSize: "12px",
               color: "#888888",
               marginRight: "4px",
             }}
           />
           <Typography
             sx={{
-              fontSize: { xs: "10px", sm: "12px" },
+              fontSize: "10px",
               color: "#888888",
               fontWeight: 400,
             }}
           >
-            Used: {voucher.usedDate || "Dec 23, 2024"}
+            Used: {safeUsedDate}
           </Typography>
         </Box>
 
-        {/* Review/Expired button */}
         <Button
           variant="contained"
           sx={{
-            backgroundColor: type === "expired" ? "#9e9e9e" : "#d32f2f",
+            backgroundColor: safeType === "expired" ? "#9e9e9e" : "#ff2d55",
             color: "#ffffff",
             textTransform: "none",
-            borderRadius: "20px",
-            padding: { xs: "3px 12px", sm: "4px 16px" },
-            fontSize: { xs: "11px", sm: "13px" },
+            borderRadius: "12px",
+            padding: "4px 12px",
+            fontSize: "11px",
             fontWeight: 500,
-            minWidth: { xs: "60px", sm: "70px" },
-            height: { xs: "24px", sm: "28px" },
+            minWidth: "60px",
+            height: "24px",
             boxShadow: "none",
             lineHeight: 1,
-            order: { xs: 1, sm: 2 },
             "&:hover": {
-              backgroundColor: type === "expired" ? "#757575" : "#b71c1c",
+              backgroundColor: safeType === "expired" ? "#757575" : "#da1818",
               boxShadow: "none",
             },
             "&:active": {
@@ -202,7 +217,7 @@ const VoucherCard = ({ voucher, type }) => {
             },
           }}
         >
-          {type === "expired" ? "Expired" : "Review"}
+          {safeType === "expired" ? "Expired" : "Review"}
         </Button>
       </Box>
     </Box>
