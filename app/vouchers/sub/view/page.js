@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { 
   Box, 
   Typography, 
@@ -53,7 +53,7 @@ const BackButton = styled(Button)(({ theme }) => ({
   },
 }))
 
-export default function ViewVoucherDetails({ voucherId, voucherData }) {
+function ViewVoucherPageContent({ voucherId, voucherData }) {
   const router = useRouter()
   const searchParams = useSearchParams()
   
@@ -389,7 +389,17 @@ export default function ViewVoucherDetails({ voucherId, voucherData }) {
           </Box>
 
           {/* Form Grid */}
-          <Box sx={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 3, mb: 4 }}>
+          <Box sx={{
+            display: "grid",
+            gridTemplateColumns: {
+              xs: "1fr",
+              sm: "repeat(2, 1fr)",
+              md: "repeat(3, 1fr)",
+              lg: "repeat(4, 1fr)"
+            },
+            gap: 3,
+            mb: 4,
+          }}>
             {/* Voucher Code - Read Only */}
             <Box>
               <Typography variant="body1" sx={{ mb: 1, fontWeight: 'bolder' }}>
@@ -532,7 +542,7 @@ export default function ViewVoucherDetails({ voucherId, voucherData }) {
               </Typography>
               <StyledTextField
                 fullWidth
-                value={voucher.expiryDate}
+                value={voucher.expiryDate ? voucher.expiryDate.slice(0, 10) : ""}
                 InputProps={{
                   readOnly: true,
                 }}
@@ -598,4 +608,12 @@ export default function ViewVoucherDetails({ voucherId, voucherData }) {
       </Box>
     </Box>
   )
+}
+
+export default function ViewVoucherPage(props) {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <ViewVoucherPageContent {...props} />
+    </Suspense>
+  );
 }

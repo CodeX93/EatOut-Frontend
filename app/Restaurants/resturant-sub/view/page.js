@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import {
   Box,
@@ -122,7 +122,7 @@ const fetchRestaurantData = async (id) => {
   return mockRestaurantData
 }
 
-export default function ResturantViewPage() {
+function ViewPageContent() {
   const searchParams = useSearchParams()
   const restaurantId = searchParams.get("id")
   const [restaurant, setRestaurant] = useState(null)
@@ -1256,5 +1256,13 @@ export default function ResturantViewPage() {
         </Box>
       </Box>
     </ThemeProvider>
+  )
+}
+
+export default function ResturantViewPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <ViewPageContent />
+    </Suspense>
   )
 }

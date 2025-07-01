@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import {
   Box,
   Typography,
@@ -57,7 +57,7 @@ const UpdateButton = styled(Button)(({ theme }) => ({
   },
 }))
 
-export default function UpdateVoucherDetails({ voucherId, voucherData, onUpdate }) {
+function EditVoucherPageContent({ voucherId, voucherData, onUpdate }) {
   const router = useRouter()
   const searchParams = useSearchParams()
   
@@ -707,17 +707,10 @@ export default function UpdateVoucherDetails({ voucherId, voucherData, onUpdate 
               <StyledTextField
                 fullWidth
                 type="date"
-                defaultValue={initialDate}
-                value={formData.expiryDate}
+                label="Expiry Date"
+                value={formData.expiryDate ? formData.expiryDate.slice(0, 10) : ""}
                 onChange={(e) => handleChange("expiryDate", e.target.value)}
-                error={isFieldMissing('expiryDate')}
-                InputLabelProps={{
-                  shrink: true,
-                }}
-                inputProps={{
-                  min: initialDate, // Prevent selecting past dates
-                }}
-                sx={{ maxWidth: "300px" }}
+                InputLabelProps={{ shrink: true }}
               />
             </Box>
           </Box>
@@ -815,4 +808,12 @@ export default function UpdateVoucherDetails({ voucherId, voucherData, onUpdate 
       </Box>
     </Box>
   )
+}
+
+export default function EditVoucherPage(props) {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <EditVoucherPageContent {...props} />
+    </Suspense>
+  );
 }

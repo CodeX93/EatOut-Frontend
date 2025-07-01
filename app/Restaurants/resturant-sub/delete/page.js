@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import {
   Box,
   Typography,
@@ -83,7 +83,7 @@ const theme = createTheme({
 
 const drawerWidth = 240
 
-const DeleteRestaurantDetails = ({ restaurantId = "1" }) => {
+function DeletePageContent({ restaurantId = "1" }) {
   const [restaurant, setRestaurant] = useState(null)
   const [menuItems, setMenuItems] = useState([])
   const [loading, setLoading] = useState(true)
@@ -1305,4 +1305,10 @@ const DeleteRestaurantDetails = ({ restaurantId = "1" }) => {
   )
 }
 
-export default DeleteRestaurantDetails
+export default function DeletePage(props) {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <DeletePageContent {...props} />
+    </Suspense>
+  )
+}

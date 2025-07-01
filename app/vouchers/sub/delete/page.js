@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import {
   Box,
   Typography,
@@ -57,7 +57,7 @@ const DeleteButton = styled(Button)(({ theme }) => ({
   },
 }))
 
-export default function DeleteVoucherDetails({ voucherId, voucherData, onDelete }) {
+function DeleteVoucherPageContent({ voucherId, voucherData, onDelete }) {
   const router = useRouter()
   const searchParams = useSearchParams()
   
@@ -487,11 +487,10 @@ export default function DeleteVoucherDetails({ voucherId, voucherData, onDelete 
               <StyledTextField
                 fullWidth
                 type="date"
-                value={formData.expiryDate || ""}
+                label="Expiry Date"
+                value={formData.expiryDate ? formData.expiryDate.slice(0, 10) : ""}
                 onChange={(e) => handleChange("expiryDate", e.target.value)}
-                InputLabelProps={{
-                  shrink: true,
-                }}
+                InputLabelProps={{ shrink: true }}
               />
             </Box>
           </Box>
@@ -576,4 +575,12 @@ export default function DeleteVoucherDetails({ voucherId, voucherData, onDelete 
       </Box>
     </Box>
   )
+}
+
+export default function DeleteVoucherPage(props) {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <DeleteVoucherPageContent {...props} />
+    </Suspense>
+  );
 }

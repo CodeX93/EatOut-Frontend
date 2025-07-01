@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import {
   Box,
@@ -89,7 +89,7 @@ const theme = createTheme({
 
 const drawerWidth = 240
 
-function EditRestaurantDetails() {
+function EditPageContent() {
   const searchParams = useSearchParams()
   const restaurantId = searchParams.get("id")
   const [restaurant, setRestaurant] = useState(null)
@@ -1327,4 +1327,11 @@ function EditRestaurantDetails() {
   )
 }
 
-export default EditRestaurantDetails
+export default function EditPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <EditPageContent />
+    </Suspense>
+  )
+}
+

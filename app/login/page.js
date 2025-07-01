@@ -1,4 +1,4 @@
-//changes 1-7-2025
+//deployed errors fixed
 "use client"
 
 import { useState } from "react"
