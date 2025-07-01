@@ -2,6 +2,8 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { auth } from '../../firebaseConfig';
+import { signInWithEmailAndPassword } from 'firebase/auth';
 import Image from "next/image"
 import {
   Box,
@@ -18,12 +20,11 @@ import {
   Alert,
 } from "@mui/material"
 import { Visibility, VisibilityOff } from "@mui/icons-material"
-import LoginScreenImage from "../../Assets/Images/loginscreenImage.png"
 
 export default function SignInForm() {
   const [showPassword, setShowPassword] = useState(false)
   const [keepLoggedIn, setKeepLoggedIn] = useState(false)
-  const [email, setEmail] = useState("jonas_kahnwald@gmail.com")
+  const [email, setEmail] = useState("admin@eatout.com")
   const [password, setPassword] = useState("")
   const [errors, setErrors] = useState({ email: "", password: "" })
   const [isLoading, setIsLoading] = useState(false)
@@ -75,10 +76,17 @@ export default function SignInForm() {
 
     try {
       // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000))
+      try {
+        await signInWithEmailAndPassword(auth, email, password);
+        // alert("Logged in!");
+        router.push("/dashboard")
+      } catch (error) {
+        console.error(error);
+        alert("Login failed");
+      }
 
       // Navigate to dashboard on successful sign in
-      router.push("/dashboard")
+      
     } catch (error) {
       setGeneralError("Sign in failed. Please try again.")
     } finally {
@@ -105,17 +113,16 @@ export default function SignInForm() {
         >
           <Box sx={{ maxWidth: 400, width: "100%", mx: "auto" }}>
             {/* Logo */}
-            <Typography
-              variant="h6"
-              sx={{
-                color: "#232323",
-                fontWeight: 600,
-                mb: { xs: 6, md: 8 },
-                fontSize: { xs: "1.1rem", md: "1.25rem" },
-              }}
-            >
-              LOGO
-            </Typography>
+            <Box sx={{ mb: { xs: 6, md: 8 }, display: 'flex', justifyContent: 'flex-start' }}>
+              <Image
+                src="/logo.png"
+                alt="E.A.T Logo"
+                width={300}
+                height={100}
+                style={{ objectFit: 'contain' }}
+                priority
+              />
+            </Box>
 
             {/* Sign in heading */}
             <Typography
@@ -314,40 +321,28 @@ export default function SignInForm() {
 
         {/* Right side - Food image using Next.js Image */}
         <Grid
-          item
-          xs={12}
-          md={6}
-          sx={{
-            display: { xs: "none", md: "block" },
-            position: "relative",
-            overflow: "hidden",
-            p: { md: 2 }, // Add padding for rounded corners
-          }}
-        >
-          <Box
-            sx={{
-              position: "relative",
-              width: "100%",
-              height: "100%",
-              minHeight: "calc(100vh - 32px)", // Account for padding
-              borderRadius: "24px", // Rounded corners
-              overflow: "hidden",
-              boxShadow: "0 8px 32px rgba(0, 0, 0, 0.1)", // Optional shadow for depth
-            }}
-          >
-            <Image
-              src={LoginScreenImage}
-              alt="Delicious food spread with various dishes, vegetables, and grains on a wooden table"
-              fill
-              style={{
-                objectFit: "cover",
-                objectPosition: "center",
-              }}
-              priority
-              sizes="(max-width: 768px) 0vw, 50vw"
-            />
-          </Box>
-        </Grid>
+  item
+  xs={false}
+  md={6}
+  sx={{
+    display: { xs: "none", md: "flex" },
+    alignItems: "center",
+    justifyContent: "center",
+    bgcolor: "#fafafb",
+    position: "relative",
+    height: "100vh", // <-- Add this line
+  }}
+>
+  <Box sx={{ position: 'relative', width: '100%', height: '100%' }}>
+    <Image
+      src="/loginscreenImage.png"
+      alt="Login Screen"
+      fill
+      style={{ objectFit: 'cover' }}
+      priority
+    />
+  </Box>
+</Grid>
       </Grid>
     </Box>
   )

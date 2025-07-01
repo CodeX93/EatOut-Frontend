@@ -21,11 +21,22 @@ import {
   Settings,
   Menu as MenuIcon,
 } from "@mui/icons-material"
+import Image from "next/image"
+import Link from "next/link"
 
 export default function Header({ onMenuClick }) {
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down("md"))
   const isSmall = useMediaQuery(theme.breakpoints.down("sm"))
+  const isMedium = useMediaQuery(theme.breakpoints.up("md"))
+
+  // Use theme's toolbar minHeight for logo height
+  const toolbarMinHeight = (theme.mixins.toolbar?.minHeight || 64) + 16;
+
+  // Enlarge logo: 1.5x toolbar height
+  const enlargedLogoHeight = toolbarMinHeight * 1.5;
+  const headerCardRadius = 20;
+  const headerCardShadow = '0 2px 12px 0 rgba(0,0,0,0.04)';
 
   return (
     <AppBar
@@ -38,7 +49,7 @@ export default function Header({ onMenuClick }) {
         borderBottom: "1px solid #dadada",
       }}
     >
-      <Toolbar sx={{ justifyContent: "space-between", px: { xs: 1, sm: 3 } }}>
+      <Toolbar sx={{ justifyContent: "space-between", px: { xs: 1, sm: 3 }, minHeight: { xs: toolbarMinHeight, sm: toolbarMinHeight, md: toolbarMinHeight } }}>
         <Box sx={{ display: "flex", alignItems: "center", gap: { xs: 1, sm: 3 } }}>
           {isMobile && (
             <IconButton color="inherit" aria-label="open drawer" edge="start" onClick={onMenuClick} sx={{ mr: 1 }}>
@@ -46,40 +57,41 @@ export default function Header({ onMenuClick }) {
             </IconButton>
           )}
 
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-            <Box
-              sx={{
-                width: 32,
-                height: 32,
-                bgcolor: "#da1818",
-                borderRadius: "50%",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <Typography sx={{ color: "white", fontWeight: "bold", fontSize: "14px" }}>E</Typography>
+          <Link href="/dashboard" style={{ textDecoration: 'none' }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1, height: toolbarMinHeight, cursor: 'pointer' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <Image
+                  src="/logo.svg"
+                  alt="E.A.T Logo"
+                  height={enlargedLogoHeight}
+                  width={enlargedLogoHeight}
+                  style={{ objectFit: 'contain', height: enlargedLogoHeight, width: "auto", marginTop: -(enlargedLogoHeight - toolbarMinHeight) / 2, marginBottom: -(enlargedLogoHeight - toolbarMinHeight) / 2 }}
+                />
+               
+              </Box>
             </Box>
-            <Typography sx={{ fontWeight: "bold", color: "#da1818", fontSize: "18px" }}>E.A.T</Typography>
-          </Box>
+          </Link>
 
           {!isSmall && (
             <TextField
               placeholder="Search"
               size="small"
               sx={{
-                width: { sm: 200, md: 320 },
-                "& .MuiOutlinedInput-root": {
-                  bgcolor: "#efeff4",
-                  borderRadius: "8px",
-                  border: "none",
-                  "& fieldset": { border: "none" },
+                width: { sm: 260, md: 400 },
+                borderRadius: '32px',
+                background: '#fafafb',
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: '32px',
+                  bgcolor: '#fafafb',
+                  border: 'none',
+                  fontSize: '1rem',
+                  '& fieldset': { border: 'none' },
                 },
               }}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
-                    <SearchIcon sx={{ color: "#8a8a8f" }} />
+                    <SearchIcon sx={{ color: '#b0b0b0' }} />
                   </InputAdornment>
                 ),
               }}
@@ -99,7 +111,7 @@ export default function Header({ onMenuClick }) {
                 display: { xs: "none", md: "flex" },
               }}
             >
-              Wed 29 May 2026
+              {new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
             </Button>
           )}
 

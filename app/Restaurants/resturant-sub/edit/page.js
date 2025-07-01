@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useSearchParams } from "next/navigation"
 import {
   Box,
   Typography,
@@ -26,6 +27,10 @@ import {
   Modal,
   Snackbar,
   Alert,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from "@mui/material"
 import {
   Search as SearchIcon,
@@ -52,6 +57,8 @@ import {
 } from "@mui/icons-material"
 import { createTheme, ThemeProvider } from "@mui/material/styles"
 import SideNavbar from "../../../components/SideNavbar"
+import { doc, getDoc, collection, getDocs, updateDoc } from "firebase/firestore"
+import { db } from "../../../../firebaseConfig"
 
 const theme = createTheme({
   palette: {
@@ -82,62 +89,54 @@ const theme = createTheme({
 
 const drawerWidth = 240
 
-const mockRestaurantData = {
-  id: "1",
-  name: "Scenic Brewing Company",
-  cuisines: ["Chinese", "Italian", "Korean", "European", "Asian"],
-  address: "334 Rosewood Dr. Deptford, NJ 08096",
-  city: "Scenic Brewing Company",
-  phone: "Scenic Brewing Company",
-  email: "334 Rosewood Dr. Deptford, NJ 08096",
-  openingDays: {
-    start: "20-03-2025",
-    end: "25-03-2025",
-  },
-  openingHours: {
-    start: "09:00 AM",
-    end: "09:20 AM",
-  },
-  closingHours: {
-    start: "09:00 PM",
-    end: "10:00 PM",
-  },
-  priceRange: "$1000",
-  specialty: "Special Scenic Brewing Burger",
-  description: "Description",
-  facilities: ["Air Conditioning", "Catering Available", "Baby Chair Available"],
-  paymentOptions: ["Cash", "E-Wallets (Cashless Payment)"],
-  socialMedia: {
-    website: "",
-    facebook: "",
-    instagram: "",
-    tiktok: "",
-  },
-}
-
-const fetchRestaurantData = async (id) => {
-  return mockRestaurantData
-}
-
-const EditRestaurantDetails = ({ restaurantId = "1" }) => {
+function EditRestaurantDetails() {
+  const searchParams = useSearchParams()
+  const restaurantId = searchParams.get("id")
   const [restaurant, setRestaurant] = useState(null)
+  const [menuItems, setMenuItems] = useState([])
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
+  const [modalOpen, setModalOpen] = useState(false)
+  const [modalType, setModalType] = useState("")
+  const [modalValue, setModalValue] = useState("")
+  const [modalField, setModalField] = useState("")
 
   useEffect(() => {
+    if (!restaurantId) {
+      setRestaurant(null)
+      setMenuItems([])
+      setLoading(false)
+      return
+    }
     const getRestaurantData = async () => {
       setLoading(true)
       try {
-        const data = await fetchRestaurantData(restaurantId)
-        setRestaurant(data)
+        // Fetch restaurant document
+        const docRef = doc(db, "registeredRestaurants", restaurantId)
+        const docSnap = await getDoc(docRef)
+        if (!docSnap.exists()) {
+          setRestaurant(null)
+          setMenuItems([])
+          setLoading(false)
+          return
+        }
+        setRestaurant({ id: docSnap.id, ...docSnap.data() })
+        // Fetch menuItems subcollection
+        const menuItemsSnapshot = await getDocs(collection(docRef, "menuItems"))
+        const menuItemsArr = []
+        menuItemsSnapshot.forEach((itemDoc) => {
+          menuItemsArr.push({ id: itemDoc.id, ...itemDoc.data() })
+        })
+        setMenuItems(menuItemsArr)
       } catch (error) {
         console.error("Error fetching restaurant data:", error)
+        setRestaurant(null)
+        setMenuItems([])
       } finally {
         setLoading(false)
       }
     }
-
     getRestaurantData()
   }, [restaurantId])
 
@@ -145,9 +144,20 @@ const EditRestaurantDetails = ({ restaurantId = "1" }) => {
     setShowModal(true)
   }
 
-  const handleModalUpdate = () => {
+  const handleModalUpdate = async () => {
     setShowModal(false)
-    setShowSuccess(true)
+    setLoading(true)
+    try {
+      // Update restaurant document in Firestore
+      const docRef = doc(db, "registeredRestaurants", restaurantId)
+      await updateDoc(docRef, restaurant)
+      setShowSuccess(true)
+    } catch (error) {
+      console.error("Error updating restaurant:", error)
+      // Optionally show an error message
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleModalDiscard = () => {
@@ -176,6 +186,34 @@ const EditRestaurantDetails = ({ restaurantId = "1" }) => {
       ...prev,
       cuisines: prev.cuisines.filter((cuisine) => cuisine !== cuisineToRemove),
     }))
+  }
+
+  // Open modal for a specific field
+  const handleOpenModal = (type, field) => {
+    setModalType(type)
+    setModalField(field)
+    setModalValue("")
+    setModalOpen(true)
+  }
+
+  // Add value to array field
+  const handleAddValue = () => {
+    if (!modalValue) return
+    setRestaurant((prev) => {
+      if (modalType === "array") {
+        return {
+          ...prev,
+          [modalField]: Array.isArray(prev[modalField]) ? [...prev[modalField], modalValue] : [modalValue],
+        }
+      } else if (modalType === "social") {
+        return {
+          ...prev,
+          [modalField]: modalValue,
+        }
+      }
+      return prev
+    })
+    setModalOpen(false)
   }
 
   if (loading) {
@@ -285,8 +323,8 @@ const EditRestaurantDetails = ({ restaurantId = "1" }) => {
                     </Typography>
                     <TextField
                       fullWidth
-                      value={restaurant.name}
-                      onChange={(e) => handleInputChange("name", e.target.value)}
+                      value={restaurant.restaurantName || ""}
+                      onChange={(e) => handleInputChange("restaurantName", e.target.value)}
                       variant="outlined"
                       size="small"
                       sx={{
@@ -375,7 +413,7 @@ const EditRestaurantDetails = ({ restaurantId = "1" }) => {
                     </Typography>
                     <TextField
                       fullWidth
-                      value={restaurant.address}
+                      value={restaurant.address || ""}
                       onChange={(e) => handleInputChange("address", e.target.value)}
                       variant="outlined"
                       size="small"
@@ -413,7 +451,7 @@ const EditRestaurantDetails = ({ restaurantId = "1" }) => {
                     </Typography>
                     <TextField
                       fullWidth
-                      value={restaurant.city}
+                      value={restaurant.city || ""}
                       onChange={(e) => handleInputChange("city", e.target.value)}
                       variant="outlined"
                       size="small"
@@ -451,7 +489,7 @@ const EditRestaurantDetails = ({ restaurantId = "1" }) => {
                     </Typography>
                     <TextField
                       fullWidth
-                      value={restaurant.phone}
+                      value={restaurant.phone || ""}
                       onChange={(e) => handleInputChange("phone", e.target.value)}
                       variant="outlined"
                       size="small"
@@ -492,7 +530,7 @@ const EditRestaurantDetails = ({ restaurantId = "1" }) => {
                   </Typography>
                   <TextField
                     fullWidth
-                    value={restaurant.email}
+                    value={restaurant.email || ""}
                     onChange={(e) => handleInputChange("email", e.target.value)}
                     variant="outlined"
                     size="small"
@@ -545,8 +583,8 @@ const EditRestaurantDetails = ({ restaurantId = "1" }) => {
                       <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
                         <FormControl size="small" sx={{ flex: 1 }}>
                           <Select
-                            value={restaurant.openingDays.start}
-                            onChange={(e) => handleNestedInputChange("openingDays", "start", e.target.value)}
+                            value={restaurant.openingSchedules?.[0]?.startDay || ""}
+                            onChange={(e) => handleNestedInputChange("openingSchedules", "startDay", e.target.value)}
                             sx={{
                               bgcolor: "#ffffff",
                               borderRadius: "6px",
@@ -580,8 +618,8 @@ const EditRestaurantDetails = ({ restaurantId = "1" }) => {
                         <Typography sx={{ color: "#8a8a8f", mx: 1, fontSize: "14px" }}>—</Typography>
                         <FormControl size="small" sx={{ flex: 1 }}>
                           <Select
-                            value={restaurant.openingDays.end}
-                            onChange={(e) => handleNestedInputChange("openingDays", "end", e.target.value)}
+                            value={restaurant.openingSchedules?.[0]?.endDay || ""}
+                            onChange={(e) => handleNestedInputChange("openingSchedules", "endDay", e.target.value)}
                             sx={{
                               bgcolor: "#ffffff",
                               borderRadius: "6px",
@@ -623,8 +661,8 @@ const EditRestaurantDetails = ({ restaurantId = "1" }) => {
                       <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
                         <FormControl size="small" sx={{ flex: 1 }}>
                           <Select
-                            value={restaurant.openingHours.start}
-                            onChange={(e) => handleNestedInputChange("openingHours", "start", e.target.value)}
+                            value={restaurant.openingSchedules?.[0]?.startHour || ""}
+                            onChange={(e) => handleNestedInputChange("openingSchedules", "startHour", e.target.value)}
                             sx={{
                               bgcolor: "#ffffff",
                               borderRadius: "6px",
@@ -658,8 +696,8 @@ const EditRestaurantDetails = ({ restaurantId = "1" }) => {
                         <Typography sx={{ color: "#8a8a8f", mx: 1, fontSize: "14px" }}>—</Typography>
                         <FormControl size="small" sx={{ flex: 1 }}>
                           <Select
-                            value={restaurant.openingHours.end}
-                            onChange={(e) => handleNestedInputChange("openingHours", "end", e.target.value)}
+                            value={restaurant.openingSchedules?.[0]?.endHour || ""}
+                            onChange={(e) => handleNestedInputChange("openingSchedules", "endHour", e.target.value)}
                             sx={{
                               bgcolor: "#ffffff",
                               borderRadius: "6px",
@@ -701,8 +739,8 @@ const EditRestaurantDetails = ({ restaurantId = "1" }) => {
                       <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
                         <FormControl size="small" sx={{ flex: 1 }}>
                           <Select
-                            value={restaurant.closingHours.start}
-                            onChange={(e) => handleNestedInputChange("closingHours", "start", e.target.value)}
+                            value={restaurant.closingSchedules?.[0]?.startHour || ""}
+                            onChange={(e) => handleNestedInputChange("closingSchedules", "startHour", e.target.value)}
                             sx={{
                               bgcolor: "#ffffff",
                               borderRadius: "6px",
@@ -736,8 +774,8 @@ const EditRestaurantDetails = ({ restaurantId = "1" }) => {
                         <Typography sx={{ color: "#8a8a8f", mx: 1, fontSize: "14px" }}>—</Typography>
                         <FormControl size="small" sx={{ flex: 1 }}>
                           <Select
-                            value={restaurant.closingHours.end}
-                            onChange={(e) => handleNestedInputChange("closingHours", "end", e.target.value)}
+                            value={restaurant.closingSchedules?.[0]?.endHour || ""}
+                            onChange={(e) => handleNestedInputChange("closingSchedules", "endHour", e.target.value)}
                             sx={{
                               bgcolor: "#ffffff",
                               borderRadius: "6px",
@@ -819,7 +857,7 @@ const EditRestaurantDetails = ({ restaurantId = "1" }) => {
                         </Typography>
                         <TextField
                           fullWidth
-                          value={restaurant.specialty}
+                          value={restaurant.specialty || ""}
                           onChange={(e) => handleInputChange("specialty", e.target.value)}
                           variant="outlined"
                           size="small"
@@ -862,7 +900,7 @@ const EditRestaurantDetails = ({ restaurantId = "1" }) => {
                         fullWidth
                         multiline
                         rows={4}
-                        value={restaurant.description}
+                        value={restaurant.description || ""}
                         onChange={(e) => handleInputChange("description", e.target.value)}
                         variant="outlined"
                         sx={{
@@ -906,34 +944,17 @@ const EditRestaurantDetails = ({ restaurantId = "1" }) => {
                       <Typography variant="h6" sx={{ fontWeight: 600, color: "#ff2d55" }}>
                         Facilities and Services
                       </Typography>
-                      <Button
-                        variant="contained"
-                        size="small"
-                        startIcon={<Add sx={{ fontSize: 16 }} />}
-                        sx={{
-                          bgcolor: "#ff2d55",
-                          color: "white",
-                          minWidth: "unset",
-                          height: 28,
-                          width: 28,
-                          padding: 0,
-                          borderRadius: "4px",
-                          "& .MuiButton-startIcon": {
-                            margin: 0,
-                          },
-                          "&:hover": { bgcolor: "#e6254d" },
-                        }}
-                      />
+                      <IconButton size="small" onClick={() => handleOpenModal("array", "facilities")}> <Add /> </IconButton>
                     </Box>
 
                     <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
-                      {restaurant.facilities.map((facility, index) => (
+                      {Array.isArray(restaurant.facilities) && restaurant.facilities.map((facility, idx) => (
                         <Chip
-                          key={index}
+                          key={idx}
                           icon={
-                            index === 0 ? (
+                            idx === 0 ? (
                               <AcUnit sx={{ color: "white !important", fontSize: "16px" }} />
-                            ) : index === 1 ? (
+                            ) : idx === 1 ? (
                               <RestaurantIcon sx={{ color: "white !important", fontSize: "16px" }} />
                             ) : (
                               <ChildCare sx={{ color: "white !important", fontSize: "16px" }} />
@@ -962,32 +983,15 @@ const EditRestaurantDetails = ({ restaurantId = "1" }) => {
                       <Typography variant="h6" sx={{ fontWeight: 600, color: "#ff2d55" }}>
                         Payment Options
                       </Typography>
-                      <Button
-                        variant="contained"
-                        size="small"
-                        startIcon={<Add sx={{ fontSize: 16 }} />}
-                        sx={{
-                          bgcolor: "#ff2d55",
-                          color: "white",
-                          minWidth: "unset",
-                          height: 28,
-                          width: 28,
-                          padding: 0,
-                          borderRadius: "4px",
-                          "& .MuiButton-startIcon": {
-                            margin: 0,
-                          },
-                          "&:hover": { bgcolor: "#e6254d" },
-                        }}
-                      />
+                      <IconButton size="small" onClick={() => handleOpenModal("array", "paymentOptions")}> <Add /> </IconButton>
                     </Box>
 
                     <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
-                      {restaurant.paymentOptions.map((option, index) => (
+                      {Array.isArray(restaurant.paymentOptions) && restaurant.paymentOptions.map((option, idx) => (
                         <Chip
-                          key={index}
+                          key={idx}
                           icon={
-                            index === 0 ? (
+                            idx === 0 ? (
                               <AttachMoney sx={{ color: "white !important", fontSize: "16px" }} />
                             ) : (
                               <AccountBalanceWallet sx={{ color: "white !important", fontSize: "16px" }} />
@@ -1016,24 +1020,7 @@ const EditRestaurantDetails = ({ restaurantId = "1" }) => {
                       <Typography variant="h6" sx={{ fontWeight: 600, color: "#ff2d55" }}>
                         Social Media
                       </Typography>
-                      <Button
-                        variant="contained"
-                        size="small"
-                        startIcon={<Add sx={{ fontSize: 16 }} />}
-                        sx={{
-                          bgcolor: "#ff2d55",
-                          color: "white",
-                          minWidth: "unset",
-                          height: 28,
-                          width: 28,
-                          padding: 0,
-                          borderRadius: "4px",
-                          "& .MuiButton-startIcon": {
-                            margin: 0,
-                          },
-                          "&:hover": { bgcolor: "#e6254d" },
-                        }}
-                      />
+                      <IconButton size="small" onClick={() => handleOpenModal("social", "websiteUrl")}> <Add /> </IconButton>
                     </Box>
 
                     <Grid container spacing={2}>
@@ -1041,7 +1028,7 @@ const EditRestaurantDetails = ({ restaurantId = "1" }) => {
                         <TextField
                           fullWidth
                           placeholder="Enter Website Url (Optional)"
-                          value={restaurant.socialMedia.website}
+                          value={restaurant.websiteUrl || ""}
                           onChange={(e) => handleNestedInputChange("socialMedia", "website", e.target.value)}
                           variant="outlined"
                           size="small"
@@ -1080,7 +1067,7 @@ const EditRestaurantDetails = ({ restaurantId = "1" }) => {
                         <TextField
                           fullWidth
                           placeholder="Enter Facebook Url (Optional)"
-                          value={restaurant.socialMedia.facebook}
+                          value={restaurant.facebookUrl || ""}
                           onChange={(e) => handleNestedInputChange("socialMedia", "facebook", e.target.value)}
                           variant="outlined"
                           size="small"
@@ -1119,7 +1106,7 @@ const EditRestaurantDetails = ({ restaurantId = "1" }) => {
                         <TextField
                           fullWidth
                           placeholder="Enter Instagram Url (Optional)"
-                          value={restaurant.socialMedia.instagram}
+                          value={restaurant.instagramUrl || ""}
                           onChange={(e) => handleNestedInputChange("socialMedia", "instagram", e.target.value)}
                           variant="outlined"
                           size="small"
@@ -1158,7 +1145,7 @@ const EditRestaurantDetails = ({ restaurantId = "1" }) => {
                         <TextField
                           fullWidth
                           placeholder="Enter TikTok Url (Optional)"
-                          value={restaurant.socialMedia.tiktok}
+                          value={restaurant.tiktokUrl || ""}
                           onChange={(e) => handleNestedInputChange("socialMedia", "tiktok", e.target.value)}
                           variant="outlined"
                           size="small"
@@ -1314,6 +1301,26 @@ const EditRestaurantDetails = ({ restaurantId = "1" }) => {
               Restaurant details updated successfully!
             </Alert>
           </Snackbar>
+
+          {/* Modal for adding values */}
+          <Dialog open={modalOpen} onClose={() => setModalOpen(false)}>
+            <DialogTitle>Add {modalType === "array" ? modalField : "Social Media Link"}</DialogTitle>
+            <DialogContent>
+              <TextField
+                autoFocus
+                margin="dense"
+                label={modalType === "array" ? "Enter value" : "Enter URL"}
+                type="text"
+                fullWidth
+                value={modalValue}
+                onChange={(e) => setModalValue(e.target.value)}
+              />
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={() => setModalOpen(false)}>Cancel</Button>
+              <Button onClick={handleAddValue} variant="contained">Add</Button>
+            </DialogActions>
+          </Dialog>
         </Box>
       </Box>
     </ThemeProvider>

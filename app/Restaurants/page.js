@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react"
 import { Box, Typography, CircularProgress } from "@mui/material"
+import { collection, getDocs } from "firebase/firestore"
+import { db } from "../../firebaseConfig"
 
 // Import layout components
 import Sidebar from "../components/SideNavbar"
@@ -109,12 +111,27 @@ export default function Restaurants() {
     const loadInitialData = async () => {
       setLoading(true)
       try {
-        const [restaurants, popularRestaurants, popularVouchers] = await Promise.all([
-          fetchRestaurants(),
+        // Fetch restaurants from Firestore
+        const querySnapshot = await getDocs(collection(db, "registeredRestaurants"))
+        const restaurants = []
+        querySnapshot.forEach((doc) => {
+          const data = doc.data()
+          restaurants.push({
+            id: doc.id,
+            name: data.restaurantName || "-",
+            address: data.address || "-",
+            location: data.city || "-",
+            phone: data.phone || "-",
+            vouchers: 0, // Set to 0 for now
+            redeemed: 0, // Set to 0 for now
+            ...data,
+          })
+        })
+        // Keep the rest of the data fetching as is
+        const [popularRestaurants, popularVouchers] = await Promise.all([
           fetchPopularRestaurants("Month"),
           fetchPopularVouchers("Month"),
         ])
-
         setRestaurantsData(restaurants)
         setPopularRestaurantsData(popularRestaurants)
         setPopularVouchersData(popularVouchers)
@@ -125,7 +142,6 @@ export default function Restaurants() {
         setLoading(false)
       }
     }
-
     loadInitialData()
   }, [])
 
@@ -301,6 +317,9 @@ export default function Restaurants() {
                 flexDirection: "column",
                 gap: { xs: 2, md: 3 },
                 minHeight: { xs: "auto", xl: "100%" },
+                maxHeight: { xs: "none", xl: "calc(100vh - 64px)" }, // 64px header height
+                overflowY: "auto",
+                minHeight: 0,
               }}
             >
               {/* Popular Restaurants Card */}

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   Box,
   Typography,
@@ -17,68 +17,39 @@ import {
   Chip,
 } from "@mui/material"
 import { KeyboardArrowDown, Groups } from "@mui/icons-material"
+import { collection, getDocs } from "firebase/firestore"
+import { db } from "../../../firebaseConfig"
 
 export default function ReferredUsersTable() {
   const [filter, setFilter] = useState("Last Month")
+  const [referredUsers, setReferredUsers] = useState([])
+  const [loading, setLoading] = useState(true)
 
-  const referredUsers = [
-    {
-      referred: "Ali H",
-      email: "ali@gmail.com",
-      referrer: "Sarah A",
-      joinedOn: "05 May 2025",
-      status: "Reward Applied",
-    },
-    {
-      referred: "Fahad K",
-      email: "fahad@gmail.com",
-      referrer: "Riya Shah",
-      joinedOn: "03 May 2025",
-      status: "Reward Applied",
-    },
-    {
-      referred: "Meera I",
-      email: "meera@gmail.com",
-      referrer: "Omar Ali",
-      joinedOn: "08 May 2025",
-      status: "Pending",
-    },
-    {
-      referred: "Noah M",
-      email: "noah@gmail.com",
-      referrer: "Olivia Brown",
-      joinedOn: "06 May 2025",
-      status: "Reward Applied",
-    },
-    {
-      referred: "Emily J",
-      email: "emily@gmail.com",
-      referrer: "Jacob Smith",
-      joinedOn: "05 May 2025",
-      status: "Reward Applied",
-    },
-    {
-      referred: "Ava W",
-      email: "ava@gmail.com",
-      referrer: "Jacob Smith",
-      joinedOn: "04 May 2025",
-      status: "Reward Applied",
-    },
-    {
-      referred: "Sophia T",
-      email: "sophia@gmail.com",
-      referrer: "Olivia Brown",
-      joinedOn: "08 May 2025",
-      status: "Pending",
-    },
-    {
-      referred: "Harper T",
-      email: "harper@gmail.com",
-      referrer: "Jacob Smith",
-      joinedOn: "08 May 2025",
-      status: "No Order Yet",
-    },
-  ]
+  useEffect(() => {
+    const fetchReferredUsers = async () => {
+      setLoading(true)
+      try {
+        const querySnapshot = await getDocs(collection(db, "referrals"))
+        const users = []
+        querySnapshot.forEach((doc) => {
+          const data = doc.data()
+          if (Array.isArray(data.referredUsers)) {
+            data.referredUsers.forEach((ru) => {
+              users.push({
+                ...ru,
+                referrer: data.email || "-",
+              })
+            })
+          }
+        })
+        setReferredUsers(users)
+      } catch (error) {
+        console.error("Error fetching referred users:", error)
+      }
+      setLoading(false)
+    }
+    fetchReferredUsers()
+  }, [])
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -172,45 +143,59 @@ export default function ReferredUsersTable() {
             </TableRow>
           </TableHead>
           <TableBody>
-            {referredUsers.map((user, index) => (
-              <TableRow
-                key={index}
-                sx={{
-                  "&:last-child td, &:last-child th": { border: 0 },
-                  "&:hover": { bgcolor: "#f9f9f9" },
-                }}
-              >
-                <TableCell sx={{ fontSize: { xs: "10px", sm: "11px" }, py: 0.8, fontWeight: 500 }}>
-                  {user.referred}
-                </TableCell>
-                <TableCell sx={{ fontSize: { xs: "10px", sm: "11px" }, py: 0.8, color: "#da1818" }}>
-                  {user.email}
-                </TableCell>
-                <TableCell
-                  sx={{ fontSize: { xs: "10px", sm: "11px" }, py: 0.8, display: { xs: "none", sm: "table-cell" } }}
-                >
-                  {user.referrer}
-                </TableCell>
-                <TableCell
-                  sx={{ fontSize: { xs: "10px", sm: "11px" }, py: 0.8, display: { xs: "none", sm: "table-cell" } }}
-                >
-                  {user.joinedOn}
-                </TableCell>
-                <TableCell sx={{ py: 0.8 }}>
-                  <Chip
-                    label={user.status}
-                    size="small"
-                    sx={{
-                      ...getStatusColor(user.status),
-                      fontWeight: 500,
-                      fontSize: { xs: "8px", sm: "9px" },
-                      height: "18px",
-                      borderRadius: "4px",
-                    }}
-                  />
+            {loading ? (
+              <TableRow>
+                <TableCell colSpan={5} align="center">
+                  Loading...
                 </TableCell>
               </TableRow>
-            ))}
+            ) : referredUsers.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={5} align="center">
+                  No referred users found.
+                </TableCell>
+              </TableRow>
+            ) : (
+              referredUsers.map((user, index) => (
+                <TableRow
+                  key={index}
+                  sx={{
+                    "&:last-child td, &:last-child th": { border: 0 },
+                    "&:hover": { bgcolor: "#f9f9f9" },
+                  }}
+                >
+                  <TableCell sx={{ fontSize: { xs: "10px", sm: "11px" }, py: 0.8, fontWeight: 500 }}>
+                    {user.name || user.referred || user.email || "-"}
+                  </TableCell>
+                  <TableCell sx={{ fontSize: { xs: "10px", sm: "11px" }, py: 0.8, color: "#da1818" }}>
+                    {user.email || "-"}
+                  </TableCell>
+                  <TableCell
+                    sx={{ fontSize: { xs: "10px", sm: "11px" }, py: 0.8, display: { xs: "none", sm: "table-cell" } }}
+                  >
+                    {user.referrer || "-"}
+                  </TableCell>
+                  <TableCell
+                    sx={{ fontSize: { xs: "10px", sm: "11px" }, py: 0.8, display: { xs: "none", sm: "table-cell" } }}
+                  >
+                    {user.joinedOn || (user.createdAt && user.createdAt.seconds ? new Date(user.createdAt.seconds * 1000).toLocaleDateString() : "-")}
+                  </TableCell>
+                  <TableCell sx={{ py: 0.8 }}>
+                    <Chip
+                      label={user.status || "Pending"}
+                      size="small"
+                      sx={{
+                        ...getStatusColor(user.status || "Pending"),
+                        fontWeight: 500,
+                        fontSize: { xs: "8px", sm: "9px" },
+                        height: "18px",
+                        borderRadius: "4px",
+                      }}
+                    />
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
           </TableBody>
         </Table>
       </TableContainer>

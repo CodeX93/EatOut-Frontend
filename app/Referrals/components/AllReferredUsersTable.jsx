@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import {
   Box,
   Typography,
@@ -16,60 +16,32 @@ import {
   Paper,
 } from "@mui/material"
 import { KeyboardArrowDown } from "@mui/icons-material"
+import { collection, getDocs } from "firebase/firestore"
+import { db } from "../../../firebaseConfig"
 
 export default function AllReferredUsersTable() {
   const [filter, setFilter] = useState("Last 24h")
+  const [allReferredUsers, setAllReferredUsers] = useState([])
+  const [loading, setLoading] = useState(true)
 
-  const allReferredUsers = [
-    {
-      referrerName: "Sarah Ahmed",
-      email: "sarah@email.com",
-      referredUsers: 15,
-      successfulReferrals: 13,
-      rewardEarned: "$130",
-      lastReferral: "12 May 2025",
-    },
-    {
-      referrerName: "Omar Ali",
-      email: "omar@email.com",
-      referredUsers: 10,
-      successfulReferrals: 9,
-      rewardEarned: "$90",
-      lastReferral: "10 May 2025",
-    },
-    {
-      referrerName: "Riya Shah",
-      email: "riya@email.com",
-      referredUsers: 8,
-      successfulReferrals: 8,
-      rewardEarned: "$80",
-      lastReferral: "11 May 2025",
-    },
-    {
-      referrerName: "Jacob Smith",
-      email: "jacob@email.com",
-      referredUsers: 12,
-      successfulReferrals: 10,
-      rewardEarned: "$100",
-      lastReferral: "09 May 2025",
-    },
-    {
-      referrerName: "Olivia Brown",
-      email: "olivia@email.com",
-      referredUsers: 7,
-      successfulReferrals: 6,
-      rewardEarned: "$60",
-      lastReferral: "08 May 2025",
-    },
-    {
-      referrerName: "Emma Wilson",
-      email: "emma@email.com",
-      referredUsers: 9,
-      successfulReferrals: 8,
-      rewardEarned: "$80",
-      lastReferral: "07 May 2025",
-    },
-  ]
+  useEffect(() => {
+    const fetchReferrals = async () => {
+      setLoading(true)
+      try {
+        const querySnapshot = await getDocs(collection(db, "referrals"))
+        const users = []
+        querySnapshot.forEach((doc) => {
+          users.push(doc.data())
+        })
+        setAllReferredUsers(users)
+      } catch (error) {
+        console.error("Error fetching referrals:", error)
+      }
+      setLoading(false)
+    }
+    fetchReferrals()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   return (
     <>
@@ -118,69 +90,63 @@ export default function AllReferredUsersTable() {
           overflow: "hidden",
         }}
       >
-        <TableContainer sx={{ maxHeight: "400px", overflow: "auto" }}>
-          <Table>
-            <TableHead>
-              <TableRow sx={{ bgcolor: "#f9f9f9" }}>
-                {[
-                  "Referrer Name",
-                  "Email",
-                  "Referred Users",
-                  "Successful Referrals",
-                  "Reward Earned",
-                  "Last Referral",
-                ].map((header) => (
-                  <TableCell
-                    key={header}
+        {loading ? (
+          <Box sx={{ p: 4, textAlign: "center" }}>
+            <Typography>Loading...</Typography>
+          </Box>
+        ) : (
+          <TableContainer sx={{ maxHeight: "400px", overflow: "auto" }}>
+            <Table>
+              <TableHead>
+                <TableRow sx={{ bgcolor: "#f9f9f9" }}>
+                  {["Email", "Referred Users", "Total Rewards Earned", "Referral Code", "Created At"].map((header) => (
+                    <TableCell
+                      key={header}
+                      sx={{
+                        color: "#8a8a8f",
+                        fontWeight: 500,
+                        fontSize: { xs: "12px", sm: "14px" },
+                        borderBottom: "1px solid #dadada",
+                        py: 1.5,
+                      }}
+                    >
+                      {header}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {allReferredUsers.map((user, index) => (
+                  <TableRow
+                    key={index}
                     sx={{
-                      color: "#8a8a8f",
-                      fontWeight: 500,
-                      fontSize: { xs: "12px", sm: "14px" },
-                      borderBottom: "1px solid #dadada",
-                      py: 1.5,
-                      display:
-                        header === "Successful Referrals" || header === "Last Referral"
-                          ? { xs: "none", md: "table-cell" }
-                          : "table-cell",
+                      "&:last-child td, &:last-child th": { border: 0 },
+                      "&:hover": { bgcolor: "#f9f9f9" },
                     }}
                   >
-                    {header}
-                  </TableCell>
+                    <TableCell sx={{ fontSize: { xs: "12px", sm: "14px" }, py: 1.5, color: "#da1818" }}>
+                      {user.email}
+                    </TableCell>
+                    <TableCell sx={{ fontSize: { xs: "12px", sm: "14px" }, py: 1.5 }}>
+                      {user.referredUsers ? user.referredUsers.length : 0}
+                    </TableCell>
+                    <TableCell sx={{ fontSize: { xs: "12px", sm: "14px" }, py: 1.5 }}>
+                      {user.totalRewardsEarned || 0}
+                    </TableCell>
+                    <TableCell sx={{ fontSize: { xs: "12px", sm: "14px" }, py: 1.5 }}>
+                      {user.referralCode || "-"}
+                    </TableCell>
+                    <TableCell sx={{ fontSize: { xs: "12px", sm: "14px" }, py: 1.5 }}>
+                      {user.createdAt && user.createdAt.seconds
+                        ? new Date(user.createdAt.seconds * 1000).toLocaleString()
+                        : "-"}
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {allReferredUsers.map((user, index) => (
-                <TableRow
-                  key={index}
-                  sx={{
-                    "&:last-child td, &:last-child th": { border: 0 },
-                    "&:hover": { bgcolor: "#f9f9f9" },
-                  }}
-                >
-                  <TableCell sx={{ fontSize: { xs: "12px", sm: "14px" }, py: 1.5, fontWeight: 500 }}>
-                    {user.referrerName}
-                  </TableCell>
-                  <TableCell sx={{ fontSize: { xs: "12px", sm: "14px" }, py: 1.5, color: "#da1818" }}>
-                    {user.email}
-                  </TableCell>
-                  <TableCell sx={{ fontSize: { xs: "12px", sm: "14px" }, py: 1.5 }}>{user.referredUsers}</TableCell>
-                  <TableCell
-                    sx={{ fontSize: { xs: "12px", sm: "14px" }, py: 1.5, display: { xs: "none", md: "table-cell" } }}
-                  >
-                    {user.successfulReferrals}
-                  </TableCell>
-                  <TableCell sx={{ fontSize: { xs: "12px", sm: "14px" }, py: 1.5 }}>{user.rewardEarned}</TableCell>
-                  <TableCell
-                    sx={{ fontSize: { xs: "12px", sm: "14px" }, py: 1.5, display: { xs: "none", md: "table-cell" } }}
-                  >
-                    {user.lastReferral}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
+              </TableBody>
+            </Table>
+          </TableContainer>
+        )}
       </Paper>
     </>
   )

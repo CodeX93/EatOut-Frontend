@@ -1,8 +1,26 @@
 "use client"
 
-import { Box, Typography, TextField, Button, MenuItem, InputAdornment, FormControl, Select } from "@mui/material"
+import { useState, useEffect } from "react"
+import { 
+  Box, 
+  Typography, 
+  TextField, 
+  Button, 
+  MenuItem, 
+  InputAdornment, 
+  FormControl, 
+  Select, 
+  CircularProgress,
+  Alert,
+  Chip 
+} from "@mui/material"
 import { styled } from "@mui/material/styles"
-import { KeyboardArrowDown } from "@mui/icons-material"
+import { KeyboardArrowDown, ArrowBack } from "@mui/icons-material"
+import { useRouter, useSearchParams } from "next/navigation"
+
+// Firebase imports
+import { db } from "../../../../firebaseConfig" // Adjust path as needed
+import { doc, getDoc, collection, query, where, getDocs } from "firebase/firestore"
 
 // Sidebar component import
 import Sidebar from "../../../components/SideNavbar"
@@ -24,66 +42,153 @@ const StyledTextField = styled(TextField)(({ theme }) => ({
   },
 }))
 
-const DisabledButton = styled(Button)(({ theme }) => ({
-  backgroundColor: "#8a8a8f",
+const BackButton = styled(Button)(({ theme }) => ({
+  backgroundColor: "#da1818",
   color: "#ffffff",
   borderRadius: "4px",
   padding: "10px 24px",
   textTransform: "none",
-  cursor: "not-allowed",
   "&:hover": {
-    backgroundColor: "#8a8a8f",
-  },
-  "&:disabled": {
-    backgroundColor: "#8a8a8f",
-    color: "#ffffff",
+    backgroundColor: "#c41515",
   },
 }))
 
 export default function ViewVoucherDetails({ voucherId, voucherData }) {
-  // Function to get voucher data based on ID or use provided data
-  const getVoucherData = (id) => {
-    // If voucherData prop is provided, use it
-    if (voucherData) {
-      return voucherData
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  
+  // Get voucher code from props or URL params
+  const initialVoucherCode = voucherId || searchParams.get('id') || searchParams.get('code')
+
+  // State for voucher data
+  const [voucher, setVoucher] = useState({
+    voucherType: "",
+    valueOfSavings: "",
+    voucherTitle: "",
+    voucherDescription: "",
+    termsAndConditions: "",
+    quantity: "",
+    expiryDate: "",
+    voucherCode: "",
+    usedCount: 0,
+    status: "",
+    createdAt: null,
+    updatedAt: null,
+  })
+
+  // State for loading and error handling
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+
+  // Fetch voucher data from Firestore using voucherCode
+  const fetchVoucherData = async (voucherCode) => {
+    if (!voucherCode) {
+      setError("No voucher code provided")
+      setLoading(false)
+      return
     }
 
-    // Mock data - in real app, this would fetch from API
-    const vouchers = {
-      1: {
-        voucherType: "Free Item",
-        valueOfSavings: "10%",
-        voucherTitle: "SAVE10",
-        voucherDescription: "Get 10% off on your next order. Valid for all menu items.",
-        termsAndConditions:
-          "Valid for one-time use only. Cannot be combined with other offers. Minimum order value $20.",
-        quantity: "500",
-        expiryDate: "1 May - 30 May",
-      },
-      2: {
-        voucherType: "Percentage Discount",
-        valueOfSavings: "20%",
-        voucherTitle: "WELCOME20",
-        voucherDescription: "Welcome bonus for new customers. Enjoy 20% discount on your first order.",
-        termsAndConditions: "Valid for new customers only. One-time use. Valid for 30 days from registration.",
-        quantity: "1000",
-        expiryDate: "1 Jun - 30 Jun",
-      },
-      3: {
-        voucherType: "Fixed Amount Discount",
-        valueOfSavings: "$5",
-        voucherTitle: "SAVE5",
-        voucherDescription: "Save $5 on orders above $25. Perfect for lunch deals.",
-        termsAndConditions: "Minimum order value $25. Valid for delivery and pickup orders.",
-        quantity: "250",
-        expiryDate: "15 May - 15 Jun",
-      },
+    try {
+      setLoading(true)
+      setError(null)
+
+      console.log("Fetching voucher with code:", voucherCode)
+
+      // Search by voucherCode field (primary method)
+      const vouchersQuery = query(
+        collection(db, "vouchers"),
+        where("voucherCode", "==", voucherCode)
+      )
+      
+      const querySnapshot = await getDocs(vouchersQuery)
+      
+      if (!querySnapshot.empty) {
+        // Found by voucherCode
+        const docData = querySnapshot.docs[0]
+        const data = docData.data()
+        
+        console.log("Found voucher by voucherCode:", data)
+        
+        // Map Firestore data to state
+        setVoucher({
+          voucherType: data.voucherType || "",
+          valueOfSavings: data.valueOfSavings?.toString() || "",
+          voucherTitle: data.voucherTitle || "",
+          voucherDescription: data.voucherDescription || "",
+          termsAndConditions: data.termsAndConditions || "",
+          quantity: data.quantity?.toString() || "",
+          expiryDate: data.expiryDate || "",
+          voucherCode: data.voucherCode || "",
+          usedCount: data.usedCount || 0,
+          status: data.status || "active",
+          createdAt: data.createdAt,
+          updatedAt: data.updatedAt,
+        })
+      } else {
+        // Fallback: try as document ID (in case someone passes document ID)
+        console.log("Not found by voucherCode, trying as document ID:", voucherCode)
+        
+        const voucherRef = doc(db, "vouchers", voucherCode)
+        const voucherSnap = await getDoc(voucherRef)
+        
+        if (voucherSnap.exists()) {
+          const data = voucherSnap.data()
+          console.log("Found voucher by document ID:", data)
+          
+          setVoucher({
+            voucherType: data.voucherType || "",
+            valueOfSavings: data.valueOfSavings?.toString() || "",
+            voucherTitle: data.voucherTitle || "",
+            voucherDescription: data.voucherDescription || "",
+            termsAndConditions: data.termsAndConditions || "",
+            quantity: data.quantity?.toString() || "",
+            expiryDate: data.expiryDate || "",
+            voucherCode: data.voucherCode || "",
+            usedCount: data.usedCount || 0,
+            status: data.status || "active",
+            createdAt: data.createdAt,
+            updatedAt: data.updatedAt,
+          })
+        } else {
+          console.log("Voucher not found with code or ID:", voucherCode)
+          setError(`Voucher not found with code: ${voucherCode}`)
+        }
+      }
+    } catch (err) {
+      console.error("Error fetching voucher:", err)
+      setError("Failed to load voucher data. Please try again.")
+    } finally {
+      setLoading(false)
     }
-    return vouchers[id] || vouchers["1"] // Default to first voucher if ID not found
   }
 
-  // Get the voucher data
-  const voucher = getVoucherData(voucherId)
+  // Load voucher data on component mount
+  useEffect(() => {
+    if (voucherData) {
+      // Use provided voucher data
+      setVoucher({
+        voucherType: voucherData.voucherType || "",
+        valueOfSavings: voucherData.valueOfSavings?.toString() || "",
+        voucherTitle: voucherData.voucherTitle || "",
+        voucherDescription: voucherData.voucherDescription || "",
+        termsAndConditions: voucherData.termsAndConditions || "",
+        quantity: voucherData.quantity?.toString() || "",
+        expiryDate: voucherData.expiryDate || "",
+        voucherCode: voucherData.voucherCode || "",
+        usedCount: voucherData.usedCount || 0,
+        status: voucherData.status || "active",
+        createdAt: voucherData.createdAt,
+        updatedAt: voucherData.updatedAt,
+      })
+      setLoading(false)
+    } else if (initialVoucherCode) {
+      // Fetch from Firestore using voucherCode
+      fetchVoucherData(initialVoucherCode)
+    } else {
+      setError("No voucher code or data provided")
+      setLoading(false)
+    }
+  }, [initialVoucherCode, voucherData])
 
   // Voucher type options (for display purposes)
   const voucherTypes = [
@@ -94,6 +199,108 @@ export default function ViewVoucherDetails({ voucherId, voucherData }) {
     "Free Shipping",
     "Cash Voucher",
   ]
+
+  // Helper function to format date
+  const formatDate = (timestamp) => {
+    if (!timestamp) return "Unknown"
+    
+    try {
+      // Handle Firestore timestamp
+      if (timestamp.toDate) {
+        return timestamp.toDate().toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        })
+      }
+      // Handle regular date string
+      return new Date(timestamp).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      })
+    } catch (error) {
+      return "Invalid date"
+    }
+  }
+
+  // Helper function to get status chip color
+  const getStatusColor = (status) => {
+    switch (status?.toLowerCase()) {
+      case 'active':
+        return { bgcolor: "#e8f5e8", color: "#00c17c" }
+      case 'expired':
+        return { bgcolor: "#ffebee", color: "#d32f2f" }
+      case 'review':
+        return { bgcolor: "#fff3e0", color: "#f57c00" }
+      default:
+        return { bgcolor: "#f5f5f5", color: "#666" }
+    }
+  }
+
+  // Calculate usage percentage
+  const usagePercentage = voucher.quantity > 0 ? (voucher.usedCount / parseInt(voucher.quantity)) * 100 : 0
+
+  // Loading state
+  if (loading) {
+    return (
+      <Box sx={{ display: "flex", bgcolor: "#f9f9f9", minHeight: "100vh" }}>
+        <Sidebar />
+        <Box
+          component="main"
+          sx={{
+            flexGrow: 1,
+            p: 3,
+            ml: "240px",
+            pt: 2,
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          <Box sx={{ textAlign: "center" }}>
+            <CircularProgress size={60} sx={{ color: "#da1818", mb: 2 }} />
+            <Typography variant="h6" sx={{ color: "#666" }}>
+              Loading voucher details...
+            </Typography>
+          </Box>
+        </Box>
+      </Box>
+    )
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <Box sx={{ display: "flex", bgcolor: "#f9f9f9", minHeight: "100vh" }}>
+        <Sidebar />
+        <Box
+          component="main"
+          sx={{
+            flexGrow: 1,
+            p: 3,
+            ml: "240px",
+            pt: 2,
+          }}
+        >
+          <Typography variant="h5" component="h1" sx={{ color: "#da1818", fontWeight: 'bolder', mb: 3 }}>
+            View A Voucher
+          </Typography>
+          <Alert severity="error" sx={{ maxWidth: 600 }}>
+            {error}
+            <Button 
+              onClick={() => fetchVoucherData(initialVoucherCode)} 
+              sx={{ mt: 1, color: "#da1818" }}
+            >
+              Try Again
+            </Button>
+          </Alert>
+        </Box>
+      </Box>
+    )
+  }
 
   return (
     <Box sx={{ display: "flex", bgcolor: "#f9f9f9", minHeight: "100vh" }}>
@@ -113,7 +320,10 @@ export default function ViewVoucherDetails({ voucherId, voucherData }) {
         {/* Header */}
         <Box sx={{ mb: 4 }}>
           <Typography variant="h5" component="h1" sx={{ color: "#da1818", fontWeight: 'bolder' }}>
-            View A Voucher
+            View Voucher: {voucher.voucherCode}
+          </Typography>
+          <Typography variant="body2" sx={{ color: "#666", mt: 1 }}>
+            Read-only view of voucher details
           </Typography>
         </Box>
 
@@ -128,13 +338,78 @@ export default function ViewVoucherDetails({ voucherId, voucherData }) {
             p: 4,
           }}
         >
-          {/* Subheading */}
-          <Typography variant="h6" sx={{ mb: 3, fontWeight: 'bold', color: "#da1818" }}>
-            View a Voucher:
-          </Typography>
+          {/* Subheading with Status */}
+          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
+            <Typography variant="h6" sx={{ fontWeight: 'bold', color: "#da1818" }}>
+              Voucher Details:
+            </Typography>
+            <Chip
+              label={voucher.status?.charAt(0).toUpperCase() + voucher.status?.slice(1)}
+              size="medium"
+              sx={{
+                ...getStatusColor(voucher.status),
+                fontWeight: 500,
+                fontSize: "14px",
+                borderRadius: "8px",
+              }}
+            />
+          </Box>
+
+          {/* Usage Statistics */}
+          <Box sx={{ 
+            bgcolor: "#f8f9fa", 
+            borderRadius: 2, 
+            p: 2, 
+            mb: 3,
+            border: "1px solid #e9ecef"
+          }}>
+            <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1, color: "#495057" }}>
+              Usage Statistics
+            </Typography>
+            <Box sx={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+              <Box>
+                <Typography variant="body2" sx={{ color: "#6c757d" }}>Used</Typography>
+                <Typography variant="h6" sx={{ fontWeight: 'bold', color: "#da1818" }}>
+                  {voucher.usedCount} / {voucher.quantity}
+                </Typography>
+              </Box>
+              <Box>
+                <Typography variant="body2" sx={{ color: "#6c757d" }}>Usage Rate</Typography>
+                <Typography variant="h6" sx={{ fontWeight: 'bold', color: "#28a745" }}>
+                  {usagePercentage.toFixed(1)}%
+                </Typography>
+              </Box>
+              <Box>
+                <Typography variant="body2" sx={{ color: "#6c757d" }}>Remaining</Typography>
+                <Typography variant="h6" sx={{ fontWeight: 'bold', color: "#007bff" }}>
+                  {parseInt(voucher.quantity) - voucher.usedCount}
+                </Typography>
+              </Box>
+            </Box>
+          </Box>
 
           {/* Form Grid */}
           <Box sx={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 3, mb: 4 }}>
+            {/* Voucher Code - Read Only */}
+            <Box>
+              <Typography variant="body1" sx={{ mb: 1, fontWeight: 'bolder' }}>
+                Voucher Code
+              </Typography>
+              <StyledTextField
+                fullWidth
+                value={voucher.voucherCode}
+                InputProps={{
+                  readOnly: true,
+                  style: { 
+                    fontFamily: "monospace", 
+                    fontWeight: "bold",
+                    letterSpacing: "1px",
+                    backgroundColor: "#f8f9fa"
+                  },
+                }}
+              />
+            </Box>
+
             {/* Voucher Type */}
             <Box>
               <Typography variant="body1" sx={{ mb: 1, fontWeight: 'bolder' }}>
@@ -189,10 +464,25 @@ export default function ViewVoucherDetails({ voucherId, voucherData }) {
               />
             </Box>
 
+            {/* Voucher Quantity */}
+            <Box>
+              <Typography variant="body1" sx={{ mb: 1, fontWeight: 'bolder' }}>
+                Voucher Quantity
+              </Typography>
+              <StyledTextField
+                fullWidth
+                value={voucher.quantity}
+                InputProps={{
+                  readOnly: true,
+                }}
+                type="number"
+              />
+            </Box>
+
             {/* Voucher Title */}
             <Box sx={{ gridColumn: "1 / -1" }}>
               <Typography variant="body1" sx={{ mb: 1, fontWeight: 'bolder' }}>
-                Enter Voucher Title
+                Voucher Title
               </Typography>
               <StyledTextField
                 fullWidth
@@ -206,7 +496,7 @@ export default function ViewVoucherDetails({ voucherId, voucherData }) {
             {/* Voucher Description */}
             <Box>
               <Typography variant="body1" sx={{ mb: 1, fontWeight: 'bolder' }}>
-                Enter Voucher Description
+                Voucher Description
               </Typography>
               <StyledTextField
                 fullWidth
@@ -222,7 +512,7 @@ export default function ViewVoucherDetails({ voucherId, voucherData }) {
             {/* Terms & Conditions */}
             <Box>
               <Typography variant="body1" sx={{ mb: 1, fontWeight: 'bolder' }}>
-                Enter Voucher's Terms & Conditions
+                Terms & Conditions
               </Typography>
               <StyledTextField
                 fullWidth
@@ -232,21 +522,6 @@ export default function ViewVoucherDetails({ voucherId, voucherData }) {
                 }}
                 multiline
                 rows={4}
-              />
-            </Box>
-
-            {/* Voucher Quantity */}
-            <Box>
-              <Typography variant="body1" sx={{ mb: 1, fontWeight: 'bolder' }}>
-                Enter Voucher Quantity
-              </Typography>
-              <StyledTextField
-                fullWidth
-                value={voucher.quantity}
-                InputProps={{
-                  readOnly: true,
-                }}
-                type="number"
               />
             </Box>
 
@@ -263,13 +538,61 @@ export default function ViewVoucherDetails({ voucherId, voucherData }) {
                 }}
               />
             </Box>
+
+            {/* Created Date */}
+            <Box>
+              <Typography variant="body1" sx={{ mb: 1, fontWeight: 'bolder' }}>
+                Created Date
+              </Typography>
+              <StyledTextField
+                fullWidth
+                value={formatDate(voucher.createdAt)}
+                InputProps={{
+                  readOnly: true,
+                }}
+              />
+            </Box>
           </Box>
 
-          {/* Disabled Update Button */}
-          <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 4 }}>
-            <DisabledButton variant="contained" disabled>
-              Update a Voucher
-            </DisabledButton>
+          {/* Last Updated Info */}
+          {voucher.updatedAt && (
+            <Box sx={{ 
+              bgcolor: "#f8f9fa", 
+              borderRadius: 1, 
+              p: 2, 
+              mb: 3,
+              border: "1px solid #e9ecef"
+            }}>
+              <Typography variant="body2" sx={{ color: "#6c757d" }}>
+                Last updated: {formatDate(voucher.updatedAt)}
+              </Typography>
+            </Box>
+          )}
+
+          {/* Action Buttons */}
+          <Box sx={{ display: "flex", justifyContent: "space-between", mt: 4 }}>
+            <BackButton 
+              variant="contained" 
+              startIcon={<ArrowBack />}
+              onClick={() => router.push("/vouchers")}
+            >
+              Back to Vouchers
+            </BackButton>
+            
+            <Button
+              variant="outlined"
+              onClick={() => router.push(`/vouchers/sub/edit?id=${voucher.voucherCode}`)}
+              sx={{
+                borderColor: "#da1818",
+                color: "#da1818",
+                "&:hover": {
+                  borderColor: "#c41515",
+                  bgcolor: "rgba(218, 24, 24, 0.04)"
+                }
+              }}
+            >
+              Edit Voucher
+            </Button>
           </Box>
         </Box>
       </Box>

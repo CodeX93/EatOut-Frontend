@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useSearchParams } from "next/navigation"
 import {
   Box,
   Typography,
@@ -52,6 +53,8 @@ import {
 } from "@mui/icons-material"
 import { createTheme, ThemeProvider } from "@mui/material/styles"
 import SideNavbar from "../../../components/SideNavbar"
+import { doc, getDoc, collection, getDocs } from "firebase/firestore"
+import { db } from "../../../../firebaseConfig"
 
 const theme = createTheme({
   palette: {
@@ -119,25 +122,50 @@ const fetchRestaurantData = async (id) => {
   return mockRestaurantData
 }
 
-const ResturantViewPage = ({ restaurantId = "1" }) => {
+export default function ResturantViewPage() {
+  const searchParams = useSearchParams()
+  const restaurantId = searchParams.get("id")
   const [restaurant, setRestaurant] = useState(null)
+  const [menuItems, setMenuItems] = useState([])
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
 
   useEffect(() => {
+    if (!restaurantId) {
+      setRestaurant(null)
+      setMenuItems([])
+      setLoading(false)
+      return
+    }
     const getRestaurantData = async () => {
       setLoading(true)
       try {
-        const data = await fetchRestaurantData(restaurantId)
-        setRestaurant(data)
+        // Fetch restaurant document
+        const docRef = doc(db, "registeredRestaurants", restaurantId)
+        const docSnap = await getDoc(docRef)
+        if (!docSnap.exists()) {
+          setRestaurant(null)
+          setMenuItems([])
+          setLoading(false)
+          return
+        }
+        setRestaurant({ id: docSnap.id, ...docSnap.data() })
+        // Fetch menuItems subcollection
+        const menuItemsSnapshot = await getDocs(collection(docRef, "menuItems"))
+        const menuItemsArr = []
+        menuItemsSnapshot.forEach((itemDoc) => {
+          menuItemsArr.push({ id: itemDoc.id, ...itemDoc.data() })
+        })
+        setMenuItems(menuItemsArr)
       } catch (error) {
         console.error("Error fetching restaurant data:", error)
+        setRestaurant(null)
+        setMenuItems([])
       } finally {
         setLoading(false)
       }
     }
-
     getRestaurantData()
   }, [restaurantId])
 
@@ -287,7 +315,7 @@ const ResturantViewPage = ({ restaurantId = "1" }) => {
                       </Typography>
                       <TextField
                         fullWidth
-                        value={restaurant.name}
+                        value={restaurant.restaurantName || ""}
                         disabled
                         variant="outlined"
                         size="small"
@@ -377,7 +405,7 @@ const ResturantViewPage = ({ restaurantId = "1" }) => {
                       </Typography>
                       <TextField
                         fullWidth
-                        value={restaurant.address}
+                        value={restaurant.address || ""}
                         disabled
                         variant="outlined"
                         size="small"
@@ -415,7 +443,7 @@ const ResturantViewPage = ({ restaurantId = "1" }) => {
                       </Typography>
                       <TextField
                         fullWidth
-                        value={restaurant.city}
+                        value={restaurant.city || ""}
                         disabled
                         variant="outlined"
                         size="small"
@@ -453,7 +481,7 @@ const ResturantViewPage = ({ restaurantId = "1" }) => {
                       </Typography>
                       <TextField
                         fullWidth
-                        value={restaurant.phone}
+                        value={restaurant.phone || ""}
                         disabled
                         variant="outlined"
                         size="small"
@@ -494,7 +522,7 @@ const ResturantViewPage = ({ restaurantId = "1" }) => {
                     </Typography>
                     <TextField
                       fullWidth
-                      value={restaurant.email}
+                      value={restaurant.email || ""}
                       disabled
                       variant="outlined"
                       size="small"
@@ -547,7 +575,7 @@ const ResturantViewPage = ({ restaurantId = "1" }) => {
                         <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
                           <FormControl size="small" sx={{ flex: 1 }}>
                             <Select
-                              value={restaurant.openingDays.start}
+                              value={restaurant.openingDays?.start || ""}
                               disabled
                               sx={{
                                 bgcolor: "#ffffff",
@@ -582,7 +610,7 @@ const ResturantViewPage = ({ restaurantId = "1" }) => {
                           <Typography sx={{ color: "#8a8a8f", mx: 1, fontSize: "14px" }}>—</Typography>
                           <FormControl size="small" sx={{ flex: 1 }}>
                             <Select
-                              value={restaurant.openingDays.end}
+                              value={restaurant.openingDays?.end || ""}
                               disabled
                               sx={{
                                 bgcolor: "#ffffff",
@@ -625,7 +653,7 @@ const ResturantViewPage = ({ restaurantId = "1" }) => {
                         <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
                           <FormControl size="small" sx={{ flex: 1 }}>
                             <Select
-                              value={restaurant.openingHours.start}
+                              value={restaurant.openingHours?.start || ""}
                               disabled
                               sx={{
                                 bgcolor: "#ffffff",
@@ -660,7 +688,7 @@ const ResturantViewPage = ({ restaurantId = "1" }) => {
                           <Typography sx={{ color: "#8a8a8f", mx: 1, fontSize: "14px" }}>—</Typography>
                           <FormControl size="small" sx={{ flex: 1 }}>
                             <Select
-                              value={restaurant.openingHours.end}
+                              value={restaurant.openingHours?.end || ""}
                               disabled
                               sx={{
                                 bgcolor: "#ffffff",
@@ -703,7 +731,7 @@ const ResturantViewPage = ({ restaurantId = "1" }) => {
                         <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
                           <FormControl size="small" sx={{ flex: 1 }}>
                             <Select
-                              value={restaurant.closingHours.start}
+                              value={restaurant.closingHours?.start || ""}
                               disabled
                               sx={{
                                 bgcolor: "#ffffff",
@@ -738,7 +766,7 @@ const ResturantViewPage = ({ restaurantId = "1" }) => {
                           <Typography sx={{ color: "#8a8a8f", mx: 1, fontSize: "14px" }}>—</Typography>
                           <FormControl size="small" sx={{ flex: 1 }}>
                             <Select
-                              value={restaurant.closingHours.end}
+                              value={restaurant.closingHours?.end || ""}
                               disabled
                               sx={{
                                 bgcolor: "#ffffff",
@@ -781,7 +809,7 @@ const ResturantViewPage = ({ restaurantId = "1" }) => {
                           </Typography>
                           <FormControl fullWidth size="small">
                             <Select
-                              value={restaurant.priceRange}
+                              value={restaurant.priceRange || ""}
                               disabled
                               sx={{
                                 bgcolor: "#ffffff",
@@ -821,7 +849,7 @@ const ResturantViewPage = ({ restaurantId = "1" }) => {
                           </Typography>
                           <TextField
                             fullWidth
-                            value={restaurant.specialty}
+                            value={restaurant.specialty || ""}
                             disabled
                             variant="outlined"
                             size="small"
@@ -864,7 +892,7 @@ const ResturantViewPage = ({ restaurantId = "1" }) => {
                           fullWidth
                           multiline
                           rows={4}
-                          value={restaurant.description}
+                          value={restaurant.description || ""}
                           disabled
                           variant="outlined"
                           sx={{
@@ -1043,7 +1071,7 @@ const ResturantViewPage = ({ restaurantId = "1" }) => {
                           <TextField
                             fullWidth
                             placeholder="Enter Website Url (Optional)"
-                            value={restaurant.socialMedia.website}
+                            value={restaurant.socialMedia?.website || ""}
                             disabled
                             variant="outlined"
                             size="small"
@@ -1082,7 +1110,7 @@ const ResturantViewPage = ({ restaurantId = "1" }) => {
                           <TextField
                             fullWidth
                             placeholder="Enter Facebook Url (Optional)"
-                            value={restaurant.socialMedia.facebook}
+                            value={restaurant.socialMedia?.facebook || ""}
                             disabled
                             variant="outlined"
                             size="small"
@@ -1121,7 +1149,7 @@ const ResturantViewPage = ({ restaurantId = "1" }) => {
                           <TextField
                             fullWidth
                             placeholder="Enter Instagram Url (Optional)"
-                            value={restaurant.socialMedia.instagram}
+                            value={restaurant.socialMedia?.instagram || ""}
                             disabled
                             variant="outlined"
                             size="small"
@@ -1160,7 +1188,7 @@ const ResturantViewPage = ({ restaurantId = "1" }) => {
                           <TextField
                             fullWidth
                             placeholder="Enter TikTok Url (Optional)"
-                            value={restaurant.socialMedia.tiktok}
+                            value={restaurant.socialMedia?.tiktok || ""}
                             disabled
                             variant="outlined"
                             size="small"
@@ -1230,5 +1258,3 @@ const ResturantViewPage = ({ restaurantId = "1" }) => {
     </ThemeProvider>
   )
 }
-
-export default ResturantViewPage

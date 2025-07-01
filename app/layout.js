@@ -8,6 +8,9 @@ const inter = Inter({ subsets: ["latin"] })
 export const metadata = {
   title: "E.AT Admin Dashboard",
   description: "Admin dashboard for E.AT restaurant management system",
+  icons: {
+    icon: "/logo.svg",
+  },
 }
 
 export default function RootLayout({ children }) {

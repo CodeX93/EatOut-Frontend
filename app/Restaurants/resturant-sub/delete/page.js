@@ -51,6 +51,8 @@ import {
 } from "@mui/icons-material"
 import { createTheme, ThemeProvider } from "@mui/material/styles"
 import SideNavbar from "../../../components/SideNavbar"
+import { doc, getDoc, collection, getDocs, deleteDoc } from "firebase/firestore"
+import { db } from "../../../../firebaseConfig"
 
 const theme = createTheme({
   palette: {
@@ -81,45 +83,9 @@ const theme = createTheme({
 
 const drawerWidth = 240
 
-const mockRestaurantData = {
-  id: "1",
-  name: "Scenic Brewing Company",
-  cuisines: ["Chinese", "Italian", "Korean", "European", "Asian"],
-  address: "334 Rosewood Dr. Deptford, NJ 08096",
-  city: "Scenic Brewing Company",
-  phone: "Scenic Brewing Company",
-  email: "334 Rosewood Dr. Deptford, NJ 08096",
-  openingDays: {
-    start: "20-03-2025",
-    end: "25-03-2025",
-  },
-  openingHours: {
-    start: "09:00 AM",
-    end: "09:20 AM",
-  },
-  closingHours: {
-    start: "09:00 PM",
-    end: "10:00 PM",
-  },
-  priceRange: "$1000",
-  specialty: "Special Scenic Brewing Burger",
-  description: "Description",
-  facilities: ["Air Conditioning", "Catering Available", "Baby Chair Available"],
-  paymentOptions: ["Cash", "E-Wallets (Cashless Payment)"],
-  socialMedia: {
-    website: "",
-    facebook: "",
-    instagram: "",
-    tiktok: "",
-  },
-}
-
-const fetchRestaurantData = async (id) => {
-  return mockRestaurantData
-}
-
 const DeleteRestaurantDetails = ({ restaurantId = "1" }) => {
   const [restaurant, setRestaurant] = useState(null)
+  const [menuItems, setMenuItems] = useState([])
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
@@ -128,15 +94,31 @@ const DeleteRestaurantDetails = ({ restaurantId = "1" }) => {
     const getRestaurantData = async () => {
       setLoading(true)
       try {
-        const data = await fetchRestaurantData(restaurantId)
-        setRestaurant(data)
+        // Fetch restaurant document
+        const docRef = doc(db, "registeredRestaurants", restaurantId)
+        const docSnap = await getDoc(docRef)
+        if (!docSnap.exists()) {
+          setRestaurant(null)
+          setMenuItems([])
+          setLoading(false)
+          return
+        }
+        setRestaurant({ id: docSnap.id, ...docSnap.data() })
+        // Fetch menuItems subcollection
+        const menuItemsSnapshot = await getDocs(collection(docRef, "menuItems"))
+        const menuItemsArr = []
+        menuItemsSnapshot.forEach((itemDoc) => {
+          menuItemsArr.push({ id: itemDoc.id, ...itemDoc.data() })
+        })
+        setMenuItems(menuItemsArr)
       } catch (error) {
         console.error("Error fetching restaurant data:", error)
+        setRestaurant(null)
+        setMenuItems([])
       } finally {
         setLoading(false)
       }
     }
-
     getRestaurantData()
   }, [restaurantId])
 
@@ -144,9 +126,29 @@ const DeleteRestaurantDetails = ({ restaurantId = "1" }) => {
     setShowModal(true)
   }
 
-  const handleModalDelete = () => {
+  const handleModalDelete = async () => {
     setShowModal(false)
-    setShowSuccess(true)
+    setLoading(true)
+    try {
+      // Delete all menuItems in the subcollection
+      const docRef = doc(db, "registeredRestaurants", restaurantId)
+      const menuItemsSnapshot = await getDocs(collection(docRef, "menuItems"))
+      const deletePromises = []
+      menuItemsSnapshot.forEach((itemDoc) => {
+        deletePromises.push(deleteDoc(itemDoc.ref))
+      })
+      await Promise.all(deletePromises)
+      // Delete the restaurant document
+      await deleteDoc(docRef)
+      setShowSuccess(true)
+      setRestaurant(null)
+      setMenuItems([])
+    } catch (error) {
+      console.error("Error deleting restaurant:", error)
+      // Optionally show an error message
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleModalDiscard = () => {
@@ -261,7 +263,7 @@ const DeleteRestaurantDetails = ({ restaurantId = "1" }) => {
                     </Typography>
                     <TextField
                       fullWidth
-                      value={restaurant.name}
+                      value={restaurant.restaurantName || ""}
                       disabled
                       variant="outlined"
                       size="small"
@@ -350,7 +352,7 @@ const DeleteRestaurantDetails = ({ restaurantId = "1" }) => {
                     </Typography>
                     <TextField
                       fullWidth
-                      value={restaurant.address}
+                      value={restaurant.address || ""}
                       disabled
                       variant="outlined"
                       size="small"
@@ -388,7 +390,7 @@ const DeleteRestaurantDetails = ({ restaurantId = "1" }) => {
                     </Typography>
                     <TextField
                       fullWidth
-                      value={restaurant.city}
+                      value={restaurant.city || ""}
                       disabled
                       variant="outlined"
                       size="small"
@@ -426,7 +428,7 @@ const DeleteRestaurantDetails = ({ restaurantId = "1" }) => {
                     </Typography>
                     <TextField
                       fullWidth
-                      value={restaurant.phone}
+                      value={restaurant.phone || ""}
                       disabled
                       variant="outlined"
                       size="small"
@@ -467,7 +469,7 @@ const DeleteRestaurantDetails = ({ restaurantId = "1" }) => {
                   </Typography>
                   <TextField
                     fullWidth
-                    value={restaurant.email}
+                    value={restaurant.email || ""}
                     disabled
                     variant="outlined"
                     size="small"
@@ -520,7 +522,7 @@ const DeleteRestaurantDetails = ({ restaurantId = "1" }) => {
                       <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
                         <FormControl size="small" sx={{ flex: 1 }}>
                           <Select
-                            value={restaurant.openingDays.start}
+                            value={restaurant.openingDays?.start || ""}
                             disabled
                             sx={{
                               bgcolor: "#ffffff",
@@ -555,7 +557,7 @@ const DeleteRestaurantDetails = ({ restaurantId = "1" }) => {
                         <Typography sx={{ color: "#8a8a8f", mx: 1, fontSize: "14px" }}>—</Typography>
                         <FormControl size="small" sx={{ flex: 1 }}>
                           <Select
-                            value={restaurant.openingDays.end}
+                            value={restaurant.openingDays?.end || ""}
                             disabled
                             sx={{
                               bgcolor: "#ffffff",
@@ -598,7 +600,7 @@ const DeleteRestaurantDetails = ({ restaurantId = "1" }) => {
                       <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
                         <FormControl size="small" sx={{ flex: 1 }}>
                           <Select
-                            value={restaurant.openingHours.start}
+                            value={restaurant.openingHours?.start || ""}
                             disabled
                             sx={{
                               bgcolor: "#ffffff",
@@ -633,7 +635,7 @@ const DeleteRestaurantDetails = ({ restaurantId = "1" }) => {
                         <Typography sx={{ color: "#8a8a8f", mx: 1, fontSize: "14px" }}>—</Typography>
                         <FormControl size="small" sx={{ flex: 1 }}>
                           <Select
-                            value={restaurant.openingHours.end}
+                            value={restaurant.openingHours?.end || ""}
                             disabled
                             sx={{
                               bgcolor: "#ffffff",
@@ -676,7 +678,7 @@ const DeleteRestaurantDetails = ({ restaurantId = "1" }) => {
                       <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
                         <FormControl size="small" sx={{ flex: 1 }}>
                           <Select
-                            value={restaurant.closingHours.start}
+                            value={restaurant.closingHours?.start || ""}
                             disabled
                             sx={{
                               bgcolor: "#ffffff",
@@ -711,7 +713,7 @@ const DeleteRestaurantDetails = ({ restaurantId = "1" }) => {
                         <Typography sx={{ color: "#8a8a8f", mx: 1, fontSize: "14px" }}>—</Typography>
                         <FormControl size="small" sx={{ flex: 1 }}>
                           <Select
-                            value={restaurant.closingHours.end}
+                            value={restaurant.closingHours?.end || ""}
                             disabled
                             sx={{
                               bgcolor: "#ffffff",
@@ -754,7 +756,7 @@ const DeleteRestaurantDetails = ({ restaurantId = "1" }) => {
                         </Typography>
                         <FormControl fullWidth size="small">
                           <Select
-                            value={restaurant.priceRange}
+                            value={restaurant.priceRange || ""}
                             disabled
                             sx={{
                               bgcolor: "#ffffff",
@@ -794,7 +796,7 @@ const DeleteRestaurantDetails = ({ restaurantId = "1" }) => {
                         </Typography>
                         <TextField
                           fullWidth
-                          value={restaurant.specialty}
+                          value={restaurant.specialty || ""}
                           disabled
                           variant="outlined"
                           size="small"
@@ -837,7 +839,7 @@ const DeleteRestaurantDetails = ({ restaurantId = "1" }) => {
                         fullWidth
                         multiline
                         rows={4}
-                        value={restaurant.description}
+                        value={restaurant.description || ""}
                         disabled
                         variant="outlined"
                         sx={{
@@ -1024,7 +1026,7 @@ const DeleteRestaurantDetails = ({ restaurantId = "1" }) => {
                         <TextField
                           fullWidth
                           placeholder="Enter Website Url (Optional)"
-                          value={restaurant.socialMedia.website}
+                          value={restaurant.websiteUrl || ""}
                           disabled
                           variant="outlined"
                           size="small"
@@ -1063,7 +1065,7 @@ const DeleteRestaurantDetails = ({ restaurantId = "1" }) => {
                         <TextField
                           fullWidth
                           placeholder="Enter Facebook Url (Optional)"
-                          value={restaurant.socialMedia.facebook}
+                          value={restaurant.facebookUrl || ""}
                           disabled
                           variant="outlined"
                           size="small"
@@ -1102,7 +1104,7 @@ const DeleteRestaurantDetails = ({ restaurantId = "1" }) => {
                         <TextField
                           fullWidth
                           placeholder="Enter Instagram Url (Optional)"
-                          value={restaurant.socialMedia.instagram}
+                          value={restaurant.instagramUrl || ""}
                           disabled
                           variant="outlined"
                           size="small"
@@ -1141,7 +1143,7 @@ const DeleteRestaurantDetails = ({ restaurantId = "1" }) => {
                         <TextField
                           fullWidth
                           placeholder="Enter TikTok Url (Optional)"
-                          value={restaurant.socialMedia.tiktok}
+                          value={restaurant.tiktokUrl || ""}
                           disabled
                           variant="outlined"
                           size="small"

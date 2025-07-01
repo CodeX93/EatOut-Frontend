@@ -1,7 +1,7 @@
 "use client"
 import { useState, forwardRef, useImperativeHandle } from "react"
 import { Box, Drawer, useMediaQuery, useTheme } from "@mui/material"
-import { useRouter } from "next/navigation"
+import { useRouter, usePathname } from "next/navigation"
 import { useAuth } from "../context/AuthContext"
 import Link from "next/link"
 import List from "@mui/material/List"
@@ -19,6 +19,7 @@ import ShareIcon from "@mui/icons-material/Share"
 import RamenDiningIcon from "@mui/icons-material/RamenDining"
 import CampaignIcon from "@mui/icons-material/Campaign"
 import LogoutIcon from "@mui/icons-material/Logout"
+import Image from "next/image"
 
 const SideNavbar = forwardRef((props, ref) => {
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -30,6 +31,7 @@ const SideNavbar = forwardRef((props, ref) => {
   const isDesktop = useMediaQuery(theme.breakpoints.up("md"))
   
   const router = useRouter()
+  const pathname = usePathname()
   const { logout } = useAuth()
 
   // Expose toggle function to parent components via ref
@@ -98,28 +100,15 @@ const SideNavbar = forwardRef((props, ref) => {
         }}
       >
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          <Box
-            sx={{
-              width: { xs: 36, sm: 34, md: 32 },
-              height: { xs: 36, sm: 34, md: 32 },
-              bgcolor: "#da1818",
-              borderRadius: "50%",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <Typography 
-              sx={{ 
-                color: "white", 
-                fontWeight: "bold", 
-                fontSize: { xs: "16px", sm: "15px", md: "14px" }
-              }}
-            >
-              E
-            </Typography>
-          </Box>
-          <Typography 
+          <Image
+          alt="E.A.T Logo"
+            width={36}
+            height={36}
+            src="/logo.png"
+            
+            style={{ objectFit: "contain" }}
+          />
+          {/* <Typography 
             sx={{ 
               fontWeight: "bold", 
               color: "#da1818", 
@@ -127,7 +116,7 @@ const SideNavbar = forwardRef((props, ref) => {
             }}
           >
             E.A.T
-          </Typography>
+          </Typography> */}
         </Box>
       </Box>
 
@@ -150,15 +139,18 @@ const SideNavbar = forwardRef((props, ref) => {
                 mx: { xs: 1, sm: 0.75, md: 0.5 },
                 py: { xs: 2, sm: 1.75, md: 1.5 },
                 px: { xs: 2, sm: 1.5, md: 1 },
-                color: "#666666",
+                color: pathname === item.path ? "#fff" : "#666666",
+                bgcolor: pathname === item.path ? "#da1818" : "transparent",
                 transition: "all 0.3s ease-in-out",
                 "&:hover": {
-                  bgcolor: "#f5f5f5",
+                  bgcolor: pathname === item.path ? "#da1818" : "#f5f5f5",
+                  color: "#fff",
                   transform: "translateX(4px)",
                   boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
                 },
                 "&:active": {
-                  bgcolor: "#e0e0e0",
+                  bgcolor: pathname === item.path ? "#da1818" : "#e0e0e0",
+                  color: "#fff",
                   transform: "translateX(2px)",
                 },
               }}
@@ -166,7 +158,7 @@ const SideNavbar = forwardRef((props, ref) => {
               <ListItemIcon 
                 sx={{ 
                   minWidth: { xs: 52, sm: 46, md: 40 }, 
-                  color: "#666666",
+                  color: pathname === item.path ? "#fff" : "#666666",
                   "& .MuiSvgIcon-root": {
                     fontSize: { xs: "26px", sm: "22px", md: "20px" }
                   }

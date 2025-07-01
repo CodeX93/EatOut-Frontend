@@ -63,21 +63,15 @@ export default function RestaurantsTable({
   }
 
   const handleView = (restaurant, index) => {
-    console.log('View restaurant:', restaurant)
-    // Navigate to restaurant view page
-    router.push(`/Restaurants/resturant-sub/view?id=${index}&name=${encodeURIComponent(restaurant.name)}&action=view`)
+    router.push(`/Restaurants/resturant-sub/view?id=${restaurant.id}&name=${encodeURIComponent(restaurant.name)}&action=view`)
   }
 
   const handleViewEdit = (restaurant, index) => {
-    console.log('Edit restaurant:', restaurant)
-    // Navigate to restaurant edit page
-    router.push(`/Restaurants/resturant-sub/edit?id=${index}&name=${encodeURIComponent(restaurant.name)}&action=edit`)
+    router.push(`/Restaurants/resturant-sub/edit?id=${restaurant.id}&name=${encodeURIComponent(restaurant.name)}&action=edit`)
   }
 
   const handleDelete = (restaurant, index) => {
-    console.log('Delete restaurant:', restaurant)
-    // Navigate to restaurant delete page (same route as requested)
-    router.push(`/Restaurants/resturant-sub/delete?id=${index}&name=${encodeURIComponent(restaurant.name)}&action=delete`)
+    router.push(`/Restaurants/resturant-sub/delete?id=${restaurant.id}&name=${encodeURIComponent(restaurant.name)}&action=delete`)
   }
 
   return (

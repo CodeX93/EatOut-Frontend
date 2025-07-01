@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   Box,
   Typography,
@@ -13,9 +13,15 @@ import {
   Modal,
   Snackbar,
   Alert,
+  CircularProgress,
 } from "@mui/material"
 import { styled } from "@mui/material/styles"
 import { KeyboardArrowDown } from "@mui/icons-material"
+import { useRouter, useSearchParams } from "next/navigation"
+
+// Firebase imports
+import { db } from "../../../../firebaseConfig" // Adjust path as needed
+import { doc, getDoc, deleteDoc, collection, query, where, getDocs } from "firebase/firestore"
 
 // Sidebar component import
 import Sidebar from "../../../components/SideNavbar"
@@ -46,52 +52,35 @@ const DeleteButton = styled(Button)(({ theme }) => ({
   "&:hover": {
     backgroundColor: "#c41515",
   },
+  "&:disabled": {
+    backgroundColor: "#cccccc",
+  },
 }))
 
 export default function DeleteVoucherDetails({ voucherId, voucherData, onDelete }) {
-  // Function to get voucher data based on ID or use provided data
-  const getVoucherData = (id) => {
-    // If voucherData prop is provided, use it
-    if (voucherData) {
-      return voucherData
-    }
-
-    // Mock data - in real app, this would fetch from API
-    const vouchers = {
-      1: {
-        voucherType: "Free Item",
-        valueOfSavings: "10%",
-        voucherTitle: "SAVE10",
-        voucherDescription: "Get 10% off on your next order. Valid for all menu items.",
-        termsAndConditions:
-          "Valid for one-time use only. Cannot be combined with other offers. Minimum order value $20.",
-        quantity: "500",
-        expiryDate: "2023-05-30",
-      },
-      2: {
-        voucherType: "Percentage Discount",
-        valueOfSavings: "20%",
-        voucherTitle: "WELCOME20",
-        voucherDescription: "Welcome bonus for new customers. Enjoy 20% discount on your first order.",
-        termsAndConditions: "Valid for new customers only. One-time use. Valid for 30 days from registration.",
-        quantity: "1000",
-        expiryDate: "2023-06-30",
-      },
-      3: {
-        voucherType: "Fixed Amount Discount",
-        valueOfSavings: "$5",
-        voucherTitle: "SAVE5",
-        voucherDescription: "Save $5 on orders above $25. Perfect for lunch deals.",
-        termsAndConditions: "Minimum order value $25. Valid for delivery and pickup orders.",
-        quantity: "250",
-        expiryDate: "2023-06-15",
-      },
-    }
-    return vouchers[id] || vouchers["1"] // Default to first voucher if ID not found
-  }
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  
+  // Get voucher code from props or URL params
+  const initialVoucherCode = voucherId || searchParams.get('id') || searchParams.get('code')
+  const [currentVoucherId, setCurrentVoucherId] = useState(null) // Document ID for deletion
 
   // State for form data
-  const [formData, setFormData] = useState(getVoucherData(voucherId))
+  const [formData, setFormData] = useState({
+    voucherType: "",
+    valueOfSavings: "",
+    voucherTitle: "",
+    voucherDescription: "",
+    termsAndConditions: "",
+    quantity: "",
+    expiryDate: "",
+    voucherCode: "",
+  })
+
+  // State for loading and error handling
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const [deleting, setDeleting] = useState(false)
 
   // State for modal
   const [openModal, setOpenModal] = useState(false)
@@ -102,6 +91,109 @@ export default function DeleteVoucherDetails({ voucherId, voucherData, onDelete 
     message: "",
     severity: "success",
   })
+
+  // Fetch voucher data from Firestore using voucherCode
+  const fetchVoucherData = async (voucherCode) => {
+    if (!voucherCode) {
+      setError("No voucher code provided")
+      setLoading(false)
+      return
+    }
+
+    try {
+      setLoading(true)
+      setError(null)
+
+      console.log("Fetching voucher with code:", voucherCode)
+
+      // Search by voucherCode field (primary method)
+      const vouchersQuery = query(
+        collection(db, "vouchers"),
+        where("voucherCode", "==", voucherCode)
+      )
+      
+      const querySnapshot = await getDocs(vouchersQuery)
+      
+      if (!querySnapshot.empty) {
+        // Found by voucherCode
+        const docData = querySnapshot.docs[0]
+        const data = docData.data()
+        
+        console.log("Found voucher by voucherCode:", data)
+        
+        // Store the document ID for deletion
+        setCurrentVoucherId(docData.id)
+        
+        // Map Firestore data to form structure
+        setFormData({
+          voucherType: data.voucherType || "",
+          valueOfSavings: data.valueOfSavings?.toString() || "",
+          voucherTitle: data.voucherTitle || "",
+          voucherDescription: data.voucherDescription || "",
+          termsAndConditions: data.termsAndConditions || "",
+          quantity: data.quantity?.toString() || "",
+          expiryDate: data.expiryDate || "",
+          voucherCode: data.voucherCode || "",
+        })
+      } else {
+        // Fallback: try as document ID (in case someone passes document ID)
+        console.log("Not found by voucherCode, trying as document ID:", voucherCode)
+        
+        const voucherRef = doc(db, "vouchers", voucherCode)
+        const voucherSnap = await getDoc(voucherRef)
+        
+        if (voucherSnap.exists()) {
+          const data = voucherSnap.data()
+          console.log("Found voucher by document ID:", data)
+          
+          setCurrentVoucherId(voucherCode)
+          
+          setFormData({
+            voucherType: data.voucherType || "",
+            valueOfSavings: data.valueOfSavings?.toString() || "",
+            voucherTitle: data.voucherTitle || "",
+            voucherDescription: data.voucherDescription || "",
+            termsAndConditions: data.termsAndConditions || "",
+            quantity: data.quantity?.toString() || "",
+            expiryDate: data.expiryDate || "",
+            voucherCode: data.voucherCode || "",
+          })
+        } else {
+          console.log("Voucher not found with code or ID:", voucherCode)
+          setError(`Voucher not found with code: ${voucherCode}`)
+        }
+      }
+    } catch (err) {
+      console.error("Error fetching voucher:", err)
+      setError("Failed to load voucher data. Please try again.")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Load voucher data on component mount
+  useEffect(() => {
+    if (voucherData) {
+      // Use provided voucher data
+      setFormData({
+        voucherType: voucherData.voucherType || "",
+        valueOfSavings: voucherData.valueOfSavings?.toString() || "",
+        voucherTitle: voucherData.voucherTitle || "",
+        voucherDescription: voucherData.voucherDescription || "",
+        termsAndConditions: voucherData.termsAndConditions || "",
+        quantity: voucherData.quantity?.toString() || "",
+        expiryDate: voucherData.expiryDate || "",
+        voucherCode: voucherData.voucherCode || "",
+      })
+      setLoading(false)
+    } else if (initialVoucherCode) {
+      // Fetch from Firestore using voucherCode
+      fetchVoucherData(initialVoucherCode)
+    } else {
+      setError("No voucher code or data provided")
+      setLoading(false)
+    }
+  }, [initialVoucherCode, voucherData])
 
   // Handle form changes
   const handleChange = (field, value) => {
@@ -116,22 +208,45 @@ export default function DeleteVoucherDetails({ voucherId, voucherData, onDelete 
     setOpenModal(true)
   }
 
-  // Handle modal confirm
-  const handleConfirmDelete = () => {
-    // Close modal
+  // Handle modal confirm - Delete voucher from Firestore
+  const handleConfirmDelete = async () => {
     setOpenModal(false)
+    setDeleting(true)
 
-    // Call onDelete prop if provided
-    if (onDelete) {
-      onDelete(formData)
+    try {
+      // Delete from Firestore using the document ID
+      const voucherRef = doc(db, "vouchers", currentVoucherId)
+      await deleteDoc(voucherRef)
+
+      console.log("Voucher deleted successfully")
+
+      // Call onDelete prop if provided (for parent component updates)
+      if (onDelete) {
+        onDelete({ id: currentVoucherId, voucherCode: formData.voucherCode })
+      }
+
+      // Show success message
+      setSnackbar({
+        open: true,
+        message: `Voucher ${formData.voucherCode} deleted successfully!`,
+        severity: "success",
+      })
+
+      // Redirect back to vouchers list after a delay
+      setTimeout(() => {
+        router.push("/vouchers")
+      }, 2000)
+
+    } catch (err) {
+      console.error("Error deleting voucher:", err)
+      setSnackbar({
+        open: true,
+        message: "Failed to delete voucher. Please try again.",
+        severity: "error",
+      })
+    } finally {
+      setDeleting(false)
     }
-
-    // Show success message
-    setSnackbar({
-      open: true,
-      message: "Voucher Deleted successfully!",
-      severity: "success",
-    })
   }
 
   // Handle snackbar close
@@ -151,6 +266,65 @@ export default function DeleteVoucherDetails({ voucherId, voucherData, onDelete 
     "Free Shipping",
     "Cash Voucher",
   ]
+
+  // Loading state
+  if (loading) {
+    return (
+      <Box sx={{ display: "flex", bgcolor: "#f9f9f9", minHeight: "100vh" }}>
+        <Sidebar />
+        <Box
+          component="main"
+          sx={{
+            flexGrow: 1,
+            p: 3,
+            ml: "240px",
+            pt: 2,
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          <Box sx={{ textAlign: "center" }}>
+            <CircularProgress size={60} sx={{ color: "#da1818", mb: 2 }} />
+            <Typography variant="h6" sx={{ color: "#666" }}>
+              Loading voucher details...
+            </Typography>
+          </Box>
+        </Box>
+      </Box>
+    )
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <Box sx={{ display: "flex", bgcolor: "#f9f9f9", minHeight: "100vh" }}>
+        <Sidebar />
+        <Box
+          component="main"
+          sx={{
+            flexGrow: 1,
+            p: 3,
+            ml: "240px",
+            pt: 2,
+          }}
+        >
+          <Typography variant="h5" component="h1" sx={{ color: "#da1818", fontWeight: 'bolder', mb: 3 }}>
+            Delete A Voucher
+          </Typography>
+          <Alert severity="error" sx={{ maxWidth: 600 }}>
+            {error}
+            <Button 
+              onClick={() => fetchVoucherData(initialVoucherCode)} 
+              sx={{ mt: 1, color: "#da1818" }}
+            >
+              Try Again
+            </Button>
+          </Alert>
+        </Box>
+      </Box>
+    )
+  }
 
   return (
     <Box sx={{ display: "flex", bgcolor: "#f9f9f9", minHeight: "100vh" }}>
@@ -324,8 +498,12 @@ export default function DeleteVoucherDetails({ voucherId, voucherData, onDelete 
 
           {/* Delete Button */}
           <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 4 }}>
-            <DeleteButton variant="contained" onClick={handleDelete}>
-              Delete a Voucher
+            <DeleteButton 
+              variant="contained" 
+              onClick={handleDelete}
+              disabled={deleting}
+            >
+              {deleting ? "Deleting..." : "Delete a Voucher"}
             </DeleteButton>
           </Box>
         </Box>
@@ -349,12 +527,13 @@ export default function DeleteVoucherDetails({ voucherId, voucherData, onDelete 
               Delete Voucher
             </Typography>
             <Typography sx={{ textAlign: "center", mb: 3 }}>
-              Click on Delete to delete voucher or Discard to cancel.
+              Are you sure you want to permanently delete voucher <strong>{formData.voucherCode}</strong>? This action cannot be undone.
             </Typography>
             <Box sx={{ display: "flex", justifyContent: "center", gap: 2 }}>
               <Button
                 variant="outlined"
                 onClick={() => setOpenModal(false)}
+                disabled={deleting}
                 sx={{
                   borderColor: "#e0e0e0",
                   color: "#666666",
@@ -364,11 +543,12 @@ export default function DeleteVoucherDetails({ voucherId, voucherData, onDelete 
                   },
                 }}
               >
-                Discard
+                Cancel
               </Button>
               <Button
                 variant="contained"
                 onClick={handleConfirmDelete}
+                disabled={deleting}
                 sx={{
                   bgcolor: "#da1818",
                   "&:hover": {
@@ -376,7 +556,7 @@ export default function DeleteVoucherDetails({ voucherId, voucherData, onDelete 
                   },
                 }}
               >
-                Delete
+                {deleting ? "Deleting..." : "Delete"}
               </Button>
             </Box>
           </Box>
