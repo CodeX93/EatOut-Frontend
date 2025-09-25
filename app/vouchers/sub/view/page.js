@@ -24,6 +24,9 @@ import { doc, getDoc, collection, query, where, getDocs } from "firebase/firesto
 
 // Sidebar component import
 import Sidebar from "../../../components/SideNavbar"
+import Header from "../../../components/Header"
+
+const drawerWidth = 240
 
 // Custom styled components
 const StyledTextField = styled(TextField)(({ theme }) => ({
@@ -94,10 +97,10 @@ function ViewVoucherPageContent({ voucherId, voucherData }) {
 
       console.log("Fetching voucher with code:", voucherCode)
 
-      // Search by voucherCode field (primary method)
+      // Search by voucherId field in `voucher` collection
       const vouchersQuery = query(
-        collection(db, "vouchers"),
-        where("voucherCode", "==", voucherCode)
+        collection(db, "voucher"),
+        where("voucherId", "==", voucherCode)
       )
       
       const querySnapshot = await getDocs(vouchersQuery)
@@ -109,18 +112,48 @@ function ViewVoucherPageContent({ voucherId, voucherData }) {
         
         console.log("Found voucher by voucherCode:", data)
         
-        // Map Firestore data to state
+        // Map Firestore data (new schema) to state expected by UI
+        const quantity = Number(data.quantity ?? 0)
+        const available = Number(data.available ?? 0)
+        const usedCount = Math.max(0, quantity - available)
+        const terms = Array.isArray(data.termsAndConditions) ? data.termsAndConditions.join("\n") : (data.termsAndConditions || "")
+        const expiry = data.expiryDate ? new Date(data.expiryDate).toISOString() : ""
+        const normalizeVoucherType = (raw) => {
+          const t = (raw || "").toString().trim().toLowerCase()
+          switch (t) {
+            case "percentage discount":
+            case "percent discount":
+            case "discount":
+              return "Percentage Discount"
+            case "fixed amount discount":
+            case "fixed discount":
+            case "amount discount":
+              return "Fixed Amount Discount"
+            case "buy one get one free":
+            case "bogo":
+              return "Buy One Get One Free"
+            case "free item":
+              return "Free Item"
+            case "free shipping":
+              return "Free Shipping"
+            case "cash voucher":
+              return "Cash Voucher"
+            default:
+              return raw || ""
+          }
+        }
+
         setVoucher({
-          voucherType: data.voucherType || "",
+          voucherType: normalizeVoucherType(data.voucherType),
           valueOfSavings: data.valueOfSavings?.toString() || "",
-          voucherTitle: data.voucherTitle || "",
-          voucherDescription: data.voucherDescription || "",
-          termsAndConditions: data.termsAndConditions || "",
-          quantity: data.quantity?.toString() || "",
-          expiryDate: data.expiryDate || "",
-          voucherCode: data.voucherCode || "",
-          usedCount: data.usedCount || 0,
-          status: data.status || "active",
+          voucherTitle: data.title || "",
+          voucherDescription: data.description || "",
+          termsAndConditions: terms,
+          quantity: quantity?.toString() || "",
+          expiryDate: expiry,
+          voucherCode: data.voucherId || docData.id,
+          usedCount: usedCount,
+          status: data.isActive ? "active" : "inactive",
           createdAt: data.createdAt,
           updatedAt: data.updatedAt,
         })
@@ -128,24 +161,54 @@ function ViewVoucherPageContent({ voucherId, voucherData }) {
         // Fallback: try as document ID (in case someone passes document ID)
         console.log("Not found by voucherCode, trying as document ID:", voucherCode)
         
-        const voucherRef = doc(db, "vouchers", voucherCode)
+        const voucherRef = doc(db, "voucher", voucherCode)
         const voucherSnap = await getDoc(voucherRef)
         
         if (voucherSnap.exists()) {
           const data = voucherSnap.data()
           console.log("Found voucher by document ID:", data)
           
+          const quantity = Number(data.quantity ?? 0)
+          const available = Number(data.available ?? 0)
+          const usedCount = Math.max(0, quantity - available)
+          const terms = Array.isArray(data.termsAndConditions) ? data.termsAndConditions.join("\n") : (data.termsAndConditions || "")
+          const expiry = data.expiryDate ? new Date(data.expiryDate).toISOString() : ""
+          const normalizeVoucherType = (raw) => {
+            const t = (raw || "").toString().trim().toLowerCase()
+            switch (t) {
+              case "percentage discount":
+              case "percent discount":
+              case "discount":
+                return "Percentage Discount"
+              case "fixed amount discount":
+              case "fixed discount":
+              case "amount discount":
+                return "Fixed Amount Discount"
+              case "buy one get one free":
+              case "bogo":
+                return "Buy One Get One Free"
+              case "free item":
+                return "Free Item"
+              case "free shipping":
+                return "Free Shipping"
+              case "cash voucher":
+                return "Cash Voucher"
+              default:
+                return raw || ""
+            }
+          }
+
           setVoucher({
-            voucherType: data.voucherType || "",
+            voucherType: normalizeVoucherType(data.voucherType),
             valueOfSavings: data.valueOfSavings?.toString() || "",
-            voucherTitle: data.voucherTitle || "",
-            voucherDescription: data.voucherDescription || "",
-            termsAndConditions: data.termsAndConditions || "",
-            quantity: data.quantity?.toString() || "",
-            expiryDate: data.expiryDate || "",
-            voucherCode: data.voucherCode || "",
-            usedCount: data.usedCount || 0,
-            status: data.status || "active",
+            voucherTitle: data.title || "",
+            voucherDescription: data.description || "",
+            termsAndConditions: terms,
+            quantity: quantity?.toString() || "",
+            expiryDate: expiry,
+            voucherCode: data.voucherId || voucherCode,
+            usedCount: usedCount,
+            status: data.isActive ? "active" : "inactive",
             createdAt: data.createdAt,
             updatedAt: data.updatedAt,
           })
@@ -166,17 +229,47 @@ function ViewVoucherPageContent({ voucherId, voucherData }) {
   useEffect(() => {
     if (voucherData) {
       // Use provided voucher data
+      const normalizeVoucherType = (raw) => {
+        const t = (raw || "").toString().trim().toLowerCase()
+        switch (t) {
+          case "percentage discount":
+          case "percent discount":
+          case "discount":
+            return "Percentage Discount"
+          case "fixed amount discount":
+          case "fixed discount":
+          case "amount discount":
+            return "Fixed Amount Discount"
+          case "buy one get one free":
+          case "bogo":
+            return "Buy One Get One Free"
+          case "free item":
+            return "Free Item"
+          case "free shipping":
+            return "Free Shipping"
+          case "cash voucher":
+            return "Cash Voucher"
+          default:
+            return raw || ""
+        }
+      }
+      const terms = Array.isArray(voucherData.termsAndConditions)
+        ? voucherData.termsAndConditions.join("\n")
+        : (voucherData.termsAndConditions || "")
+      const expiry = voucherData.expiryDate
+        ? (typeof voucherData.expiryDate === 'number' ? new Date(voucherData.expiryDate).toISOString() : voucherData.expiryDate)
+        : ""
       setVoucher({
-        voucherType: voucherData.voucherType || "",
+        voucherType: normalizeVoucherType(voucherData.voucherType),
         valueOfSavings: voucherData.valueOfSavings?.toString() || "",
-        voucherTitle: voucherData.voucherTitle || "",
-        voucherDescription: voucherData.voucherDescription || "",
-        termsAndConditions: voucherData.termsAndConditions || "",
+        voucherTitle: voucherData.voucherTitle || voucherData.title || "",
+        voucherDescription: voucherData.voucherDescription || voucherData.description || "",
+        termsAndConditions: terms,
         quantity: voucherData.quantity?.toString() || "",
-        expiryDate: voucherData.expiryDate || "",
-        voucherCode: voucherData.voucherCode || "",
+        expiryDate: expiry,
+        voucherCode: voucherData.voucherCode || voucherData.voucherId || "",
         usedCount: voucherData.usedCount || 0,
-        status: voucherData.status || "active",
+        status: voucherData.status || (voucherData.isActive ? "active" : "inactive"),
         createdAt: voucherData.createdAt,
         updatedAt: voucherData.updatedAt,
       })
@@ -246,26 +339,36 @@ function ViewVoucherPageContent({ voucherId, voucherData }) {
   // Loading state
   if (loading) {
     return (
-      <Box sx={{ display: "flex", bgcolor: "#f9f9f9", minHeight: "100vh" }}>
+      <Box
+        component="div"
+        sx={{
+          display: "flex",
+          backgroundColor: "#f9f9f9",
+          minHeight: "100vh",
+          height: "100vh",
+          width: "100vw",
+        }}
+      >
+        <Header />
         <Sidebar />
         <Box
-          component="main"
+          component="div"
           sx={{
             flexGrow: 1,
-            p: 3,
-            ml: "240px",
-            pt: 2,
+            height: "100vh",
+            width: "100%",
             display: "flex",
+            flexDirection: "column",
+            ml: { xs: 0, sm: `${drawerWidth}px` },
+            mt: { xs: "56px", sm: "64px" },
             justifyContent: "center",
             alignItems: "center",
           }}
         >
-          <Box sx={{ textAlign: "center" }}>
-            <CircularProgress size={60} sx={{ color: "#da1818", mb: 2 }} />
-            <Typography variant="h6" sx={{ color: "#666" }}>
-              Loading voucher details...
-            </Typography>
-          </Box>
+          <CircularProgress size={60} sx={{ color: "#da1818", mb: 2 }} />
+          <Typography variant="h6" sx={{ color: "#666" }}>
+            Loading voucher details...
+          </Typography>
         </Box>
       </Box>
     )

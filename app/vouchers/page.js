@@ -141,9 +141,9 @@ export default function VouchersPage() {
       setLoading(true)
       setError(null)
 
-      // Fetch all vouchers
+      // Fetch all vouchers from `voucher` collection (matches Firestore structure)
       const vouchersQuery = query(
-        collection(db, "vouchers"),
+        collection(db, "voucher"),
         orderBy("createdAt", "desc")
       )
 
@@ -151,10 +151,32 @@ export default function VouchersPage() {
       const allVouchers = []
 
       querySnapshot.forEach((doc) => {
-        allVouchers.push({
+        const data = doc.data() || {}
+        const quantity = Number(data.quantity ?? 0)
+        const available = Number(data.available ?? 0)
+        const usedCount = Math.max(0, quantity - available)
+
+        // Normalize to UI-expected fields
+        const normalized = {
           id: doc.id,
-          ...doc.data()
-        })
+          voucherCode: data.voucherId || doc.id,
+          voucherType: data.voucherType || "Unknown",
+          valueOfSavings: data.valueOfSavings ?? 0,
+          voucherTitle: data.title || "",
+          expiryDate: data.expiryDate ?? null,
+          quantity: quantity,
+          usedCount: usedCount,
+          status: data.isActive ? "active" : "inactive",
+          createdAt: data.createdAt ?? null,
+          minSpending: data.minSpending ?? 0,
+          restaurantEmail: data.restaurantEmail ?? "",
+          termsAndConditions: Array.isArray(data.termsAndConditions) ? data.termsAndConditions : [],
+          description: data.description ?? "",
+          available: available,
+          voucherId: data.voucherId ?? doc.id,
+        }
+
+        allVouchers.push(normalized)
       })
 
       // Categorize vouchers

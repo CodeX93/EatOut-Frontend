@@ -50,7 +50,15 @@ export default function PopularVouchersCard({
     },
   ]
 
-  const displayVouchers = vouchers.length > 0 ? vouchers : defaultVouchers
+  const displayVouchers = vouchers.length > 0 ? vouchers.map(v => ({
+    discount: v.discount,
+    minimumSpend: v.minimumSpend || "",
+    restaurantName: v.restaurant || v.restaurantName || "",
+    branch: v.branch || "",
+    voucherCode: v.voucherCode,
+    usedDate: v.expiry || v.usedDate,
+    type: v.type || "review",
+  })) : defaultVouchers
 
   const handlePeriodChange = (event) => {
     const newPeriod = event.target.value

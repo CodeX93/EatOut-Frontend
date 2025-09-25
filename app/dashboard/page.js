@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { 
   Box, 
   FormControl, 
@@ -9,8 +9,7 @@ import {
   Select, 
   Typography, 
   useMediaQuery, 
-  useTheme,
-  Container
+  useTheme
 } from "@mui/material"
 import Header from "../components/Header"
 import Sidebar from "../components/SideNavbar"
@@ -22,9 +21,44 @@ import VouchersPerformance from "./components/VoucherPerformance"
 import VouchersBreakdown from "./components/VoucherBreakdown"
 import RecentRedeemedVouchers from "./components/RecentRedeemVouchers"
 
+// Utility function to get date range based on selected period
+const getDateRange = (period) => {
+  const now = new Date()
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  
+  switch (period) {
+    case "Weekly":
+      const startOfWeek = new Date(startOfToday)
+      startOfWeek.setDate(startOfToday.getDate() - 6) // Last 7 days including today
+      return {
+        start: startOfWeek,
+        end: now,
+        label: "Last 7 days"
+      }
+    case "Monthly":
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+      return {
+        start: startOfMonth,
+        end: now,
+        label: "This month"
+      }
+    case "Yearly":
+    default:
+      const startOfYear = new Date(now.getFullYear(), 0, 1)
+      return {
+        start: startOfYear,
+        end: now,
+        label: "This year"
+      }
+  }
+}
+
 export default function Dashboard() {
   const [selectedPeriod, setSelectedPeriod] = useState("Yearly")
   const theme = useTheme()
+  
+  // Memoize the date range to prevent useEffect dependency issues
+  const dateRange = useMemo(() => getDateRange(selectedPeriod), [selectedPeriod])
   
   // Multiple breakpoint queries for better responsive control
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"))
@@ -58,43 +92,12 @@ export default function Dashboard() {
         component="main"
         sx={{
           flexGrow: 1,
-          width: {
-            xs: "100%",
-            sm: "100%", 
-            md: `calc(100% - ${sidebarWidth}px)`,
-          },
-          ml: {
-            xs: 0,
-            md: `${sidebarWidth}px`
-          },
-          mt: {
-            xs: "56px", // Smaller header on mobile
-            sm: "64px",
-            md: "64px"
-          },
-          bgcolor: "#f9f9f9",
-          overflow: "auto",
-          minHeight: "calc(100vh - 64px)",
+          p: { xs: 2, sm: 3 },
+          overflow: "hidden",
+          mt: { xs: 7, sm: 8 }, // Account for fixed header
+          ml: { xs: 0, sm: "240px" }, // Account for sidebar on larger screens
         }}
       >
-        {/* Use Container for better content width management */}
-        <Container
-          maxWidth={false}
-          sx={{
-            px: { 
-              xs: 1, 
-              sm: 2, 
-              md: 3, 
-              lg: 4,
-              xl: 5 
-            },
-            py: { 
-              xs: 1, 
-              sm: 2, 
-              md: 3 
-            },
-          }}
-        >
           <Grid container spacing={spacing}>
             {/* Left Section - More responsive column distribution */}
             <Grid item xs={12} sm={12} md={12} lg={8} xl={8}>
@@ -152,7 +155,7 @@ export default function Dashboard() {
 
               {/* Stats Cards with responsive spacing */}
               <Box sx={{ mb: { xs: 1.5, sm: 2, md: 3 } }}>
-                <StatsCards />
+                <StatsCards selectedPeriod={selectedPeriod} dateRange={dateRange} />
               </Box>
 
               {/* Main Overview Chart with responsive height */}
@@ -169,7 +172,7 @@ export default function Dashboard() {
                   }
                 }}
               >
-                <OverviewChart />
+                <OverviewChart selectedPeriod={selectedPeriod} dateRange={dateRange} />
               </Box>
 
               {/* Voucher Charts Row - Stack on mobile/tablet, side by side on desktop */}
@@ -179,10 +182,10 @@ export default function Dashboard() {
                 sx={{ mb: { xs: 1.5, sm: 2, md: 3 } }}
               >
                 <Grid item xs={12} sm={12} md={6} lg={6}>
-                  <VoucherCharts title="Earned Vouchers" />
+                  <VoucherCharts title="Earned Vouchers" selectedPeriod={selectedPeriod} dateRange={dateRange} />
                 </Grid>
                 <Grid item xs={12} sm={12} md={6} lg={6}>
-                  <VoucherCharts title="Redeemed Vouchers" />
+                  <VoucherCharts title="Redeemed Vouchers" selectedPeriod={selectedPeriod} dateRange={dateRange} />
                 </Grid>
               </Grid>
 
@@ -199,7 +202,7 @@ export default function Dashboard() {
                   }
                 }}
               >
-                <PeakHoursChart />
+                <PeakHoursChart selectedPeriod={selectedPeriod} dateRange={dateRange} />
               </Box>
             </Grid>
 
@@ -217,20 +220,19 @@ export default function Dashboard() {
                 }}
               >
                 {/* Vouchers Performance */}
-                <VouchersPerformance />
+                <VouchersPerformance selectedPeriod={selectedPeriod} dateRange={dateRange} />
 
                 {/* Vouchers Breakdown */}
-                <VouchersBreakdown />
+                <VouchersBreakdown selectedPeriod={selectedPeriod} dateRange={dateRange} />
 
                 {/* Recent Redeemed Vouchers */}
-                <RecentRedeemedVouchers />
+                <RecentRedeemedVouchers selectedPeriod={selectedPeriod} dateRange={dateRange} />
               </Box>
             </Grid>
           </Grid>
 
           {/* Add some bottom padding for better mobile scrolling */}
           <Box sx={{ height: { xs: "20px", sm: "40px" } }} />
-        </Container>
       </Box>
     </Box>
   )

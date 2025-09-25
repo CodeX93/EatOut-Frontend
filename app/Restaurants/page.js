@@ -55,39 +55,124 @@ const fetchRestaurants = async () => {
   ]
 }
 
-const fetchPopularRestaurants = async (period) => {
-  await new Promise((resolve) => setTimeout(resolve, 500))
+// Compute popular restaurants based on voucher usage
+const computeTimeWindowMs = (period) => {
+  const now = Date.now()
+  switch (period) {
+    case "Today":
+      return now - 24 * 60 * 60 * 1000
+    case "Week":
+      return now - 7 * 24 * 60 * 60 * 1000
+    case "Year":
+      return now - 365 * 24 * 60 * 60 * 1000
+    case "Month":
+    default:
+      return now - 30 * 24 * 60 * 60 * 1000
+  }
+}
 
-  // Return different data based on period
-  const data = {
-    Today: [
-      { id: 1, name: "KFC", rating: 4.7, reviews: 50, revenue: "$12,217", highlighted: false },
-      { id: 2, name: "McDonalds", rating: 4.8, reviews: 45, revenue: "$8,543", highlighted: true },
-      { id: 3, name: "Al Baik", rating: 4.6, reviews: 30, revenue: "$6,999", highlighted: false },
-    ],
-    Week: [
-      { id: 1, name: "KFC", rating: 4.7, reviews: 200, revenue: "$85,217", highlighted: false },
-      { id: 2, name: "McDonalds", rating: 4.8, reviews: 180, revenue: "$62,543", highlighted: false },
-      { id: 3, name: "Al Baik", rating: 4.7, reviews: 150, revenue: "$45,999", highlighted: true },
-    ],
-    Month: [
-      { id: 1, name: "KFC", rating: 4.7, reviews: 800, revenue: "$243,217", highlighted: false },
-      { id: 2, name: "McDonalds", rating: 4.8, reviews: 750, revenue: "$174,543", highlighted: false },
-      { id: 3, name: "Al Baik", rating: 4.7, reviews: 600, revenue: "$127,999", highlighted: true },
-    ],
+const fetchPopularRestaurants = async (period, emailToNameMap = {}) => {
+  const fromTs = computeTimeWindowMs(period)
+
+  // Aggregate usage from vouchers' redeemedUsers
+  const vouchersSnap = await getDocs(collection(db, "voucher"))
+
+  const emailToStats = new Map()
+
+  for (const voucherDoc of vouchersSnap.docs) {
+    const voucherData = voucherDoc.data() || {}
+    const restaurantEmail = voucherData.restaurantEmail || "unknown"
+    // Load redeemedUsers for this voucher
+    try {
+      const redeemedSnap = await getDocs(collection(db, "voucher", voucherDoc.id, "redeemedUsers"))
+      let stats = emailToStats.get(restaurantEmail)
+      if (!stats) {
+        stats = { orders: 0, memberSet: new Set() }
+        emailToStats.set(restaurantEmail, stats)
+      }
+      redeemedSnap.forEach((ru) => {
+        const r = ru.data() || {}
+        const redeemedAt = typeof r.redeemedAt === "number" ? r.redeemedAt : (typeof r.validUntil === "number" ? r.validUntil : 0)
+        const used = r.used === true || r.used === false ? r.used : true
+        if (redeemedAt >= fromTs && used) {
+          stats.orders += 1
+          if (r.userEmail) stats.memberSet.add(r.userEmail)
+        }
+      })
+    } catch (e) {
+      // Ignore subcollection errors for robustness
+      // console.warn("Failed loading redeemedUsers for", voucherDoc.id, e)
+    }
   }
 
-  return data[period] || data["Month"]
+  // Build ranked list
+  const avgOrderValue = 85
+  const results = Array.from(emailToStats.entries())
+    .map(([email, s]) => {
+      const members = s.memberSet.size
+      const orders = s.orders
+      const revenue = `$${(orders * avgOrderValue).toLocaleString()}`
+      // Derive a pseudo-rating from orders (bounded 3.5 - 5.0)
+      const rating = Math.max(3.5, Math.min(5.0, 3.5 + (orders / 100)))
+      return {
+        id: email,
+        name: emailToNameMap[email] || email,
+        rating: Number(rating.toFixed(1)),
+        reviews: members,
+        revenue,
+        highlighted: false,
+        orders,
+        members,
+      }
+    })
+    .sort((a, b) => b.orders - a.orders)
+    .slice(0, 5)
+
+  // Highlight the top 1
+  if (results[1]) results[1].highlighted = true
+  return results
 }
 
 const fetchPopularVouchers = async (period) => {
-  await new Promise((resolve) => setTimeout(resolve, 500))
+  const fromTs = computeTimeWindowMs(period)
+  // Load vouchers and count recent redemptions
+  const vouchersSnap = await getDocs(collection(db, "voucher"))
+  const results = []
 
-  return [
-    { id: 1, restaurant: "Al Baik", discount: "30% off", expiry: "30-02-2025" },
-    { id: 2, restaurant: "KFC", discount: "15% off", expiry: "28-02-2025" },
-    { id: 3, restaurant: "McDonalds", discount: "20% off", expiry: "25-02-2025" },
-  ]
+  for (const vDoc of vouchersSnap.docs) {
+    const vData = vDoc.data() || {}
+    let usedCountWindow = 0
+    try {
+      const redeemedSnap = await getDocs(collection(db, "voucher", vDoc.id, "redeemedUsers"))
+      redeemedSnap.forEach((ru) => {
+        const r = ru.data() || {}
+        const redeemedAt = typeof r.redeemedAt === "number" ? r.redeemedAt : (typeof r.validUntil === "number" ? r.validUntil : 0)
+        const used = r.used === true || r.used === false ? r.used : true
+        if (redeemedAt >= fromTs && used) usedCountWindow += 1
+      })
+    } catch (e) {
+      // ignore
+    }
+
+    // Only include vouchers with at least one use in window
+    if (usedCountWindow > 0) {
+      const voucherType = vData.voucherType || ""
+      const value = vData.valueOfSavings ?? ""
+      const discount = voucherType === "Percentage Discount" ? `${value}%` : `${value}`
+      results.push({
+        id: vDoc.id,
+        restaurant: vData.restaurantEmail || "Unknown",
+        discount,
+        expiry: vData.expiryDate ? new Date(vData.expiryDate).toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" }) : "",
+        voucherCode: vData.voucherId || vDoc.id,
+        usedCountWindow,
+      })
+    }
+  }
+
+  return results
+    .sort((a, b) => b.usedCountWindow - a.usedCountWindow)
+    .slice(0, 5)
 }
 
 export default function Restaurants() {
@@ -115,21 +200,38 @@ export default function Restaurants() {
         const querySnapshot = await getDocs(collection(db, "registeredRestaurants"))
         const restaurants = []
         querySnapshot.forEach((doc) => {
-          const data = doc.data()
+          const data = doc.data() || {}
+          const branches = Array.isArray(data.branches) ? data.branches : []
+          const primaryBranch = branches[0] || {}
+          const address = data.fullAddress || data.address || primaryBranch.fullAddress || "-"
+          const location = data.city || primaryBranch.city || "-"
+          const phone = data.phone || primaryBranch.telephone || "-"
+
           restaurants.push({
             id: doc.id,
-            name: data.restaurantName || "-",
-            address: data.address || "-",
-            location: data.city || "-",
-            phone: data.phone || "-",
-            vouchers: 0, // Set to 0 for now
-            redeemed: 0, // Set to 0 for now
-            ...data,
+            name: data.restaurantName || data.name || "-",
+            address,
+            location,
+            phone,
+            cuisines: Array.isArray(data.cuisines) ? data.cuisines : [],
+            facilities: Array.isArray(data.facilities) ? data.facilities : [],
+            price: data.price || "-",
+            email: data.email || doc.id,
+            latitude: data.latitude ?? null,
+            longitude: data.longitude ?? null,
+            branches,
+            vouchers: 0,
+            redeemed: 0,
           })
         })
-        // Keep the rest of the data fetching as is
+        // Build a map from email to restaurantName for nicer labels
+        const emailToName = restaurants.reduce((acc, r) => {
+          if (r.email) acc[r.email] = r.name
+          return acc
+        }, {})
+
         const [popularRestaurants, popularVouchers] = await Promise.all([
-          fetchPopularRestaurants("Month"),
+          fetchPopularRestaurants("Month", emailToName),
           fetchPopularVouchers("Month"),
         ])
         setRestaurantsData(restaurants)
@@ -151,7 +253,11 @@ export default function Restaurants() {
 
     setPopularRestaurantsLoading(true)
     try {
-      const data = await fetchPopularRestaurants(period)
+      const emailToName = restaurantsData.reduce((acc, r) => {
+        if (r.email) acc[r.email] = r.name
+        return acc
+      }, {})
+      const data = await fetchPopularRestaurants(period, emailToName)
       setPopularRestaurantsData(data)
     } catch (error) {
       console.error("Error fetching popular restaurants:", error)

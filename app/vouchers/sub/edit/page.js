@@ -25,6 +25,9 @@ import { doc, getDoc, updateDoc, serverTimestamp, collection, query, where, getD
 
 // Sidebar component import
 import Sidebar from "../../../components/SideNavbar"
+import Header from "../../../components/Header"
+
+const drawerWidth = 240
 
 // Custom styled components
 const StyledTextField = styled(TextField)(({ theme }) => ({
@@ -115,8 +118,8 @@ function EditVoucherPageContent({ voucherId, voucherData, onUpdate }) {
   const isVoucherCodeUnique = async (code) => {
     try {
       const vouchersQuery = query(
-        collection(db, "vouchers"),
-        where("voucherCode", "==", code)
+        collection(db, "voucher"),
+        where("voucherId", "==", code)
       )
       const querySnapshot = await getDocs(vouchersQuery)
       return querySnapshot.empty // Returns true if no documents found (unique)
@@ -181,10 +184,10 @@ function EditVoucherPageContent({ voucherId, voucherData, onUpdate }) {
 
       console.log("Fetching voucher with code:", voucherCode)
 
-      // Search by voucherCode field (primary method)
+      // Search by voucherId field in `voucher` collection
       const vouchersQuery = query(
-        collection(db, "vouchers"),
-        where("voucherCode", "==", voucherCode)
+        collection(db, "voucher"),
+        where("voucherId", "==", voucherCode)
       )
       
       const querySnapshot = await getDocs(vouchersQuery)
@@ -199,22 +202,49 @@ function EditVoucherPageContent({ voucherId, voucherData, onUpdate }) {
         // Store the document ID for updates
         setCurrentVoucherId(docData.id)
         
-        // Map Firestore data to form structure
+        // Map Firestore data (new schema) to form structure
+        const quantity = Number(data.quantity ?? 0)
+        const terms = Array.isArray(data.termsAndConditions) ? data.termsAndConditions.join("\n") : (data.termsAndConditions || "")
+        const expiry = data.expiryDate ? new Date(data.expiryDate).toISOString() : ""
+        const normalizeVoucherType = (raw) => {
+          const t = (raw || "").toString().trim().toLowerCase()
+          switch (t) {
+            case "percentage discount":
+            case "percent discount":
+            case "discount":
+              return "Percentage Discount"
+            case "fixed amount discount":
+            case "fixed discount":
+            case "amount discount":
+              return "Fixed Amount Discount"
+            case "buy one get one free":
+            case "bogo":
+              return "Buy One Get One Free"
+            case "free item":
+              return "Free Item"
+            case "free shipping":
+              return "Free Shipping"
+            case "cash voucher":
+              return "Cash Voucher"
+            default:
+              return raw || ""
+          }
+        }
         setFormData({
-          voucherType: data.voucherType || "",
+          voucherType: normalizeVoucherType(data.voucherType),
           valueOfSavings: data.valueOfSavings?.toString() || "",
-          voucherTitle: data.voucherTitle || "",
-          voucherDescription: data.voucherDescription || "",
-          termsAndConditions: data.termsAndConditions || "",
-          quantity: data.quantity?.toString() || "",
-          expiryDate: data.expiryDate || "",
-          voucherCode: data.voucherCode || "",
+          voucherTitle: data.title || "",
+          voucherDescription: data.description || "",
+          termsAndConditions: terms,
+          quantity: quantity?.toString() || "",
+          expiryDate: expiry,
+          voucherCode: data.voucherId || docData.id,
         })
       } else {
         // Fallback: try as document ID (in case someone passes document ID)
         console.log("Not found by voucherCode, trying as document ID:", voucherCode)
         
-        const voucherRef = doc(db, "vouchers", voucherCode)
+        const voucherRef = doc(db, "voucher", voucherCode)
         const voucherSnap = await getDoc(voucherRef)
         
         if (voucherSnap.exists()) {
@@ -223,15 +253,42 @@ function EditVoucherPageContent({ voucherId, voucherData, onUpdate }) {
           
           setCurrentVoucherId(voucherCode)
           
+          const quantity = Number(data.quantity ?? 0)
+          const terms = Array.isArray(data.termsAndConditions) ? data.termsAndConditions.join("\n") : (data.termsAndConditions || "")
+          const expiry = data.expiryDate ? new Date(data.expiryDate).toISOString() : ""
+          const normalizeVoucherType = (raw) => {
+            const t = (raw || "").toString().trim().toLowerCase()
+            switch (t) {
+              case "percentage discount":
+              case "percent discount":
+              case "discount":
+                return "Percentage Discount"
+              case "fixed amount discount":
+              case "fixed discount":
+              case "amount discount":
+                return "Fixed Amount Discount"
+              case "buy one get one free":
+              case "bogo":
+                return "Buy One Get One Free"
+              case "free item":
+                return "Free Item"
+              case "free shipping":
+                return "Free Shipping"
+              case "cash voucher":
+                return "Cash Voucher"
+              default:
+                return raw || ""
+            }
+          }
           setFormData({
-            voucherType: data.voucherType || "",
+            voucherType: normalizeVoucherType(data.voucherType),
             valueOfSavings: data.valueOfSavings?.toString() || "",
-            voucherTitle: data.voucherTitle || "",
-            voucherDescription: data.voucherDescription || "",
-            termsAndConditions: data.termsAndConditions || "",
-            quantity: data.quantity?.toString() || "",
-            expiryDate: data.expiryDate || "",
-            voucherCode: data.voucherCode || "",
+            voucherTitle: data.title || "",
+            voucherDescription: data.description || "",
+            termsAndConditions: terms,
+            quantity: quantity?.toString() || "",
+            expiryDate: expiry,
+            voucherCode: data.voucherId || voucherCode,
           })
         } else {
           console.log("Voucher not found with code or ID:", voucherCode)
@@ -250,15 +307,33 @@ function EditVoucherPageContent({ voucherId, voucherData, onUpdate }) {
   useEffect(() => {
     if (voucherData) {
       // Use provided voucher data
+      const normalizeVoucherType = (raw) => {
+        const t = (raw || "").toString().trim().toLowerCase()
+        switch (t) {
+          case "percentage discount": return "Percentage Discount"
+          case "fixed amount discount": return "Fixed Amount Discount"
+          case "buy one get one free": return "Buy One Get One Free"
+          case "free item": return "Free Item"
+          case "free shipping": return "Free Shipping"
+          case "cash voucher": return "Cash Voucher"
+          default: return raw || ""
+        }
+      }
+      const terms = Array.isArray(voucherData.termsAndConditions)
+        ? voucherData.termsAndConditions.join("\n")
+        : (voucherData.termsAndConditions || "")
+      const expiry = voucherData.expiryDate
+        ? (typeof voucherData.expiryDate === 'number' ? new Date(voucherData.expiryDate).toISOString() : voucherData.expiryDate)
+        : initialDate
       setFormData({
-        voucherType: voucherData.voucherType || "",
+        voucherType: normalizeVoucherType(voucherData.voucherType),
         valueOfSavings: voucherData.valueOfSavings?.toString() || "",
-        voucherTitle: voucherData.voucherTitle || "",
-        voucherDescription: voucherData.voucherDescription || "",
-        termsAndConditions: voucherData.termsAndConditions || "",
+        voucherTitle: voucherData.voucherTitle || voucherData.title || "",
+        voucherDescription: voucherData.voucherDescription || voucherData.description || "",
+        termsAndConditions: terms,
         quantity: voucherData.quantity?.toString() || "",
-        expiryDate: voucherData.expiryDate || "",
-        voucherCode: voucherData.voucherCode || "",
+        expiryDate: expiry,
+        voucherCode: voucherData.voucherCode || voucherData.voucherId || "",
       })
       setLoading(false)
     } else if (initialVoucherCode) {
@@ -348,17 +423,20 @@ function EditVoucherPageContent({ voucherId, voucherData, onUpdate }) {
       const updateData = {
         voucherType: formData.voucherType,
         valueOfSavings: parseFloat(formData.valueOfSavings) || formData.valueOfSavings,
-        voucherTitle: formData.voucherTitle,
-        voucherDescription: formData.voucherDescription || "",
-        termsAndConditions: formData.termsAndConditions || "",
+        title: formData.voucherTitle,
+        description: formData.voucherDescription || "",
+        termsAndConditions: (formData.termsAndConditions || "")
+          .split(/\r?\n/)
+          .map(s => s.trim())
+          .filter(Boolean),
         quantity: parseInt(formData.quantity),
-        expiryDate: formData.expiryDate,
-        voucherCode: formData.voucherCode, // Include voucher code in case it was regenerated
+        expiryDate: formData.expiryDate ? new Date(formData.expiryDate).getTime() : null,
+        voucherId: formData.voucherCode,
         updatedAt: serverTimestamp(),
       }
 
       // Update in Firestore using the document ID
-      const voucherRef = doc(db, "vouchers", currentVoucherId)
+      const voucherRef = doc(db, "voucher", currentVoucherId)
       await updateDoc(voucherRef, updateData)
 
       console.log("Voucher updated successfully")
@@ -411,26 +489,36 @@ function EditVoucherPageContent({ voucherId, voucherData, onUpdate }) {
   // Loading state
   if (loading) {
     return (
-      <Box sx={{ display: "flex", bgcolor: "#f9f9f9", minHeight: "100vh" }}>
+      <Box
+        component="div"
+        sx={{
+          display: "flex",
+          backgroundColor: "#f9f9f9",
+          minHeight: "100vh",
+          height: "100vh",
+          width: "100vw",
+        }}
+      >
+        <Header />
         <Sidebar />
         <Box
-          component="main"
+          component="div"
           sx={{
             flexGrow: 1,
-            p: 3,
-            ml: "240px",
-            pt: 2,
+            height: "100vh",
+            width: "100%",
             display: "flex",
+            flexDirection: "column",
+            ml: { xs: 0, sm: `${drawerWidth}px` },
+            mt: { xs: "56px", sm: "64px" },
             justifyContent: "center",
             alignItems: "center",
           }}
         >
-          <Box sx={{ textAlign: "center" }}>
-            <CircularProgress size={60} sx={{ color: "#da1818", mb: 2 }} />
-            <Typography variant="h6" sx={{ color: "#666" }}>
-              Loading voucher details...
-            </Typography>
-          </Box>
+          <CircularProgress size={60} sx={{ color: "#da1818", mb: 2 }} />
+          <Typography variant="h6" sx={{ color: "#666" }}>
+            Loading voucher details...
+          </Typography>
         </Box>
       </Box>
     )

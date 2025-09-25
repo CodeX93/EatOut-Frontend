@@ -18,6 +18,8 @@ import ConfirmationNumberIcon from "@mui/icons-material/ConfirmationNumber"
 import ShareIcon from "@mui/icons-material/Share"
 import RamenDiningIcon from "@mui/icons-material/RamenDining"
 import CampaignIcon from "@mui/icons-material/Campaign"
+import RestaurantMenuIcon from "@mui/icons-material/RestaurantMenu"
+import LocalOfferIcon from "@mui/icons-material/LocalOffer"
 import LogoutIcon from "@mui/icons-material/Logout"
 import Image from "next/image"
 
@@ -64,7 +66,9 @@ const SideNavbar = forwardRef((props, ref) => {
     { name: "Members", icon: <PeopleIcon />, path: "/members" },
     { name: "Vouchers", icon: <ConfirmationNumberIcon />, path: "/vouchers" },
     { name: "Referrals", icon: <ShareIcon />, path: "/Referrals" },
+    { name: "Discount", icon: <LocalOfferIcon />, path: "/Discount" },
     { name: "Bowls", icon: <RamenDiningIcon />, path: "/Bowls" },
+    { name: "Cuisines", icon: <RestaurantMenuIcon />, path: "/cuisines" },
     { name: "Broadcast", icon: <CampaignIcon />, path: "/Broadcast" },
   ]
 
@@ -76,6 +80,12 @@ const SideNavbar = forwardRef((props, ref) => {
   }
 
   const drawerWidth = getDrawerWidth()
+
+  // Treat nested routes as active (e.g., /vouchers/sub/edit)
+  const isActivePath = (itemPath) => {
+    if (!pathname || !itemPath) return false
+    return pathname === itemPath || pathname.startsWith(`${itemPath}/`)
+  }
 
   const drawer = (
     <Box
@@ -139,17 +149,18 @@ const SideNavbar = forwardRef((props, ref) => {
                 mx: { xs: 1, sm: 0.75, md: 0.5 },
                 py: { xs: 2, sm: 1.75, md: 1.5 },
                 px: { xs: 2, sm: 1.5, md: 1 },
-                color: pathname === item.path ? "#fff" : "#666666",
-                bgcolor: pathname === item.path ? "#da1818" : "transparent",
+                color: isActivePath(item.path) ? "#fff" : "#666666",
+                bgcolor: isActivePath(item.path) ? "#da1818" : "transparent",
                 transition: "all 0.3s ease-in-out",
                 "&:hover": {
-                  bgcolor: pathname === item.path ? "#da1818" : "#f5f5f5",
-                  color: "#fff",
+                  bgcolor: isActivePath(item.path) ? "#da1818" : "#f5f5f5",
+                  color: isActivePath(item.path) ? "#fff" : "#000",
+                  fontWeight: isActivePath(item.path) ? "normal" : "bold",
                   transform: "translateX(4px)",
                   boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
                 },
                 "&:active": {
-                  bgcolor: pathname === item.path ? "#da1818" : "#e0e0e0",
+                  bgcolor: isActivePath(item.path) ? "#da1818" : "#e0e0e0",
                   color: "#fff",
                   transform: "translateX(2px)",
                 },
@@ -158,7 +169,7 @@ const SideNavbar = forwardRef((props, ref) => {
               <ListItemIcon 
                 sx={{ 
                   minWidth: { xs: 52, sm: 46, md: 40 }, 
-                  color: pathname === item.path ? "#fff" : "#666666",
+                  color: isActivePath(item.path) ? "#fff" : "#666666",
                   "& .MuiSvgIcon-root": {
                     fontSize: { xs: "26px", sm: "22px", md: "20px" }
                   }

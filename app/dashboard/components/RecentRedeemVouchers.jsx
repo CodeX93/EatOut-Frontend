@@ -1,45 +1,116 @@
 "use client"
 
-import { Box, Paper, Typography, Avatar } from "@mui/material"
+import { useState, useEffect } from "react"
+import { Box, Paper, Typography, Avatar, CircularProgress } from "@mui/material"
 import { format } from "date-fns"
+import { collection, getDocs, query, orderBy, limit } from "firebase/firestore"
+import { db } from "../../../firebaseConfig"
 
-const recentVouchers = [
-  {
-    id: 1,
-    restaurant: "Al Baik",
-    branch: "Main Branch",
-    discount: "20%",
-    minimumSpend: "SAR 50",
-    redeemedBy: "John Doe",
-    redeemedAt: new Date(),
-  },
-  {
-    id: 2,
-    restaurant: "McDonald's",
-    branch: "City Center",
-    discount: "15%",
-    minimumSpend: "SAR 30",
-    redeemedBy: "Jane Smith",
-    redeemedAt: new Date(),
-  },
-  {
-    id: 3,
-    restaurant: "KFC",
-    branch: "Mall Branch",
-    discount: "25%",
-    minimumSpend: "SAR 40",
-    redeemedBy: "Mike Johnson",
-    redeemedAt: new Date(),
-  },
-]
+export default function RecentRedeemedVouchers({ selectedPeriod, dateRange }) {
+  const [recentVouchers, setRecentVouchers] = useState([])
+  const [loading, setLoading] = useState(true)
 
-export default function RecentRedeemedVouchers() {
+  useEffect(() => {
+    const fetchRecentVouchers = async () => {
+      setLoading(true)
+      try {
+        // Fetch vouchers data
+        const vouchersSnap = await getDocs(collection(db, "voucher"))
+        const vouchers = []
+        
+        vouchersSnap.forEach((doc) => {
+          const data = doc.data()
+          if (data.createdAt) {
+            vouchers.push({
+              id: doc.id,
+              restaurant: data.restaurantEmail || "Unknown Restaurant",
+              branch: "Main Branch", // Default branch
+              discount: data.voucherType || "Unknown",
+              minimumSpend: data.minSpending ? `RM ${data.minSpending}` : "No minimum",
+              redeemedBy: "System", // Default user
+              redeemedAt: data.createdAt.seconds ? new Date(data.createdAt.seconds * 1000) : new Date(data.createdAt),
+              title: data.title || "Unknown Voucher",
+            })
+          }
+        })
+
+        // Sort by creation date and take recent 3
+        vouchers.sort((a, b) => b.redeemedAt - a.redeemedAt)
+        setRecentVouchers(vouchers.slice(0, 3))
+      } catch (error) {
+        console.error("Error fetching recent vouchers:", error)
+        // Fallback to mock data
+        setRecentVouchers([
+          {
+            id: 1,
+            restaurant: "Al Baik",
+            branch: "Main Branch",
+            discount: "20%",
+            minimumSpend: "SAR 50",
+            redeemedBy: "John Doe",
+            redeemedAt: new Date(),
+          },
+          {
+            id: 2,
+            restaurant: "McDonald's",
+            branch: "City Center",
+            discount: "15%",
+            minimumSpend: "SAR 30",
+            redeemedBy: "Jane Smith",
+            redeemedAt: new Date(),
+          },
+          {
+            id: 3,
+            restaurant: "KFC",
+            branch: "Mall Branch",
+            discount: "25%",
+            minimumSpend: "SAR 40",
+            redeemedBy: "Mike Johnson",
+            redeemedAt: new Date(),
+          },
+        ])
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchRecentVouchers()
+  }, [selectedPeriod, dateRange])
+
+  if (loading) {
+    return (
+      <Paper
+        elevation={0}
+        sx={{
+          p: { xs: 2, sm: 3 },
+          borderRadius: "10px",
+          height: "100%",
+          minHeight: { xs: 300, sm: 350, md: 400 },
+          bgcolor: "#ffffff",
+          border: "1px solid #efeff4",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <Box sx={{ textAlign: "center" }}>
+          <CircularProgress sx={{ color: "#da1818", mb: 2 }} />
+          <Typography variant="body2" sx={{ color: "#8a8a8f" }}>
+            Loading recent vouchers...
+          </Typography>
+        </Box>
+      </Paper>
+    )
+  }
+
   return (
     <Paper
       elevation={0}
       sx={{
         p: { xs: 2, sm: 3 },
         borderRadius: "10px",
+        height: "100%",
+        minHeight: { xs: 300, sm: 350, md: 400 },
         bgcolor: "#ffffff",
         border: "1px solid #efeff4",
       }}
@@ -88,7 +159,7 @@ export default function RecentRedeemedVouchers() {
                   mb: 0.5,
                 }}
               >
-                {voucher.restaurant}
+                {voucher.title || voucher.restaurant}
               </Typography>
 
               <Typography

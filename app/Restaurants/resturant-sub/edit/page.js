@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, Suspense } from "react"
+import { useState, useEffect, Suspense, useRef } from "react"
 import { useSearchParams } from "next/navigation"
 import {
   Box,
@@ -94,6 +94,7 @@ function EditPageContent() {
   const restaurantId = searchParams.get("id")
   const [restaurant, setRestaurant] = useState(null)
   const [menuItems, setMenuItems] = useState([])
+  const [cuisines, setCuisines] = useState([])
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
@@ -101,11 +102,14 @@ function EditPageContent() {
   const [modalType, setModalType] = useState("")
   const [modalValue, setModalValue] = useState("")
   const [modalField, setModalField] = useState("")
+  const [cuisineDropdownOpen, setCuisineDropdownOpen] = useState(false)
+  const cuisineDropdownRef = useRef(null)
 
   useEffect(() => {
     if (!restaurantId) {
       setRestaurant(null)
       setMenuItems([])
+      setCuisines([])
       setLoading(false)
       return
     }
@@ -118,6 +122,7 @@ function EditPageContent() {
         if (!docSnap.exists()) {
           setRestaurant(null)
           setMenuItems([])
+          setCuisines([])
           setLoading(false)
           return
         }
@@ -129,16 +134,51 @@ function EditPageContent() {
           menuItemsArr.push({ id: itemDoc.id, ...itemDoc.data() })
         })
         setMenuItems(menuItemsArr)
+        
+        // Fetch cuisines from admin collection
+        const adminDocRef = doc(db, "admin", "admin")
+        const adminDoc = await getDoc(adminDocRef)
+        if (adminDoc.exists()) {
+          const data = adminDoc.data()
+          const cuisinesData = data.cuisines || {}
+          const cuisinesArray = Object.entries(cuisinesData)
+            .map(([name, data]) => ({
+              name,
+              numberOfRestUsing: data.numberOfRestUsing || 0,
+              isActive: data.isActive !== false,
+            }))
+            .filter(cuisine => cuisine.isActive) // Only show active cuisines
+            .sort((a, b) => a.name.localeCompare(b.name))
+          setCuisines(cuisinesArray)
+        }
       } catch (error) {
         console.error("Error fetching restaurant data:", error)
         setRestaurant(null)
         setMenuItems([])
+        setCuisines([])
       } finally {
         setLoading(false)
       }
     }
     getRestaurantData()
   }, [restaurantId])
+
+  // Handle click outside to close dropdown
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (cuisineDropdownRef.current && !cuisineDropdownRef.current.contains(event.target)) {
+        setCuisineDropdownOpen(false)
+      }
+    }
+
+    if (cuisineDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside)
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [cuisineDropdownOpen])
 
   const handleUpdateClick = () => {
     setShowModal(true)
@@ -186,6 +226,19 @@ function EditPageContent() {
       ...prev,
       cuisines: prev.cuisines.filter((cuisine) => cuisine !== cuisineToRemove),
     }))
+  }
+
+  const addCuisine = (cuisineName) => {
+    if (!cuisineName || restaurant.cuisines.includes(cuisineName)) return
+    setRestaurant((prev) => ({
+      ...prev,
+      cuisines: [...prev.cuisines, cuisineName],
+    }))
+    setCuisineDropdownOpen(false)
+  }
+
+  const handleCuisineSelect = (cuisineName) => {
+    addCuisine(cuisineName)
   }
 
   // Open modal for a specific field
@@ -359,48 +412,119 @@ function EditPageContent() {
                     <Typography variant="body2" sx={{ mb: 1, fontWeight: 500, color: "#000000" }}>
                       Cuisines:
                     </Typography>
-                    <Box
-                      sx={{
-                        display: "flex",
-                        flexWrap: "wrap",
-                        gap: 1,
-                        alignItems: "center",
-                        p: "10px 12px",
-                        border: "1px solid #e0e0e0",
-                        borderRadius: "6px",
-                        bgcolor: "#ffffff",
-                        minHeight: "40px",
-                        "&:hover": {
-                          borderColor: "#ff2d55",
-                        },
-                      }}
-                    >
-                      {restaurant.cuisines.map((cuisine) => (
-                        <Chip
-                          key={cuisine}
-                          label={cuisine}
-                          onDelete={() => removeCuisine(cuisine)}
-                          deleteIcon={<Close sx={{ fontSize: "16px !important" }} />}
-                          sx={{
-                            bgcolor: "#efeff4",
-                            color: "#333333",
-                            borderRadius: "4px",
-                            height: "24px",
-                            fontSize: "12px",
-                            fontWeight: 400,
-                            "& .MuiChip-deleteIcon": {
-                              color: "#8a8a8f",
-                              fontSize: "16px",
-                              "&:hover": {
-                                color: "#ff2d55",
-                              },
-                            },
+                    <Box sx={{ position: "relative" }} ref={cuisineDropdownRef}>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          flexWrap: "wrap",
+                          gap: 1,
+                          alignItems: "center",
+                          p: "10px 12px",
+                          border: "1px solid #e0e0e0",
+                          borderRadius: "6px",
+                          bgcolor: "#ffffff",
+                          minHeight: "40px",
+                          cursor: "pointer",
+                          "&:hover": {
+                            borderColor: "#ff2d55",
+                          },
+                        }}
+                        onClick={() => setCuisineDropdownOpen(!cuisineDropdownOpen)}
+                      >
+                        {restaurant.cuisines && restaurant.cuisines.length > 0 ? (
+                          restaurant.cuisines.map((cuisine) => (
+                            <Chip
+                              key={cuisine}
+                              label={cuisine}
+                              onDelete={(e) => {
+                                e.stopPropagation()
+                                removeCuisine(cuisine)
+                              }}
+                              deleteIcon={<Close sx={{ fontSize: "16px !important" }} />}
+                              sx={{
+                                bgcolor: "#efeff4",
+                                color: "#333333",
+                                borderRadius: "4px",
+                                height: "24px",
+                                fontSize: "12px",
+                                fontWeight: 400,
+                                "& .MuiChip-deleteIcon": {
+                                  color: "#8a8a8f",
+                                  fontSize: "16px",
+                                  "&:hover": {
+                                    color: "#ff2d55",
+                                  },
+                                },
+                              }}
+                            />
+                          ))
+                        ) : (
+                          <Typography sx={{ color: "#8a8a8f", fontSize: "14px" }}>
+                            Select cuisines...
+                          </Typography>
+                        )}
+                        <IconButton 
+                          size="small" 
+                          sx={{ color: "#8a8a8f", ml: "auto" }}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setCuisineDropdownOpen(!cuisineDropdownOpen)
                           }}
-                        />
-                      ))}
-                      <IconButton size="small" sx={{ color: "#8a8a8f", ml: "auto" }}>
-                        <KeyboardArrowDown />
-                      </IconButton>
+                        >
+                          <KeyboardArrowDown />
+                        </IconButton>
+                      </Box>
+                      
+                      {/* Cuisines Dropdown */}
+                      {cuisineDropdownOpen && (
+                        <Paper
+                          sx={{
+                            position: "absolute",
+                            top: "100%",
+                            left: 0,
+                            right: 0,
+                            zIndex: 1000,
+                            maxHeight: "200px",
+                            overflow: "auto",
+                            border: "1px solid #e0e0e0",
+                            borderRadius: "6px",
+                            bgcolor: "#ffffff",
+                            boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                            mt: 1,
+                          }}
+                        >
+                          {cuisines
+                            .filter(cuisine => !restaurant.cuisines?.includes(cuisine.name))
+                            .map((cuisine) => (
+                            <Box
+                              key={cuisine.name}
+                              sx={{
+                                p: 2,
+                                cursor: "pointer",
+                                borderBottom: "1px solid #f0f0f0",
+                                "&:hover": {
+                                  bgcolor: "#f5f5f5",
+                                },
+                                "&:last-child": {
+                                  borderBottom: "none",
+                                },
+                              }}
+                              onClick={() => handleCuisineSelect(cuisine.name)}
+                            >
+                              <Typography sx={{ fontSize: "14px", color: "#333333" }}>
+                                {cuisine.name}
+                              </Typography>
+                            </Box>
+                          ))}
+                          {cuisines.filter(cuisine => !restaurant.cuisines?.includes(cuisine.name)).length === 0 && (
+                            <Box sx={{ p: 2, textAlign: "center" }}>
+                              <Typography sx={{ fontSize: "14px", color: "#8a8a8f" }}>
+                                All cuisines selected
+                              </Typography>
+                            </Box>
+                          )}
+                        </Paper>
+                      )}
                     </Box>
                   </Box>
                 </Box>
@@ -413,8 +537,8 @@ function EditPageContent() {
                     </Typography>
                     <TextField
                       fullWidth
-                      value={restaurant.address || ""}
-                      onChange={(e) => handleInputChange("address", e.target.value)}
+                      value={restaurant.fullAddress || restaurant.address || ""}
+                      onChange={(e) => handleInputChange("fullAddress", e.target.value)}
                       variant="outlined"
                       size="small"
                       sx={{
@@ -451,7 +575,7 @@ function EditPageContent() {
                     </Typography>
                     <TextField
                       fullWidth
-                      value={restaurant.city || ""}
+                      value={restaurant.branches?.[0]?.city || restaurant.city || ""}
                       onChange={(e) => handleInputChange("city", e.target.value)}
                       variant="outlined"
                       size="small"
@@ -489,7 +613,7 @@ function EditPageContent() {
                     </Typography>
                     <TextField
                       fullWidth
-                      value={restaurant.phone || ""}
+                      value={restaurant.branches?.[0]?.telephone || restaurant.phone || ""}
                       onChange={(e) => handleInputChange("phone", e.target.value)}
                       variant="outlined"
                       size="small"
@@ -584,7 +708,15 @@ function EditPageContent() {
                         <FormControl size="small" sx={{ flex: 1 }}>
                           <Select
                             value={restaurant.openingSchedules?.[0]?.startDay || ""}
-                            onChange={(e) => handleNestedInputChange("openingSchedules", "startDay", e.target.value)}
+                            onChange={(e) => {
+                              const newSchedules = [...(restaurant.openingSchedules || [])]
+                              if (newSchedules[0]) {
+                                newSchedules[0].startDay = e.target.value
+                              } else {
+                                newSchedules[0] = { startDay: e.target.value, endDay: "", startHour: "", endHour: "" }
+                              }
+                              handleInputChange("openingSchedules", newSchedules)
+                            }}
                             sx={{
                               bgcolor: "#ffffff",
                               borderRadius: "6px",
@@ -610,16 +742,28 @@ function EditPageContent() {
                               },
                             }}
                           >
-                            <MenuItem value="20-03-2025">20-03-2025</MenuItem>
-                            <MenuItem value="21-03-2025">21-03-2025</MenuItem>
-                            <MenuItem value="22-03-2025">22-03-2025</MenuItem>
+                            <MenuItem value="Monday">Monday</MenuItem>
+                            <MenuItem value="Tuesday">Tuesday</MenuItem>
+                            <MenuItem value="Wednesday">Wednesday</MenuItem>
+                            <MenuItem value="Thursday">Thursday</MenuItem>
+                            <MenuItem value="Friday">Friday</MenuItem>
+                            <MenuItem value="Saturday">Saturday</MenuItem>
+                            <MenuItem value="Sunday">Sunday</MenuItem>
                           </Select>
                         </FormControl>
                         <Typography sx={{ color: "#8a8a8f", mx: 1, fontSize: "14px" }}>—</Typography>
                         <FormControl size="small" sx={{ flex: 1 }}>
                           <Select
                             value={restaurant.openingSchedules?.[0]?.endDay || ""}
-                            onChange={(e) => handleNestedInputChange("openingSchedules", "endDay", e.target.value)}
+                            onChange={(e) => {
+                              const newSchedules = [...(restaurant.openingSchedules || [])]
+                              if (newSchedules[0]) {
+                                newSchedules[0].endDay = e.target.value
+                              } else {
+                                newSchedules[0] = { startDay: "", endDay: e.target.value, startHour: "", endHour: "" }
+                              }
+                              handleInputChange("openingSchedules", newSchedules)
+                            }}
                             sx={{
                               bgcolor: "#ffffff",
                               borderRadius: "6px",
@@ -645,9 +789,14 @@ function EditPageContent() {
                               },
                             }}
                           >
-                            <MenuItem value="25-03-2025">25-03-2025</MenuItem>
-                            <MenuItem value="26-03-2025">26-03-2025</MenuItem>
-                            <MenuItem value="27-03-2025">27-03-2025</MenuItem>
+                            <MenuItem value="Monday">Monday</MenuItem>
+                            <MenuItem value="Tuesday">Tuesday</MenuItem>
+                            <MenuItem value="Wednesday">Wednesday</MenuItem>
+                            <MenuItem value="Thursday">Thursday</MenuItem>
+                            <MenuItem value="Friday">Friday</MenuItem>
+                            <MenuItem value="Saturday">Saturday</MenuItem>
+                            <MenuItem value="Sunday">Sunday</MenuItem>
+                            <MenuItem value="Same Day">Same Day</MenuItem>
                           </Select>
                         </FormControl>
                       </Box>
@@ -662,7 +811,15 @@ function EditPageContent() {
                         <FormControl size="small" sx={{ flex: 1 }}>
                           <Select
                             value={restaurant.openingSchedules?.[0]?.startHour || ""}
-                            onChange={(e) => handleNestedInputChange("openingSchedules", "startHour", e.target.value)}
+                            onChange={(e) => {
+                              const newSchedules = [...(restaurant.openingSchedules || [])]
+                              if (newSchedules[0]) {
+                                newSchedules[0].startHour = e.target.value
+                              } else {
+                                newSchedules[0] = { startDay: "", endDay: "", startHour: e.target.value, endHour: "" }
+                              }
+                              handleInputChange("openingSchedules", newSchedules)
+                            }}
                             sx={{
                               bgcolor: "#ffffff",
                               borderRadius: "6px",
@@ -688,16 +845,41 @@ function EditPageContent() {
                               },
                             }}
                           >
-                            <MenuItem value="09:00 AM">09:00 AM</MenuItem>
-                            <MenuItem value="10:00 AM">10:00 AM</MenuItem>
-                            <MenuItem value="11:00 AM">11:00 AM</MenuItem>
+                            <MenuItem value="12:40AM">12:40AM</MenuItem>
+                            <MenuItem value="02:00AM">02:00AM</MenuItem>
+                            <MenuItem value="07:00AM">07:00AM</MenuItem>
+                            <MenuItem value="08:00AM">08:00AM</MenuItem>
+                            <MenuItem value="09:00AM">09:00AM</MenuItem>
+                            <MenuItem value="10:00AM">10:00AM</MenuItem>
+                            <MenuItem value="11:00AM">11:00AM</MenuItem>
+                            <MenuItem value="12:00PM">12:00PM</MenuItem>
+                            <MenuItem value="01:00PM">01:00PM</MenuItem>
+                            <MenuItem value="02:00PM">02:00PM</MenuItem>
+                            <MenuItem value="03:00PM">03:00PM</MenuItem>
+                            <MenuItem value="04:00PM">04:00PM</MenuItem>
+                            <MenuItem value="05:00PM">05:00PM</MenuItem>
+                            <MenuItem value="06:00PM">06:00PM</MenuItem>
+                            <MenuItem value="07:00PM">07:00PM</MenuItem>
+                            <MenuItem value="08:00PM">08:00PM</MenuItem>
+                            <MenuItem value="09:00PM">09:00PM</MenuItem>
+                            <MenuItem value="10:00PM">10:00PM</MenuItem>
+                            <MenuItem value="11:00PM">11:00PM</MenuItem>
+                            <MenuItem value="12:00AM">12:00AM</MenuItem>
                           </Select>
                         </FormControl>
                         <Typography sx={{ color: "#8a8a8f", mx: 1, fontSize: "14px" }}>—</Typography>
                         <FormControl size="small" sx={{ flex: 1 }}>
                           <Select
                             value={restaurant.openingSchedules?.[0]?.endHour || ""}
-                            onChange={(e) => handleNestedInputChange("openingSchedules", "endHour", e.target.value)}
+                            onChange={(e) => {
+                              const newSchedules = [...(restaurant.openingSchedules || [])]
+                              if (newSchedules[0]) {
+                                newSchedules[0].endHour = e.target.value
+                              } else {
+                                newSchedules[0] = { startDay: "", endDay: "", startHour: "", endHour: e.target.value }
+                              }
+                              handleInputChange("openingSchedules", newSchedules)
+                            }}
                             sx={{
                               bgcolor: "#ffffff",
                               borderRadius: "6px",
@@ -723,91 +905,32 @@ function EditPageContent() {
                               },
                             }}
                           >
-                            <MenuItem value="09:20 AM">09:20 AM</MenuItem>
-                            <MenuItem value="10:20 AM">10:20 AM</MenuItem>
-                            <MenuItem value="11:20 AM">11:20 AM</MenuItem>
+                            <MenuItem value="03:00AM">03:00AM</MenuItem>
+                            <MenuItem value="04:00AM">04:00AM</MenuItem>
+                            <MenuItem value="06:00AM">06:00AM</MenuItem>
+                            <MenuItem value="07:00AM">07:00AM</MenuItem>
+                            <MenuItem value="08:00AM">08:00AM</MenuItem>
+                            <MenuItem value="09:00AM">09:00AM</MenuItem>
+                            <MenuItem value="10:00AM">10:00AM</MenuItem>
+                            <MenuItem value="11:00AM">11:00AM</MenuItem>
+                            <MenuItem value="12:00PM">12:00PM</MenuItem>
+                            <MenuItem value="01:00PM">01:00PM</MenuItem>
+                            <MenuItem value="02:00PM">02:00PM</MenuItem>
+                            <MenuItem value="03:00PM">03:00PM</MenuItem>
+                            <MenuItem value="04:00PM">04:00PM</MenuItem>
+                            <MenuItem value="05:00PM">05:00PM</MenuItem>
+                            <MenuItem value="06:00PM">06:00PM</MenuItem>
+                            <MenuItem value="07:00PM">07:00PM</MenuItem>
+                            <MenuItem value="08:00PM">08:00PM</MenuItem>
+                            <MenuItem value="09:00PM">09:00PM</MenuItem>
+                            <MenuItem value="10:00PM">10:00PM</MenuItem>
+                            <MenuItem value="11:00PM">11:00PM</MenuItem>
+                            <MenuItem value="12:00AM">12:00AM</MenuItem>
                           </Select>
                         </FormControl>
                       </Box>
                     </Box>
 
-                    {/* Closing Hours */}
-                    <Box>
-                      <Typography variant="body2" sx={{ mb: 1, fontWeight: 500, color: "#000000" }}>
-                        Closing Hours
-                      </Typography>
-                      <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                        <FormControl size="small" sx={{ flex: 1 }}>
-                          <Select
-                            value={restaurant.closingSchedules?.[0]?.startHour || ""}
-                            onChange={(e) => handleNestedInputChange("closingSchedules", "startHour", e.target.value)}
-                            sx={{
-                              bgcolor: "#ffffff",
-                              borderRadius: "6px",
-                              fontSize: "14px",
-                              fontWeight: 400,
-                              color: "#333333",
-                              "& fieldset": {
-                                borderColor: "#e0e0e0",
-                                borderWidth: "1px",
-                              },
-                              "&:hover fieldset": {
-                                borderColor: "#ff2d55",
-                              },
-                              "&.Mui-focused fieldset": {
-                                borderColor: "#ff2d55",
-                                borderWidth: "2px",
-                              },
-                              "& .MuiSelect-select": {
-                                padding: "10px 12px",
-                                fontSize: "14px",
-                                fontWeight: 400,
-                                color: "#333333",
-                              },
-                            }}
-                          >
-                            <MenuItem value="09:00 PM">09:00 PM</MenuItem>
-                            <MenuItem value="10:00 PM">10:00 PM</MenuItem>
-                            <MenuItem value="11:00 PM">11:00 PM</MenuItem>
-                          </Select>
-                        </FormControl>
-                        <Typography sx={{ color: "#8a8a8f", mx: 1, fontSize: "14px" }}>—</Typography>
-                        <FormControl size="small" sx={{ flex: 1 }}>
-                          <Select
-                            value={restaurant.closingSchedules?.[0]?.endHour || ""}
-                            onChange={(e) => handleNestedInputChange("closingSchedules", "endHour", e.target.value)}
-                            sx={{
-                              bgcolor: "#ffffff",
-                              borderRadius: "6px",
-                              fontSize: "14px",
-                              fontWeight: 400,
-                              color: "#333333",
-                              "& fieldset": {
-                                borderColor: "#e0e0e0",
-                                borderWidth: "1px",
-                              },
-                              "&:hover fieldset": {
-                                borderColor: "#ff2d55",
-                              },
-                              "&.Mui-focused fieldset": {
-                                borderColor: "#ff2d55",
-                                borderWidth: "2px",
-                              },
-                              "& .MuiSelect-select": {
-                                padding: "10px 12px",
-                                fontSize: "14px",
-                                fontWeight: 400,
-                                color: "#333333",
-                              },
-                            }}
-                          >
-                            <MenuItem value="10:00 PM">10:00 PM</MenuItem>
-                            <MenuItem value="11:00 PM">11:00 PM</MenuItem>
-                            <MenuItem value="12:00 AM">12:00 AM</MenuItem>
-                          </Select>
-                        </FormControl>
-                      </Box>
-                    </Box>
 
                     {/* Price Range and Specialty */}
                     <Box sx={{ display: "flex", gap: 3 }}>
@@ -817,8 +940,8 @@ function EditPageContent() {
                         </Typography>
                         <FormControl fullWidth size="small">
                           <Select
-                            value={restaurant.priceRange}
-                            onChange={(e) => handleInputChange("priceRange", e.target.value)}
+                            value={restaurant.price || ""}
+                            onChange={(e) => handleInputChange("price", e.target.value)}
                             sx={{
                               bgcolor: "#ffffff",
                               borderRadius: "6px",
@@ -844,10 +967,10 @@ function EditPageContent() {
                               },
                             }}
                           >
-                            <MenuItem value="$500">$500</MenuItem>
-                            <MenuItem value="$1000">$1000</MenuItem>
-                            <MenuItem value="$1500">$1500</MenuItem>
-                            <MenuItem value="$2000">$2000</MenuItem>
+                            <MenuItem value="Below RM50">Below RM50</MenuItem>
+                            <MenuItem value="RM50 - RM80">RM50 - RM80</MenuItem>
+                            <MenuItem value="RM80 - RM120">RM80 - RM120</MenuItem>
+                            <MenuItem value="Above RM120">Above RM120</MenuItem>
                           </Select>
                         </FormControl>
                       </Box>
@@ -857,8 +980,8 @@ function EditPageContent() {
                         </Typography>
                         <TextField
                           fullWidth
-                          value={restaurant.specialty || ""}
-                          onChange={(e) => handleInputChange("specialty", e.target.value)}
+                          value={restaurant.specialties?.[0] || ""}
+                          onChange={(e) => handleInputChange("specialties", [e.target.value])}
                           variant="outlined"
                           size="small"
                           sx={{
@@ -1029,7 +1152,7 @@ function EditPageContent() {
                           fullWidth
                           placeholder="Enter Website Url (Optional)"
                           value={restaurant.websiteUrl || ""}
-                          onChange={(e) => handleNestedInputChange("socialMedia", "website", e.target.value)}
+                          onChange={(e) => handleInputChange("websiteUrl", e.target.value)}
                           variant="outlined"
                           size="small"
                           sx={{
@@ -1068,7 +1191,7 @@ function EditPageContent() {
                           fullWidth
                           placeholder="Enter Facebook Url (Optional)"
                           value={restaurant.facebookUrl || ""}
-                          onChange={(e) => handleNestedInputChange("socialMedia", "facebook", e.target.value)}
+                          onChange={(e) => handleInputChange("facebookUrl", e.target.value)}
                           variant="outlined"
                           size="small"
                           sx={{
@@ -1107,7 +1230,7 @@ function EditPageContent() {
                           fullWidth
                           placeholder="Enter Instagram Url (Optional)"
                           value={restaurant.instagramUrl || ""}
-                          onChange={(e) => handleNestedInputChange("socialMedia", "instagram", e.target.value)}
+                          onChange={(e) => handleInputChange("instagramUrl", e.target.value)}
                           variant="outlined"
                           size="small"
                           sx={{
@@ -1146,7 +1269,7 @@ function EditPageContent() {
                           fullWidth
                           placeholder="Enter TikTok Url (Optional)"
                           value={restaurant.tiktokUrl || ""}
-                          onChange={(e) => handleNestedInputChange("socialMedia", "tiktok", e.target.value)}
+                          onChange={(e) => handleInputChange("tiktokUrl", e.target.value)}
                           variant="outlined"
                           size="small"
                           sx={{
