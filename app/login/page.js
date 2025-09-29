@@ -95,23 +95,63 @@ export default function SignInForm() {
   }
 
   return (
-    <Box sx={{ minHeight: "100vh", display: "flex" }}>
-      <Grid container sx={{ minHeight: "100vh" }}>
-        {/* Left side - Sign in form */}
-        <Grid
-          item
-          xs={12}
-          md={6}
-          sx={{
-            backgroundColor: "#ffffff",
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "center",
-            px: { xs: 3, sm: 6, md: 8 },
-            py: { xs: 4, md: 0 },
-          }}
-        >
+    <Box sx={{ 
+      height: "100vh", 
+      display: "flex",
+      bgcolor: "#f5f5f5",
+      // Chrome-specific fixes
+      WebkitDisplay: "flex",
+      flexDirection: "row",
+      alignItems: "stretch",
+      width: "100vw",
+      overflow: "hidden",
+    }}>
+      {/* Login Form Container */}
+      <Box
+        sx={{
+          width: { xs: "100%", md: "520px" },
+          minWidth: { xs: "100%", md: "520px" },
+          height: "100vh",
+          backgroundColor: "#ffffff",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          px: { xs: 3, sm: 4, md: 6 },
+          py: { xs: 4, md: 6 },
+          borderRadius: { xs: 0, md: "24px 0 0 24px" },
+          boxShadow: { xs: "none", md: "0 20px 60px rgba(0, 0, 0, 0.15)" },
+        }}
+      >
           <Box sx={{ maxWidth: 400, width: "100%", mx: "auto" }}>
+            {/* Mobile Image - Hidden on desktop */}
+            <Box sx={{ 
+              display: { xs: 'block', md: 'none' }, 
+              mb: 4, 
+              textAlign: 'center' 
+            }}>
+              <Box
+                sx={{
+                  position: 'relative',
+                  width: '100%',
+                  height: '200px',
+                  borderRadius: '12px',
+                  overflow: 'hidden',
+                  boxShadow: '0 4px 16px rgba(0, 0, 0, 0.1)',
+                  mx: 'auto',
+                  maxWidth: '300px',
+                }}
+              >
+                <Image
+                  src="/loginscreenImage.png"
+                  alt="Login Screen"
+                  fill
+                  sizes="(max-width: 768px) 100vw, 0vw"
+                  style={{ objectFit: 'cover' }}
+                  priority
+                />
+              </Box>
+            </Box>
+
             {/* Logo */}
             <Box sx={{ mb: { xs: 6, md: 8 }, display: 'flex', justifyContent: 'flex-start' }}>
               <Image
@@ -317,33 +357,53 @@ export default function SignInForm() {
               </Button>
             </form>
           </Box>
-        </Grid>
+        </Box>
 
-        {/* Right side - Food image using Next.js Image */}
-        <Grid
-  item
-  xs={false}
-  md={6}
-  sx={{
-    display: { xs: "none", md: "flex" },
-    alignItems: "center",
-    justifyContent: "center",
-    bgcolor: "#fafafb",
-    position: "relative",
-    height: "100vh", // <-- Add this line
-  }}
->
-  <Box sx={{ position: 'relative', width: '100%', height: '100%' }}>
-    <Image
-      src="/loginscreenImage.png"
-      alt="Login Screen"
-      fill
-      style={{ objectFit: 'cover' }}
-      priority
-    />
-  </Box>
-</Grid>
-      </Grid>
+      {/* Image Container */}
+      <Box
+        sx={{
+          flex: 1,
+          display: { xs: "none", md: "block" },
+          position: "relative",
+          overflow: "hidden",
+          backgroundColor: "#e0e0e0",
+          borderRadius: { xs: 0, md: "0 24px 24px 0" },
+          boxShadow: { xs: "none", md: "0 20px 60px rgba(0, 0, 0, 0.15)" },
+          height: "100vh",
+          width: "100%",
+          minHeight: "100vh",
+          minWidth: "100%",
+          // Chrome-specific fixes
+          WebkitFlex: 1,
+          flexGrow: 1,
+          flexShrink: 0,
+          flexBasis: "auto",
+        }}
+      >
+        <img
+          src="/loginscreenImage.png"
+          alt="Login Screen"
+          style={{
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            display: 'block',
+            // Chrome-specific fixes
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            WebkitObjectFit: 'cover',
+            MozObjectFit: 'cover',
+            msObjectFit: 'cover',
+          }}
+          onError={(e) => {
+            console.error('Image failed to load:', e);
+          }}
+          onLoad={() => {
+            console.log('Image loaded successfully');
+          }}
+        />
+      </Box>
     </Box>
   )
 }
