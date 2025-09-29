@@ -97,48 +97,48 @@ export default function SignInForm() {
   return (
     <Box sx={{ 
       height: "100vh", 
-      display: "flex",
-      bgcolor: "#f5f5f5",
-      // Chrome-specific fixes
-      WebkitDisplay: "flex",
-      flexDirection: "row",
-      alignItems: "stretch",
       width: "100vw",
+      position: "relative",
       overflow: "hidden",
+      bgcolor: "#f5f5f5",
     }}>
       {/* Login Form Container */}
       <Box
         sx={{
-          width: { xs: "100%", md: "520px" },
-          minWidth: { xs: "100%", md: "520px" },
-          height: "100vh",
+          position: "absolute",
+          top: 0,
+          left: 0,
+          width: { xs: "100%", sm: "100%", md: "520px" },
+          height: "100%",
           backgroundColor: "#ffffff",
           display: "flex",
           flexDirection: "column",
           justifyContent: "center",
-          px: { xs: 3, sm: 4, md: 6 },
-          py: { xs: 4, md: 6 },
-          borderRadius: { xs: 0, md: "24px 0 0 24px" },
-          boxShadow: { xs: "none", md: "0 20px 60px rgba(0, 0, 0, 0.15)" },
+          px: { xs: 2, sm: 3, md: 6 },
+          py: { xs: 2, sm: 3, md: 6 },
+          borderRadius: { xs: 0, sm: 0, md: "24px 0 0 24px" },
+          boxShadow: { xs: "none", sm: "none", md: "0 20px 60px rgba(0, 0, 0, 0.15)" },
+          overflow: "auto",
+          zIndex: 2,
         }}
       >
-          <Box sx={{ maxWidth: 400, width: "100%", mx: "auto" }}>
-            {/* Mobile Image - Hidden on desktop */}
+          <Box sx={{ maxWidth: { xs: "100%", sm: 400, md: 400 }, width: "100%", mx: "auto" }}>
+            {/* Mobile Image - Hidden on all screens now */}
             <Box sx={{ 
-              display: { xs: 'block', md: 'none' }, 
-              mb: 4, 
+              display: 'none', 
+              mb: { xs: 3, sm: 4, md: 4 }, 
               textAlign: 'center' 
             }}>
               <Box
                 sx={{
                   position: 'relative',
                   width: '100%',
-                  height: '200px',
-                  borderRadius: '12px',
+                  height: { xs: '150px', sm: '180px', md: '200px' },
+                  borderRadius: { xs: '8px', sm: '12px', md: '12px' },
                   overflow: 'hidden',
-                  boxShadow: '0 4px 16px rgba(0, 0, 0, 0.1)',
+                  boxShadow: { xs: '0 2px 8px rgba(0, 0, 0, 0.1)', sm: '0 4px 16px rgba(0, 0, 0, 0.1)', md: '0 4px 16px rgba(0, 0, 0, 0.1)' },
                   mx: 'auto',
-                  maxWidth: '300px',
+                  maxWidth: { xs: '280px', sm: '300px', md: '300px' },
                 }}
               >
                 <Image
@@ -153,12 +153,12 @@ export default function SignInForm() {
             </Box>
 
             {/* Logo */}
-            <Box sx={{ mb: { xs: 6, md: 8 }, display: 'flex', justifyContent: 'flex-start' }}>
+            <Box sx={{ mb: { xs: 3, sm: 4, md: 8 }, display: 'flex', justifyContent: { xs: 'center', sm: 'center', md: 'flex-start' } }}>
               <Image
                 src="/logo.png"
                 alt="E.A.T Logo"
-                width={300}
-                height={100}
+                width={isMobile ? 200 : 300}
+                height={isMobile ? 67 : 100}
                 style={{ objectFit: 'contain' }}
                 priority
               />
@@ -170,8 +170,9 @@ export default function SignInForm() {
               sx={{
                 color: "#232323",
                 fontWeight: 600,
-                mb: 2,
-                fontSize: { xs: "2rem", md: "2.5rem" },
+                mb: { xs: 1.5, sm: 2, md: 2 },
+                fontSize: { xs: "1.75rem", sm: "2rem", md: "2.5rem" },
+                textAlign: { xs: "center", sm: "center", md: "left" },
               }}
             >
               Sign in
@@ -182,8 +183,9 @@ export default function SignInForm() {
               variant="body1"
               sx={{
                 color: "#969696",
-                mb: 4,
-                fontSize: { xs: "0.9rem", md: "1rem" },
+                mb: { xs: 3, sm: 3.5, md: 4 },
+                fontSize: { xs: "0.85rem", sm: "0.9rem", md: "1rem" },
+                textAlign: { xs: "center", sm: "center", md: "left" },
               }}
             >
               Please login to continue to your account.
@@ -191,7 +193,7 @@ export default function SignInForm() {
 
             {/* General error message */}
             {generalError && (
-              <Alert severity="error" sx={{ mb: 3 }}>
+              <Alert severity="error" sx={{ mb: { xs: 2, sm: 2.5, md: 3 }, fontSize: { xs: "0.8rem", sm: "0.85rem", md: "0.9rem" } }}>
                 {generalError}
               </Alert>
             )}
@@ -202,9 +204,9 @@ export default function SignInForm() {
                 variant="body2"
                 sx={{
                   color: "#da1818",
-                  mb: 1,
+                  mb: { xs: 0.75, sm: 1, md: 1 },
                   fontWeight: 500,
-                  fontSize: { xs: "0.85rem", md: "0.9rem" },
+                  fontSize: { xs: "0.8rem", sm: "0.85rem", md: "0.9rem" },
                 }}
               >
                 Email
@@ -217,13 +219,13 @@ export default function SignInForm() {
                 error={!!errors.email}
                 helperText={errors.email}
                 sx={{
-                  mb: 3,
+                  mb: { xs: 2.5, sm: 3, md: 3 },
                   "& .MuiOutlinedInput-root": {
-                    borderRadius: "8px",
+                    borderRadius: { xs: "6px", sm: "8px", md: "8px" },
                     backgroundColor: "#ffffff",
                     "& fieldset": {
                       borderColor: errors.email ? "#da1818" : "#da1818",
-                      borderWidth: "2px",
+                      borderWidth: { xs: "1px", sm: "1.5px", md: "2px" },
                     },
                     "&:hover fieldset": {
                       borderColor: "#da1818",
@@ -234,12 +236,13 @@ export default function SignInForm() {
                   },
                   "& .MuiInputBase-input": {
                     color: "#232323",
-                    fontSize: { xs: "0.9rem", md: "1rem" },
-                    py: { xs: 1.5, md: 1.75 },
+                    fontSize: { xs: "0.85rem", sm: "0.9rem", md: "1rem" },
+                    py: { xs: 1.25, sm: 1.5, md: 1.75 },
+                    px: { xs: 1.25, sm: 1.5, md: 1.75 },
                   },
                   "& .MuiFormHelperText-root": {
                     color: "#da1818",
-                    fontSize: { xs: "0.75rem", md: "0.8rem" },
+                    fontSize: { xs: "0.7rem", sm: "0.75rem", md: "0.8rem" },
                   },
                 }}
               />
@@ -264,13 +267,13 @@ export default function SignInForm() {
                   ),
                 }}
                 sx={{
-                  mb: 3,
+                  mb: { xs: 2.5, sm: 3, md: 3 },
                   "& .MuiOutlinedInput-root": {
-                    borderRadius: "8px",
+                    borderRadius: { xs: "6px", sm: "8px", md: "8px" },
                     backgroundColor: "#ffffff",
                     "& fieldset": {
                       borderColor: errors.password ? "#da1818" : "#d9d9d9",
-                      borderWidth: "1px",
+                      borderWidth: { xs: "1px", sm: "1px", md: "1px" },
                     },
                     "&:hover fieldset": {
                       borderColor: errors.password ? "#da1818" : "#9a9a9a",
@@ -281,16 +284,18 @@ export default function SignInForm() {
                   },
                   "& .MuiInputBase-input": {
                     color: "#232323",
-                    fontSize: { xs: "0.9rem", md: "1rem" },
-                    py: { xs: 1.5, md: 1.75 },
+                    fontSize: { xs: "0.85rem", sm: "0.9rem", md: "1rem" },
+                    py: { xs: 1.25, sm: 1.5, md: 1.75 },
+                    px: { xs: 1.25, sm: 1.5, md: 1.75 },
                     "&::placeholder": {
                       color: "#969696",
                       opacity: 1,
+                      fontSize: { xs: "0.85rem", sm: "0.9rem", md: "1rem" },
                     },
                   },
                   "& .MuiFormHelperText-root": {
                     color: "#da1818",
-                    fontSize: { xs: "0.75rem", md: "0.8rem" },
+                    fontSize: { xs: "0.7rem", sm: "0.75rem", md: "0.8rem" },
                   },
                 }}
               />
@@ -322,7 +327,7 @@ export default function SignInForm() {
                     Keep me logged in
                   </Typography>
                 }
-                sx={{ mb: 4, ml: 0 }}
+                sx={{ mb: { xs: 3, sm: 3.5, md: 4 }, ml: 0 }}
               />
 
               {/* Sign in button */}
@@ -335,8 +340,8 @@ export default function SignInForm() {
                   backgroundColor: "#da1818",
                   color: "#ffffff",
                   borderRadius: "8px",
-                  py: { xs: 1.5, md: 2 },
-                  fontSize: { xs: "0.9rem", md: "1rem" },
+                  py: { xs: 1.25, sm: 1.5, md: 2 },
+                  fontSize: { xs: "0.85rem", sm: "0.9rem", md: "1rem" },
                   fontWeight: 600,
                   textTransform: "none",
                   boxShadow: "none",
@@ -362,22 +367,14 @@ export default function SignInForm() {
       {/* Image Container */}
       <Box
         sx={{
-          flex: 1,
-          display: { xs: "none", md: "block" },
-          position: "relative",
-          overflow: "hidden",
-          backgroundColor: "#e0e0e0",
-          borderRadius: { xs: 0, md: "0 24px 24px 0" },
-          boxShadow: { xs: "none", md: "0 20px 60px rgba(0, 0, 0, 0.15)" },
-          height: "100vh",
-          width: "100%",
-          minHeight: "100vh",
-          minWidth: "100%",
-          // Chrome-specific fixes
-          WebkitFlex: 1,
-          flexGrow: 1,
-          flexShrink: 0,
-          flexBasis: "auto",
+          position: "absolute",
+          top: 0,
+          left: { xs: 0, sm: 0, md: "520px" },
+          width: { xs: "100%", sm: "100%", md: "calc(100% - 520px)" },
+          height: { xs: "auto", sm: "auto", md: "100%" },
+          bottom: { xs: 0, sm: 0, md: "auto" },
+          top: { xs: "auto", sm: "auto", md: 0 },
+          zIndex: 1,
         }}
       >
         <img
@@ -388,19 +385,6 @@ export default function SignInForm() {
             height: '100%',
             objectFit: 'cover',
             display: 'block',
-            // Chrome-specific fixes
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            WebkitObjectFit: 'cover',
-            MozObjectFit: 'cover',
-            msObjectFit: 'cover',
-          }}
-          onError={(e) => {
-            console.error('Image failed to load:', e);
-          }}
-          onLoad={() => {
-            console.log('Image loaded successfully');
           }}
         />
       </Box>
