@@ -44,8 +44,10 @@ export default function MembersTable({ members, sortBy, setSortBy, relevantFilte
         sx={{
           fontWeight: 600,
           color: "#da1818",
-          mb: { xs: 2, md: 3 },
+          mb: { xs: 2.5, sm: 3, md: 3 },
+          mt: { xs: 1, sm: 0, md: 0 },
           fontSize: { xs: "1.5rem", sm: "2rem", md: "2.125rem" },
+          lineHeight: 1.2,
         }}
       >
         Members Overview
@@ -358,7 +360,7 @@ export default function MembersTable({ members, sortBy, setSortBy, relevantFilte
               },
             }}
           >
-            158 Accounts
+            {members.length} Accounts
           </Button>
         </Box>
       </Card>

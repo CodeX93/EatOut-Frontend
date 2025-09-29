@@ -9,8 +9,7 @@ import { db } from "../../firebaseConfig"
 import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore"
 
 // Import your existing components
-import Header from "../components/Header"
-import Sidebar from "../components/SideNavbar"
+import AppLayout from "../components/AppLayout"
 
 // Import the new components we'll create
 import CuisinesTable from "./components/CuisinesTable"
@@ -18,7 +17,6 @@ import AddCuisineModal from "./components/AddCuisineModal"
 import EditCuisineModal from "./components/EditCuisineModal"
 import DeleteConfirmationModal from "./components/DeleteConfirmationModal"
 
-const drawerWidth = 240
 
 export default function CuisinesPage() {
   const [cuisines, setCuisines] = useState([])
@@ -218,18 +216,7 @@ export default function CuisinesPage() {
 
   if (loading) {
     return (
-      <Box
-        sx={{
-          display: "flex",
-          bgcolor: "#f9f9f9",
-          minHeight: "100vh",
-          height: "100vh",
-          width: "100vw",
-          overflow: "hidden",
-        }}
-      >
-        <Header />
-        <Sidebar />
+      <AppLayout>
         <Box
           sx={{
             flexGrow: 1,
@@ -238,8 +225,6 @@ export default function CuisinesPage() {
             justifyContent: "center",
             height: "100vh",
             width: "100%",
-            ml: { xs: 0, sm: `${drawerWidth}px` },
-            mt: { xs: "56px", sm: "64px" },
           }}
         >
           <Box sx={{ textAlign: "center" }}>
@@ -249,29 +234,22 @@ export default function CuisinesPage() {
             </Typography>
           </Box>
         </Box>
-      </Box>
+      </AppLayout>
     )
   }
 
   return (
-    <Box sx={{ display: "flex", bgcolor: "#f9f9f9", minHeight: "100vh" }}>
-      {/* Header */}
-      <Header />
-
-      {/* Sidebar */}
-      <Sidebar />
-
-      {/* Main Content */}
+    <AppLayout>
       <Box
         component="main"
         sx={{
           flexGrow: 1,
-          p: { xs: 2, sm: 3 },
-          overflow: "hidden",
-          mt: { xs: 7, sm: 8 }, // Account for fixed header
-          ml: { xs: 0, sm: "240px" }, // Account for sidebar on larger screens
+          p: { xs: 1.5, sm: 2, md: 3 },
+          pt: { xs: 2.5, sm: 3, md: 3 },
+          pb: { xs: "80px", sm: "100px", md: "120px" },
+          overflow: "auto",
           width: "100%",
-          maxWidth: "100%",
+          minHeight: "100%",
         }}
       >
         <Box sx={{ mb: 3, width: "100%", maxWidth: "100%" }}>
@@ -279,11 +257,12 @@ export default function CuisinesPage() {
               sx={{
                 display: "flex",
                 justifyContent: "space-between",
-                alignItems: "center",
-                mb: 3,
+                alignItems: { xs: "flex-start", sm: "center" },
+                mb: { xs: 2.5, sm: 3 },
                 flexWrap: "wrap",
-                gap: 2,
+                gap: { xs: 1.5, sm: 2 },
                 width: "100%",
+                flexDirection: { xs: "column", sm: "row" },
               }}
             >
               <Box>
@@ -292,7 +271,9 @@ export default function CuisinesPage() {
                   sx={{
                     fontWeight: 600,
                     color: "#da1818",
-                    fontSize: { xs: "1.5rem", sm: "2rem", md: "2.125rem" },
+                    fontSize: { xs: "1.5rem", sm: "1.75rem", md: "2rem" },
+                    lineHeight: 1.2,
+                    mb: { xs: 0.5, sm: 0 },
                   }}
                 >
                   Cuisines Management
@@ -301,7 +282,7 @@ export default function CuisinesPage() {
                   variant="body2"
                   sx={{
                     color: "#666",
-                    fontSize: "14px",
+                    fontSize: { xs: "12px", sm: "13px", md: "14px" },
                     mt: 0.5,
                   }}
                 >
@@ -317,12 +298,14 @@ export default function CuisinesPage() {
                   "&:hover": {
                     bgcolor: "#b71c1c",
                   },
-                  px: 3,
-                  py: 1,
-                  borderRadius: "8px",
+                  px: { xs: 2, sm: 3 },
+                  py: { xs: 1.5, sm: 1 },
+                  borderRadius: { xs: "6px", sm: "8px" },
                   textTransform: "none",
                   fontWeight: 600,
-                  ml: "auto",
+                  fontSize: { xs: "0.875rem", sm: "0.95rem" },
+                  width: { xs: "100%", sm: "auto" },
+                  ml: { xs: 0, sm: "auto" },
                 }}
               >
                 Add Cuisine
@@ -330,7 +313,7 @@ export default function CuisinesPage() {
             </Box>
 
             {/* Search Bar */}
-            <Box sx={{ mb: 3, width: "100%" }}>
+            <Box sx={{ mb: { xs: 2.5, sm: 3 }, width: "100%" }}>
               <TextField
                 fullWidth
                 placeholder="Search cuisines..."
@@ -345,7 +328,7 @@ export default function CuisinesPage() {
                 }}
                 sx={{
                   "& .MuiOutlinedInput-root": {
-                    borderRadius: "8px",
+                    borderRadius: { xs: "6px", sm: "8px" },
                     backgroundColor: "#f8f9fa",
                     "& fieldset": {
                       borderColor: "#e0e0e0",
@@ -404,6 +387,6 @@ export default function CuisinesPage() {
         onDelete={handleDeleteCuisine}
         cuisine={selectedCuisine}
       />
-    </Box>
+    </AppLayout>
   )
 }

@@ -84,13 +84,18 @@ export default function RestaurantsTable({
       />
 
       {/* Table Header */}
-      <Box sx={{ mb: 2 }}>
+      <Box sx={{ 
+        mb: { xs: 1.5, sm: 2, md: 2.5 },
+        px: { xs: 0.5, sm: 0 }
+      }}>
         <Typography 
           variant="h6" 
           sx={{ 
             fontWeight: 600, 
             color: "#000000",
-            fontSize: { xs: "1rem", sm: "1.25rem" },
+            fontSize: { xs: "0.875rem", sm: "1rem", md: "1.125rem", lg: "1.25rem" },
+            lineHeight: 1.3,
+            mb: { xs: 0.5, sm: 1 }
           }}
         >
           {title}
@@ -99,7 +104,8 @@ export default function RestaurantsTable({
           variant="body2" 
           sx={{ 
             color: "#8a8a8f",
-            fontSize: { xs: "0.75rem", sm: "0.875rem" },
+            fontSize: { xs: "0.6875rem", sm: "0.75rem", md: "0.8125rem", lg: "0.875rem" },
+            lineHeight: 1.4,
           }}
         >
           {subtitle}
@@ -110,62 +116,88 @@ export default function RestaurantsTable({
       <Card sx={{ 
         bgcolor: "#ffffff", 
         border: "1px solid #dadada", 
-        borderRadius: "12px", 
-        mb: 3,
+        borderRadius: { xs: "8px", sm: "10px", md: "12px" }, 
+        mb: { xs: 2, sm: 2.5, md: 3 },
         overflow: "hidden",
+        boxShadow: { xs: "none", sm: "0 1px 3px rgba(0,0,0,0.1)" },
       }}>
         <TableContainer sx={{ 
           overflowX: "auto",
           maxWidth: "100%",
+          "&::-webkit-scrollbar": {
+            height: { xs: "4px", sm: "6px" },
+          },
+          "&::-webkit-scrollbar-track": {
+            backgroundColor: "#f1f1f1",
+            borderRadius: "3px",
+          },
+          "&::-webkit-scrollbar-thumb": {
+            backgroundColor: "#dadada",
+            borderRadius: "3px",
+            "&:hover": {
+              backgroundColor: "#c0c0c0",
+            },
+          },
         }}>
-          <Table sx={{ minWidth: { xs: 600, sm: 650 } }}>
+          <Table sx={{ 
+            minWidth: { xs: 700, sm: 750, md: 800 },
+            "& .MuiTableCell-root": {
+              padding: { xs: "8px 6px", sm: "12px 8px", md: "16px 12px" },
+            },
+          }}>
             <TableHead>
-              <TableRow>
+              <TableRow sx={{ bgcolor: "#fafafa" }}>
                 <TableCell sx={{ 
                   color: "#8a8a8f", 
-                  fontWeight: 500, 
-                  fontSize: { xs: "0.625rem", sm: "12px" },
-                  minWidth: { xs: 120, sm: 150 },
+                  fontWeight: 600, 
+                  fontSize: { xs: "0.625rem", sm: "0.6875rem", md: "0.75rem" },
+                  minWidth: { xs: 140, sm: 160, md: 180 },
+                  borderBottom: "2px solid #e0e0e0",
                 }}>
                   Name & Address
                 </TableCell>
                 <TableCell sx={{ 
                   color: "#8a8a8f", 
-                  fontWeight: 500, 
-                  fontSize: { xs: "0.625rem", sm: "12px" },
-                  minWidth: { xs: 80, sm: 100 },
+                  fontWeight: 600, 
+                  fontSize: { xs: "0.625rem", sm: "0.6875rem", md: "0.75rem" },
+                  minWidth: { xs: 90, sm: 110, md: 130 },
+                  borderBottom: "2px solid #e0e0e0",
                 }}>
                   Location
                 </TableCell>
                 <TableCell sx={{ 
                   color: "#8a8a8f", 
-                  fontWeight: 500, 
-                  fontSize: { xs: "0.625rem", sm: "12px" },
-                  minWidth: { xs: 100, sm: 120 },
+                  fontWeight: 600, 
+                  fontSize: { xs: "0.625rem", sm: "0.6875rem", md: "0.75rem" },
+                  minWidth: { xs: 110, sm: 130, md: 150 },
+                  borderBottom: "2px solid #e0e0e0",
                 }}>
                   Telephone
                 </TableCell>
                 <TableCell sx={{ 
                   color: "#8a8a8f", 
-                  fontWeight: 500, 
-                  fontSize: { xs: "0.625rem", sm: "12px" },
-                  minWidth: { xs: 70, sm: 80 },
+                  fontWeight: 600, 
+                  fontSize: { xs: "0.625rem", sm: "0.6875rem", md: "0.75rem" },
+                  minWidth: { xs: 80, sm: 90, md: 100 },
+                  borderBottom: "2px solid #e0e0e0",
                 }}>
                   Vouchers
                 </TableCell>
                 <TableCell sx={{ 
                   color: "#8a8a8f", 
-                  fontWeight: 500, 
-                  fontSize: { xs: "0.625rem", sm: "12px" },
-                  minWidth: { xs: 70, sm: 80 },
+                  fontWeight: 600, 
+                  fontSize: { xs: "0.625rem", sm: "0.6875rem", md: "0.75rem" },
+                  minWidth: { xs: 80, sm: 90, md: 100 },
+                  borderBottom: "2px solid #e0e0e0",
                 }}>
                   Redeemed
                 </TableCell>
                 <TableCell sx={{ 
                   color: "#8a8a8f", 
-                  fontWeight: 500, 
-                  fontSize: { xs: "0.625rem", sm: "12px" },
-                  minWidth: { xs: 100, sm: 120 },
+                  fontWeight: 600, 
+                  fontSize: { xs: "0.625rem", sm: "0.6875rem", md: "0.75rem" },
+                  minWidth: { xs: 110, sm: 130, md: 150 },
+                  borderBottom: "2px solid #e0e0e0",
                 }}>
                   Actions
                 </TableCell>

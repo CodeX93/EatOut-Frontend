@@ -22,14 +22,15 @@ import { KeyboardArrowDown, Refresh } from "@mui/icons-material"
 import { db } from "../../../../firebaseConfig" // Adjust path as needed
 import { collection, addDoc, serverTimestamp, query, where, getDocs } from "firebase/firestore"
 
-// Sidebar component import
-import Sidebar from "../../../components/SideNavbar"
+// Layout component import
+import AppLayout from "../../../components/AppLayout"
 
 // Custom styled components
 const StyledTextField = styled(TextField)(({ theme }) => ({
   "& .MuiOutlinedInput-root": {
     backgroundColor: "#ffffff",
-    borderRadius: "8px",
+    borderRadius: { xs: "6px", sm: "8px" },
+    fontSize: { xs: "0.875rem", sm: "0.9rem" },
     "& fieldset": {
       borderColor: "#efeff4",
     },
@@ -40,14 +41,20 @@ const StyledTextField = styled(TextField)(({ theme }) => ({
       borderColor: "#da1818",
     },
   },
+  "& .MuiInputLabel-root": {
+    fontSize: { xs: "0.875rem", sm: "0.9rem" },
+  },
 }))
 
 const CreateButton = styled(Button)(({ theme }) => ({
   backgroundColor: "#da1818",
   color: "#ffffff",
-  borderRadius: "4px",
-  padding: "10px 24px",
+  borderRadius: { xs: "6px", sm: "4px" },
+  padding: { xs: "12px 20px", sm: "10px 24px" },
   textTransform: "none",
+  fontSize: { xs: "0.875rem", sm: "1rem" },
+  fontWeight: "600",
+  width: { xs: "100%", sm: "auto" },
   "&:hover": {
     backgroundColor: "#c41515",
   },
@@ -295,20 +302,28 @@ export default function AddVoucher() {
   ]
 
   return (
-    <Box sx={{ display: "flex", height: "100vh", backgroundColor: "#f5f5f5" }}>
-      {/* Sidebar */}
-      <Sidebar />
-
+    <AppLayout>
       {/* Main content */}
-      <Box sx={{ flex: 1, padding: "24px", marginLeft: "250px" }}>
+      <Box sx={{ 
+        flex: 1, 
+        padding: { xs: "16px", sm: "20px", md: "24px" },
+        paddingBottom: { xs: "80px", sm: "100px", md: "120px" },
+        width: "100%",
+        minHeight: "100%",
+        backgroundColor: "#f5f5f5"
+      }}>
         {/* Header */}
-        <Box sx={{ marginBottom: "24px" }}>
+        <Box sx={{ 
+          marginBottom: { xs: "16px", sm: "20px", md: "24px" },
+          marginTop: { xs: "8px", sm: "0px", md: "0px" }
+        }}>
           <Typography
             variant="h4"
             sx={{
               fontWeight: "bold",
               color: "#333333",
               marginBottom: "8px",
+              fontSize: { xs: "1.75rem", sm: "2rem", md: "2.125rem" },
             }}
           >
             Add a Voucher
@@ -319,9 +334,11 @@ export default function AddVoucher() {
         <Box
           sx={{
             backgroundColor: "#ffffff",
-            borderRadius: "12px",
-            padding: "32px",
+            borderRadius: { xs: "8px", sm: "10px", md: "12px" },
+            padding: { xs: "20px", sm: "24px", md: "32px" },
             boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
+            width: "100%",
+            maxWidth: "100%",
           }}
         >
           {/* Subheading */}
@@ -340,18 +357,20 @@ export default function AddVoucher() {
           <Box
             sx={{
               display: "grid",
-              gridTemplateColumns: "repeat(2, 1fr)",
-              gap: "24px",
-              "@media (max-width: 768px)": {
-                gridTemplateColumns: "1fr",
-              },
+              gridTemplateColumns: { xs: "1fr", md: "repeat(2, 1fr)" },
+              gap: { xs: "16px", sm: "20px", md: "24px" },
             }}
           >
             {/* Voucher Code - Auto Generated */}
             <Box>
               <Typography
                 variant="subtitle2"
-                sx={{ fontWeight: "600", marginBottom: "8px", color: "#333333" }}
+                sx={{ 
+                  fontWeight: "600", 
+                  marginBottom: { xs: "6px", sm: "8px" }, 
+                  color: "#333333",
+                  fontSize: { xs: "0.875rem", sm: "0.9rem" }
+                }}
               >
                 Voucher Code (Auto-Generated) *
               </Typography>
@@ -537,7 +556,12 @@ export default function AddVoucher() {
           </Box>
 
           {/* Create Button */}
-          <Box sx={{ marginTop: "32px", display: "flex", justifyContent: "center" }}>
+          <Box sx={{ 
+            marginTop: "32px", 
+            marginBottom: { xs: "40px", sm: "60px", md: "80px" },
+            display: "flex", 
+            justifyContent: "center" 
+          }}>
             <CreateButton
               onClick={handleCreate}
               disabled={isLoading || isGeneratingCode}
@@ -559,6 +583,6 @@ export default function AddVoucher() {
           </Alert>
         </Snackbar>
       </Box>
-    </Box>
+    </AppLayout>
   )
 }

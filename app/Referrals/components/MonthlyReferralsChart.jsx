@@ -96,8 +96,13 @@ export default function MonthlyReferralsChart() {
   }, [])
 
   return (
-    <Card sx={{ bgcolor: "#ffffff", border: "1px solid #dadada", borderRadius: "12px", mb: 4 }}>
-      <CardContent sx={{ p: 3 }}>
+    <Card sx={{ 
+      bgcolor: "#ffffff", 
+      border: "1px solid #dadada", 
+      borderRadius: { xs: "8px", sm: "10px", md: "12px" }, 
+      mb: { xs: 3, sm: 4 } 
+    }}>
+      <CardContent sx={{ p: { xs: 2, sm: 2.5, md: 3 } }}>
         <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, fontSize: { xs: "16px", sm: "18px" } }}>
           Monthly Referrals
         </Typography>

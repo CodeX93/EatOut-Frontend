@@ -46,7 +46,14 @@ export default function AllReferredUsersTable() {
   return (
     <>
       <Box sx={{ mb: 2 }}>
-        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 2 }}>
+        <Box sx={{ 
+          display: "flex", 
+          justifyContent: "space-between", 
+          alignItems: "center", 
+          flexWrap: "wrap", 
+          gap: { xs: 1, sm: 2 },
+          flexDirection: { xs: "column", sm: "row" }
+        }}>
           <Typography variant="h6" sx={{ fontWeight: 600, color: "#000000", fontSize: { xs: "16px", sm: "18px" } }}>
             All Referred Users
           </Typography>
@@ -86,7 +93,7 @@ export default function AllReferredUsersTable() {
         sx={{
           bgcolor: "#ffffff",
           border: "1px solid #dadada",
-          borderRadius: "12px",
+          borderRadius: { xs: "8px", sm: "10px", md: "12px" },
           overflow: "hidden",
         }}
       >

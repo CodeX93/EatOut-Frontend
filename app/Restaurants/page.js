@@ -6,8 +6,7 @@ import { collection, getDocs } from "firebase/firestore"
 import { db } from "../../firebaseConfig"
 
 // Import layout components
-import Sidebar from "../components/SideNavbar"
-import Header from "../components/Header"
+import AppLayout from "../components/AppLayout"
 
 // Import all the modular restaurant components
 import RestaurantsTable from "./components/RestaurantsTable"
@@ -283,28 +282,15 @@ export default function Restaurants() {
   // Show loading state
   if (loading) {
     return (
-      <Box
-        sx={{
-          display: "flex",
-          bgcolor: "#f9f9f9",
-          minHeight: "100vh",
-          height: "100vh",
-          width: "100vw",
-          overflow: "hidden",
-        }}
-      >
-        <Header />
-        <Sidebar />
+      <AppLayout>
         <Box
           sx={{
-            flexGrow: 1,
+            flex: 1,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             height: "100vh",
             width: "100%",
-            ml: { xs: 0, sm: `${drawerWidth}px` },
-            mt: { xs: "56px", sm: "64px" },
           }}
         >
           <Box sx={{ textAlign: "center" }}>
@@ -320,7 +306,7 @@ export default function Restaurants() {
             </Typography>
           </Box>
         </Box>
-      </Box>
+      </AppLayout>
     )
   }
 
@@ -328,50 +314,65 @@ export default function Restaurants() {
   const dynamicSubtitle = `${restaurantsData.length} Restaurants from 6 Categories`
 
   return (
-    <Box
-      sx={{
-        display: "flex",
-        bgcolor: "#f9f9f9",
-        minHeight: "100vh",
-        height: "100vh",
-        width: "100vw",
-        overflow: "hidden",
-      }}
-    >
-      {/* Header */}
-      <Header />
-
-      {/* Sidebar */}
-      <Sidebar />
-
-      {/* Main Content Area */}
+    <AppLayout>
       <Box
-        component="main"
         sx={{
-          flexGrow: 1,
-          height: "100vh",
-          width: "100%",
-          display: "flex",
-          flexDirection: "column",
-          ml: { xs: 0, sm: `${drawerWidth}px` },
-          mt: { xs: "56px", sm: "64px" },
-          overflow: "hidden",
+          flex: 1,
+          overflow: "auto",
+          height: "100%",
         }}
       >
         {/* Content Container with Scroll */}
         <Box
           sx={{
             flex: 1,
-            p: { xs: 1, sm: 2, md: 3 },
+            p: { xs: 1, sm: 1.5, md: 2, lg: 3 },
             overflow: "auto",
             height: "100%",
           }}
         >
+          {/* Page Header */}
+          <Box sx={{ 
+            mb: { xs: 2, sm: 2.5, md: 3 }, 
+            flexShrink: 0,
+            px: { xs: 0.5, sm: 0 }
+          }}>
+            <Typography
+              variant="h4"
+              sx={{
+                fontWeight: 600,
+                color: "#da1818",
+                fontSize: { 
+                  xs: "1.25rem", 
+                  sm: "1.5rem", 
+                  md: "1.75rem", 
+                  lg: "2rem",
+                  xl: "2.125rem" 
+                },
+                lineHeight: 1.2,
+                mb: { xs: 1, sm: 1.5, md: 2 },
+              }}
+            >
+              Restaurants Overview
+            </Typography>
+            <Typography
+              variant="body2"
+              sx={{
+                color: "#8a8a8f",
+                fontSize: { xs: "0.75rem", sm: "0.875rem", md: "1rem" },
+                lineHeight: 1.4,
+              }}
+            >
+              {dynamicSubtitle}
+            </Typography>
+          </Box>
+
+          {/* Main Layout Container */}
           <Box
             sx={{
               display: "flex",
-              flexDirection: { xs: "column", xl: "row" },
-              gap: { xs: 2, md: 3 },
+              flexDirection: { xs: "column", lg: "row" },
+              gap: { xs: 2, sm: 2.5, md: 3, lg: 3 },
               height: "100%",
               minHeight: "fit-content",
             }}
@@ -379,57 +380,51 @@ export default function Restaurants() {
             {/* Left Column - Main Content */}
             <Box
               sx={{
-                flex: { xl: "1 1 65%" },
-                width: { xs: "100%", xl: "65%" },
+                flex: { lg: "1 1 65%" },
+                width: { xs: "100%", lg: "65%" },
                 display: "flex",
                 flexDirection: "column",
-                minHeight: { xs: "auto", xl: "100%" },
+                minHeight: { xs: "auto", lg: "100%" },
+                order: { xs: 2, lg: 1 },
               }}
             >
-              <Box sx={{ mb: { xs: 2, md: 3 }, flexShrink: 0 }}>
-                <Typography
-                  variant="h4"
-                  sx={{
-                    fontWeight: 600,
-                    color: "#da1818",
-                    mb: { xs: 2, md: 3 },
-                    fontSize: { xs: "1.5rem", sm: "2rem", md: "2.125rem" },
-                  }}
-                >
-                  Restaurants Overview
-                </Typography>
-              </Box>
-
-              {/* Restaurants Table with Navigation - Takes remaining space */}
+              {/* Restaurants Table */}
               <Box
                 sx={{
                   flex: 1,
                   overflow: "hidden",
                   display: "flex",
                   flexDirection: "column",
-                  minHeight: 0,
+                  minHeight: { xs: "400px", sm: "500px", lg: "600px" },
                 }}
               >
-                <RestaurantsTable restaurants={restaurantsData} title="Account list" subtitle={dynamicSubtitle} />
+                <RestaurantsTable 
+                  restaurants={restaurantsData} 
+                  title="Restaurant List" 
+                  subtitle={dynamicSubtitle} 
+                />
               </Box>
             </Box>
 
             {/* Right Column - Sidebar Cards */}
             <Box
               sx={{
-                flex: { xl: "1 1 35%" },
-                width: { xs: "100%", xl: "35%" },
+                flex: { lg: "1 1 35%" },
+                width: { xs: "100%", lg: "35%" },
                 display: "flex",
                 flexDirection: "column",
-                gap: { xs: 2, md: 3 },
-                minHeight: { xs: "auto", xl: "100%" },
-                maxHeight: { xs: "none", xl: "calc(100vh - 64px)" }, // 64px header height
-                overflowY: "auto",
-                minHeight: 0,
+                gap: { xs: 1.5, sm: 2, md: 2.5, lg: 3 },
+                minHeight: { xs: "auto", lg: "100%" },
+                maxHeight: { xs: "none", lg: "calc(100vh - 120px)" },
+                overflowY: { lg: "auto" },
+                order: { xs: 1, lg: 2 },
               }}
             >
               {/* Popular Restaurants Card */}
-              <Box sx={{ flexShrink: 0 }}>
+              <Box sx={{ 
+                flexShrink: 0,
+                minHeight: { xs: "200px", sm: "220px", md: "240px" }
+              }}>
                 <PopularRestaurantsCard
                   restaurants={popularRestaurantsData}
                   title="Popular Restaurants"
@@ -439,7 +434,10 @@ export default function Restaurants() {
               </Box>
 
               {/* Popular Vouchers Card */}
-              <Box sx={{ flexShrink: 0 }}>
+              <Box sx={{ 
+                flexShrink: 0,
+                minHeight: { xs: "200px", sm: "220px", md: "240px" }
+              }}>
                 <PopularVouchersCard
                   vouchers={popularVouchersData}
                   title="Popular Vouchers"
@@ -455,18 +453,22 @@ export default function Restaurants() {
                   gridTemplateColumns: {
                     xs: "1fr",
                     sm: "1fr 1fr",
-                    md: "1fr 1fr",
+                    md: "1fr",
                     lg: "1fr",
                     xl: "1fr 1fr",
                   },
-                  gap: { xs: 1.5, sm: 1, md: 1.5, xl: 2 },
+                  gap: { xs: 1.5, sm: 2, md: 2.5, xl: 2 },
                   flexShrink: 0,
                   width: "100%",
                   overflow: "hidden",
                 }}
               >
                 {/* Rating and Reviews Card */}
-                <Box sx={{ minWidth: 0, overflow: "hidden" }}>
+                <Box sx={{ 
+                  minWidth: 0, 
+                  overflow: "hidden",
+                  minHeight: { xs: "180px", sm: "200px", md: "220px" }
+                }}>
                   <RatingReviewsCard
                     rating={4.8}
                     positivePercentage={97}
@@ -476,14 +478,22 @@ export default function Restaurants() {
                 </Box>
 
                 {/* Top Vouchers Card */}
-                <Box sx={{ minWidth: 0, overflow: "hidden" }}>
-                  <TopVouchersCard vouchers={topVouchersData} title="Top Vouchers" reviewsText="Al Baik Reviews" />
+                <Box sx={{ 
+                  minWidth: 0, 
+                  overflow: "hidden",
+                  minHeight: { xs: "180px", sm: "200px", md: "220px" }
+                }}>
+                  <TopVouchersCard 
+                    vouchers={topVouchersData} 
+                    title="Top Vouchers" 
+                    reviewsText="Al Baik Reviews" 
+                  />
                 </Box>
               </Box>
             </Box>
           </Box>
         </Box>
       </Box>
-    </Box>
+    </AppLayout>
   )
 }

@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, Suspense } from "react"
+import { useSearchParams } from "next/navigation"
 import {
   Box,
   Typography,
@@ -83,7 +84,9 @@ const theme = createTheme({
 
 const drawerWidth = 240
 
-function DeletePageContent({ restaurantId = "1" }) {
+function DeletePageContent() {
+  const searchParams = useSearchParams()
+  const restaurantId = searchParams.get("id")
   const [restaurant, setRestaurant] = useState(null)
   const [menuItems, setMenuItems] = useState([])
   const [loading, setLoading] = useState(true)
@@ -92,6 +95,13 @@ function DeletePageContent({ restaurantId = "1" }) {
 
   useEffect(() => {
     const getRestaurantData = async () => {
+      if (!restaurantId) {
+        setRestaurant(null)
+        setMenuItems([])
+        setLoading(false)
+        return
+      }
+      
       setLoading(true)
       try {
         // Fetch restaurant document
@@ -180,13 +190,23 @@ function DeletePageContent({ restaurantId = "1" }) {
               borderBottom: "1px solid #efeff4",
             }}
           >
-            <Toolbar sx={{ justifyContent: "space-between", px: 3 }}>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 3 }}>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <Toolbar sx={{ 
+              justifyContent: "space-between", 
+              px: { xs: 1, sm: 2, md: 3 },
+              minHeight: { xs: "56px", sm: "64px" }
+            }}>
+              <Box sx={{ 
+                display: "flex", 
+                alignItems: "center", 
+                gap: { xs: 1, sm: 2, md: 3 },
+                flex: 1,
+                minWidth: 0,
+              }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexShrink: 0 }}>
                   <Box
                     sx={{
-                      width: 32,
-                      height: 32,
+                      width: { xs: 28, sm: 32 },
+                      height: { xs: 28, sm: 32 },
                       bgcolor: "#ff2d55",
                       borderRadius: "50%",
                       display: "flex",
@@ -194,15 +214,24 @@ function DeletePageContent({ restaurantId = "1" }) {
                       justifyContent: "center",
                     }}
                   >
-                    <Typography sx={{ color: "white", fontWeight: "bold", fontSize: "14px" }}>E</Typography>
+                    <Typography sx={{ 
+                      color: "white", 
+                      fontWeight: "bold", 
+                      fontSize: { xs: "12px", sm: "14px" }
+                    }}>E</Typography>
                   </Box>
-                  <Typography sx={{ fontWeight: "bold", color: "#ff2d55", fontSize: "18px" }}>E.A.T</Typography>
+                  <Typography sx={{ 
+                    fontWeight: "bold", 
+                    color: "#ff2d55", 
+                    fontSize: { xs: "14px", sm: "16px", md: "18px" }
+                  }}>E.A.T</Typography>
                 </Box>
                 <TextField
                   placeholder="Search"
                   size="small"
                   sx={{
-                    width: 320,
+                    width: { xs: 0, sm: 200, md: 320 },
+                    display: { xs: "none", sm: "block" },
                     "& .MuiOutlinedInput-root": {
                       bgcolor: "#efeff4",
                       borderRadius: "8px",
@@ -219,44 +248,91 @@ function DeletePageContent({ restaurantId = "1" }) {
                   }}
                 />
               </Box>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+              <Box sx={{ 
+                display: "flex", 
+                alignItems: "center", 
+                gap: { xs: 1, sm: 2 },
+                flexShrink: 0,
+              }}>
                 <Button
                   variant="text"
                   startIcon={<CalendarToday />}
                   endIcon={<KeyboardArrowDown />}
-                  sx={{ color: "#666666", textTransform: "none" }}
+                  sx={{ 
+                    color: "#666666", 
+                    textTransform: "none",
+                    display: { xs: "none", sm: "flex" },
+                    fontSize: { sm: "0.75rem", md: "0.875rem" },
+                  }}
                 >
                   Wed 29 May 2026
                 </Button>
-                <IconButton>
-                  <Notifications sx={{ color: "#666666" }} />
+                <IconButton size={window.innerWidth < 600 ? "small" : "medium"}>
+                  <Notifications sx={{ 
+                    color: "#666666",
+                    fontSize: { xs: "18px", sm: "20px", md: "24px" }
+                  }} />
                 </IconButton>
-                <IconButton>
-                  <Settings sx={{ color: "#666666" }} />
+                <IconButton size={window.innerWidth < 600 ? "small" : "medium"}>
+                  <Settings sx={{ 
+                    color: "#666666",
+                    fontSize: { xs: "18px", sm: "20px", md: "24px" }
+                  }} />
                 </IconButton>
-                <Avatar sx={{ width: 32, height: 32, bgcolor: "#c8c7cc", color: "#666666" }}>JM</Avatar>
+                <Avatar sx={{ 
+                  width: { xs: 28, sm: 32 }, 
+                  height: { xs: 28, sm: 32 }, 
+                  bgcolor: "#c8c7cc", 
+                  color: "#666666",
+                  fontSize: { xs: "12px", sm: "14px" }
+                }}>JM</Avatar>
               </Box>
             </Toolbar>
           </AppBar>
           {/* Main Content */}
-          <Box component="main" sx={{ flexGrow: 1, p: 4 }}>
+          <Box component="main" sx={{ 
+            flexGrow: 1, 
+            p: { xs: 1.5, sm: 2, md: 3, lg: 4 },
+            mt: { xs: "56px", sm: "64px" }
+          }}>
             <Toolbar />
 
             {/* Page Title */}
-            <Typography variant="h4" sx={{ fontWeight: 600, color: "#ff2d55", mb: 4 }}>
+            <Typography variant="h4" sx={{ 
+              fontWeight: 600, 
+              color: "#ff2d55", 
+              mb: { xs: 2, sm: 3, md: 4 },
+              fontSize: { xs: "1.25rem", sm: "1.5rem", md: "2rem", lg: "2.125rem" },
+              lineHeight: 1.2,
+            }}>
               Delete Restaurant
             </Typography>
 
             {/* Restaurant Details Card - Full Width */}
-            <Paper sx={{ p: 4, mb: 3, borderRadius: "8px", boxShadow: "0 1px 3px rgba(0,0,0,0.1)" }}>
-              <Typography variant="h6" sx={{ fontWeight: 600, color: "#ff2d55", mb: 3 }}>
+            <Paper sx={{ 
+              p: { xs: 2, sm: 3, md: 4 }, 
+              mb: { xs: 2, sm: 3, md: 3 }, 
+              borderRadius: { xs: "6px", sm: "8px" }, 
+              boxShadow: { xs: "none", sm: "0 1px 3px rgba(0,0,0,0.1)" }
+            }}>
+              <Typography variant="h6" sx={{ 
+                fontWeight: 600, 
+                color: "#ff2d55", 
+                mb: { xs: 2, sm: 3 },
+                fontSize: { xs: "1rem", sm: "1.125rem", md: "1.25rem" },
+                lineHeight: 1.3,
+              }}>
                 Restaurant Details
               </Typography>
 
-              <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+              <Box sx={{ display: "flex", flexDirection: "column", gap: { xs: 2, sm: 2.5, md: 3 } }}>
                 {/* All fields should be disabled here */}
                 {/* First Row - Name and Cuisines */}
-                <Box sx={{ display: "flex", gap: 3 }}>
+                <Box sx={{ 
+                  display: "flex", 
+                  flexDirection: { xs: "column", sm: "row" },
+                  gap: { xs: 2, sm: 3 }
+                }}>
                   <Box sx={{ flex: 1 }}>
                     <Typography variant="body2" sx={{ mb: 1, fontWeight: 500, color: "#000000" }}>
                       First Name
@@ -505,15 +581,30 @@ function DeletePageContent({ restaurantId = "1" }) {
             </Paper>
 
             {/* Two Column Layout */}
-            <Box sx={{ display: "flex", gap: 3 }}>
+            <Box sx={{ 
+              display: "flex", 
+              flexDirection: { xs: "column", lg: "row" },
+              gap: { xs: 2, sm: 2.5, md: 3 }
+            }}>
               {/* Left Column - Main Info Card */}
               <Box sx={{ flex: 1 }}>
-                <Paper sx={{ p: 4, borderRadius: "8px", boxShadow: "0 1px 3px rgba(0,0,0,0.1)", height: "fit-content" }}>
-                  <Typography variant="h6" sx={{ fontWeight: 600, color: "#ff2d55", mb: 3 }}>
+                <Paper sx={{ 
+                  p: { xs: 2, sm: 3, md: 4 }, 
+                  borderRadius: { xs: "6px", sm: "8px" }, 
+                  boxShadow: { xs: "none", sm: "0 1px 3px rgba(0,0,0,0.1)" }, 
+                  height: "fit-content" 
+                }}>
+                  <Typography variant="h6" sx={{ 
+                    fontWeight: 600, 
+                    color: "#ff2d55", 
+                    mb: { xs: 2, sm: 3 },
+                    fontSize: { xs: "1rem", sm: "1.125rem", md: "1.25rem" },
+                    lineHeight: 1.3,
+                  }}>
                     Main Info
                   </Typography>
 
-                  <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                  <Box sx={{ display: "flex", flexDirection: "column", gap: { xs: 2, sm: 2.5, md: 3 } }}>
                     {/* Opening Days */}
                     <Box>
                       <Typography variant="body2" sx={{ mb: 1, fontWeight: 500, color: "#000000" }}>
@@ -876,11 +967,20 @@ function DeletePageContent({ restaurantId = "1" }) {
 
               {/* Right Column - Three Separate Cards */}
               <Box sx={{ flex: 1 }}>
-                <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                <Box sx={{ display: "flex", flexDirection: "column", gap: { xs: 2, sm: 2.5, md: 3 } }}>
                   {/* Facilities and Services Card */}
-                  <Paper sx={{ p: 4, borderRadius: "8px", boxShadow: "0 1px 3px rgba(0,0,0,0.1)" }}>
-                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
-                      <Typography variant="h6" sx={{ fontWeight: 600, color: "#ff2d55" }}>
+                  <Paper sx={{ 
+                    p: { xs: 2, sm: 3, md: 4 }, 
+                    borderRadius: { xs: "6px", sm: "8px" }, 
+                    boxShadow: { xs: "none", sm: "0 1px 3px rgba(0,0,0,0.1)" }
+                  }}>
+                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: { xs: 1.5, sm: 2 } }}>
+                      <Typography variant="h6" sx={{ 
+                        fontWeight: 600, 
+                        color: "#ff2d55",
+                        fontSize: { xs: "1rem", sm: "1.125rem", md: "1.25rem" },
+                        lineHeight: 1.3,
+                      }}>
                         Facilities and Services
                       </Typography>
                       {/* Add button should also be disabled or removed */}
@@ -905,7 +1005,7 @@ function DeletePageContent({ restaurantId = "1" }) {
                       />
                     </Box>
 
-                    <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+                    <Box sx={{ display: "flex", flexWrap: "wrap", gap: { xs: 0.5, sm: 1 } }}>
                       {restaurant.facilities.map((facility, index) => (
                         <Chip
                           key={index}
@@ -937,9 +1037,18 @@ function DeletePageContent({ restaurantId = "1" }) {
                   </Paper>
 
                   {/* Payment Options Card */}
-                  <Paper sx={{ p: 4, borderRadius: "8px", boxShadow: "0 1px 3px rgba(0,0,0,0.1)" }}>
-                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
-                      <Typography variant="h6" sx={{ fontWeight: 600, color: "#ff2d55" }}>
+                  <Paper sx={{ 
+                    p: { xs: 2, sm: 3, md: 4 }, 
+                    borderRadius: { xs: "6px", sm: "8px" }, 
+                    boxShadow: { xs: "none", sm: "0 1px 3px rgba(0,0,0,0.1)" }
+                  }}>
+                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: { xs: 1.5, sm: 2 } }}>
+                      <Typography variant="h6" sx={{ 
+                        fontWeight: 600, 
+                        color: "#ff2d55",
+                        fontSize: { xs: "1rem", sm: "1.125rem", md: "1.25rem" },
+                        lineHeight: 1.3,
+                      }}>
                         Payment Options
                       </Typography>
                       {/* Add button should also be disabled or removed */}
@@ -964,7 +1073,7 @@ function DeletePageContent({ restaurantId = "1" }) {
                       />
                     </Box>
 
-                    <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+                    <Box sx={{ display: "flex", flexWrap: "wrap", gap: { xs: 0.5, sm: 1 } }}>
                       {restaurant.paymentOptions.map((option, index) => (
                         <Chip
                           key={index}
@@ -994,9 +1103,18 @@ function DeletePageContent({ restaurantId = "1" }) {
                   </Paper>
 
                   {/* Social Media Card */}
-                  <Paper sx={{ p: 4, borderRadius: "8px", boxShadow: "0 1px 3px rgba(0,0,0,0.1)" }}>
-                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
-                      <Typography variant="h6" sx={{ fontWeight: 600, color: "#ff2d55" }}>
+                  <Paper sx={{ 
+                    p: { xs: 2, sm: 3, md: 4 }, 
+                    borderRadius: { xs: "6px", sm: "8px" }, 
+                    boxShadow: { xs: "none", sm: "0 1px 3px rgba(0,0,0,0.1)" }
+                  }}>
+                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: { xs: 1.5, sm: 2 } }}>
+                      <Typography variant="h6" sx={{ 
+                        fontWeight: 600, 
+                        color: "#ff2d55",
+                        fontSize: { xs: "1rem", sm: "1.125rem", md: "1.25rem" },
+                        lineHeight: 1.3,
+                      }}>
                         Social Media
                       </Typography>
                       {/* Add button should also be disabled or removed */}
@@ -1021,7 +1139,7 @@ function DeletePageContent({ restaurantId = "1" }) {
                       />
                     </Box>
 
-                    <Grid container spacing={2}>
+                    <Grid container spacing={{ xs: 1.5, sm: 2 }}>
                       <Grid item xs={12} md={6}>
                         <TextField
                           fullWidth
@@ -1305,10 +1423,10 @@ function DeletePageContent({ restaurantId = "1" }) {
   )
 }
 
-export default function DeletePage(props) {
+export default function DeletePage() {
   return (
     <Suspense fallback={<div>Loading...</div>}>
-      <DeletePageContent {...props} />
+      <DeletePageContent />
     </Suspense>
   )
 }

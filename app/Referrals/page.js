@@ -6,8 +6,7 @@ import { collection, getDocs } from "firebase/firestore"
 import { db } from "../../firebaseConfig"
 
 // Import your existing components
-import Header from "../components/Header"
-import SideNavBar from "../components/SideNavbar"
+import AppLayout from "../components/AppLayout"
 
 // Import the new components we created
 import MetricsCards from "./components/MetricsCard"
@@ -16,7 +15,6 @@ import AllReferredUsersTable from "./components/AllReferredUsersTable"
 import ReferredUsersTable from "./components/ReferredUsersTable"
 import TotalCustomersChart from "./components/TotalCustomersChart"
 
-const drawerWidth = 240
 
 export default function ReferralsPage() {
   const [loading, setLoading] = useState(true)
@@ -56,18 +54,7 @@ export default function ReferralsPage() {
 
   if (loading) {
     return (
-      <Box
-        sx={{
-          display: "flex",
-          bgcolor: "#f9f9f9",
-          minHeight: "100vh",
-          height: "100vh",
-          width: "100vw",
-          overflow: "hidden",
-        }}
-      >
-        <Header />
-        <SideNavBar />
+      <AppLayout>
         <Box
           sx={{
             flexGrow: 1,
@@ -76,8 +63,6 @@ export default function ReferralsPage() {
             justifyContent: "center",
             height: "100vh",
             width: "100%",
-            ml: { xs: 0, sm: `${drawerWidth}px` },
-            mt: { xs: "56px", sm: "64px" },
           }}
         >
           <Box sx={{ textAlign: "center" }}>
@@ -87,44 +72,51 @@ export default function ReferralsPage() {
             </Typography>
           </Box>
         </Box>
-      </Box>
+      </AppLayout>
     )
   }
 
   return (
-    <Box sx={{ display: "flex", bgcolor: "#f9f9f9", minHeight: "100vh" }}>
-      {/* Header */}
-      <Header />
-
-      {/* Sidebar */}
-      <SideNavBar />
-
+    <AppLayout>
       {/* Main Content */}
       <Box
         component="main"
         sx={{
           flexGrow: 1,
-          p: { xs: 2, sm: 3 },
-          overflow: "hidden",
-          mt: { xs: 7, sm: 8 }, // Account for fixed header
-          ml: { xs: 0, sm: "240px" }, // Account for sidebar on larger screens
+          p: { xs: 1.5, sm: 2, md: 3 },
+          pt: { xs: 2.5, sm: 3, md: 3 }, // Added top padding
+          pb: { xs: "80px", sm: "100px", md: "120px" }, // Added bottom padding
+          overflow: "auto",
+          width: "100%",
+          minHeight: "100%",
         }}
       >
         <Box
           sx={{
             display: "flex",
             flexDirection: { xs: "column", lg: "row" },
-            gap: 3,
-            height: { lg: "calc(100vh - 120px)" },
-            overflow: "hidden",
+            gap: { xs: 2, sm: 2.5, md: 3 },
+            minHeight: "100%",
           }}
         >
           {/* Left Column - Main Content */}
-          <Box sx={{ flex: "1 1 66%", overflow: "auto", pr: { xs: 0, lg: 1 } }}>
+          <Box sx={{ 
+            flex: { xs: "1 1 100%", lg: "1 1 66%" }, 
+            overflow: "auto", 
+            pr: { xs: 0, lg: 1 },
+            width: { xs: "100%", lg: "auto" }
+          }}>
             <Box sx={{ mb: 3 }}>
               <Typography
                 variant="h4"
-                sx={{ fontWeight: 600, color: "#000000", mb: 3, fontSize: { xs: "24px", sm: "32px" } }}
+                sx={{ 
+                  fontWeight: 600, 
+                  color: "#000000", 
+                  mb: { xs: 2, sm: 2.5, md: 3 }, 
+                  mt: { xs: 1, sm: 0, md: 0 }, // Added top margin for mobile
+                  fontSize: { xs: "1.5rem", sm: "1.75rem", md: "2rem" },
+                  lineHeight: 1.2
+                }}
               >
                 Referrals Overview
               </Typography>
@@ -141,7 +133,12 @@ export default function ReferralsPage() {
           </Box>
 
           {/* Right Column */}
-          <Box sx={{ flex: "1 1 33%", overflow: "auto", pl: { xs: 0, lg: 1 } }}>
+          <Box sx={{ 
+            flex: { xs: "1 1 100%", lg: "1 1 33%" }, 
+            overflow: "auto", 
+            pl: { xs: 0, lg: 1 },
+            width: { xs: "100%", lg: "auto" }
+          }}>
             {/* Referred Users Table */}
             <ReferredUsersTable />
 
@@ -150,6 +147,6 @@ export default function ReferralsPage() {
           </Box>
         </Box>
       </Box>
-    </Box>
+    </AppLayout>
   )
 }

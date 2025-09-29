@@ -78,7 +78,7 @@ export default function StatsCards({ selectedPeriod, dateRange }) {
 
   if (loading) {
     return (
-      <Grid container spacing={{ xs: 2, sm: 3 }}>
+      <Grid container spacing={{ xs: 1.5, sm: 2, md: 3 }}>
         <Grid item xs={12} sx={{ textAlign: "center", py: 4 }}>
           <CircularProgress sx={{ color: "#da1818", mb: 2 }} />
           <Typography variant="body2" sx={{ color: "#8a8a8f" }}>
@@ -90,15 +90,16 @@ export default function StatsCards({ selectedPeriod, dateRange }) {
   }
 
   return (
-    <Grid container spacing={{ xs: 2, sm: 3 }}>
+    <Grid container spacing={{ xs: 1.5, sm: 2, md: 3 }}>
       {stats.map((stat, index) => (
         <Grid item xs={12} sm={6} md={4} key={index}>
           <Paper
             elevation={0}
             sx={{
-              p: { xs: 2, sm: 2.5 },
-              borderRadius: "10px",
+              p: { xs: 1.5, sm: 2, md: 2.5 },
+              borderRadius: { xs: "8px", sm: "10px" },
               height: "100%",
+              width: "100%",
               display: "flex",
               flexDirection: "column",
               bgcolor: "#ffffff",

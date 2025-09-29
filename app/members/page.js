@@ -6,8 +6,7 @@ import { collection, getDocs } from "firebase/firestore"
 import { db } from "../../firebaseConfig"
 
 // Components
-import Header from "../components/Header"
-import Sidebar from "../components/SideNavbar"
+import AppLayout from "../components/AppLayout"
 import MembersTable from "./components/MembersTable"
 import TopSpenders from "./components/TopSpenders"
 import MostFrequentUsers from "./components/MostFrequentUsers"
@@ -128,28 +127,15 @@ export default function MembersPage() {
 
   if (loading) {
     return (
-      <Box
-        sx={{
-          display: "flex",
-          bgcolor: "#f9f9f9",
-          minHeight: "100vh",
-          height: "100vh",
-          width: "100vw",
-          overflow: "hidden",
-        }}
-      >
-        <Header />
-        <Sidebar />
+      <AppLayout>
         <Box
           sx={{
-            flexGrow: 1,
+            flex: 1,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             height: "100vh",
             width: "100%",
-            ml: { xs: 0, sm: `${drawerWidth}px` },
-            mt: { xs: "56px", sm: "64px" },
           }}
         >
           <Box sx={{ textAlign: "center" }}>
@@ -159,34 +145,19 @@ export default function MembersPage() {
             </Typography>
           </Box>
         </Box>
-      </Box>
+      </AppLayout>
     )
   }
 
   return (
-    <Box
-      sx={{
-        display: "flex",
-        bgcolor: "#f9f9f9",
-        minHeight: "100vh",
-        height: "100vh",
-        width: "100vw",
-        overflow: "hidden",
-      }}
-    >
-      <Header />
-      <Sidebar activeItem="Members" />
-
+    <AppLayout>
       <Box
-        component="main"
         sx={{
-          flexGrow: 1,
-          height: "100vh",
+          flex: 1,
+          height: "100%",
           width: "100%",
           display: "flex",
           flexDirection: "column",
-          ml: { xs: 0, sm: `${drawerWidth}px` },
-          mt: { xs: "56px", sm: "64px" },
           overflow: "hidden",
         }}
       >
@@ -194,7 +165,8 @@ export default function MembersPage() {
         <Box
           sx={{
             flex: 1,
-            p: { xs: 1, sm: 2, md: 3 },
+            p: { xs: 2, sm: 2.5, md: 3 },
+            pt: { xs: 3, sm: 3, md: 3 },
             overflow: "auto",
             height: "100%",
           }}
@@ -255,6 +227,6 @@ export default function MembersPage() {
           </Box>
         </Box>
       </Box>
-    </Box>
+    </AppLayout>
   )
 }

@@ -23,28 +23,30 @@ import CardContent from "@mui/material/CardContent"
 import { styled } from "@mui/material/styles"
 import EditIcon from "@mui/icons-material/Edit"
 
-// Sidebar component import
-import Sidebar from "../../../components/SideNavbar"
+// Layout component import
+import AppLayout from "../../../components/AppLayout"
 
 // Custom styled components
 const StyledCard = styled(Card)(({ theme }) => ({
-  borderRadius: "8px",
-  boxShadow: "0px 1px 3px rgba(0, 0, 0, 0.1)",
-  marginBottom: "24px",
+  borderRadius: theme.breakpoints.down('sm') ? "6px" : "8px",
+  boxShadow: theme.breakpoints.down('sm') ? "none" : "0px 1px 3px rgba(0, 0, 0, 0.1)",
+  marginBottom: theme.breakpoints.down('sm') ? "16px" : "24px",
   backgroundColor: "#ffffff",
 }))
 
 const SectionTitle = styled(Typography)(({ theme }) => ({
   color: "#ff2d55",
   fontWeight: 600,
-  fontSize: "16px",
-  marginBottom: "16px",
+  fontSize: theme.breakpoints.down('sm') ? "14px" : "16px",
+  marginBottom: theme.breakpoints.down('sm') ? "12px" : "16px",
+  lineHeight: 1.3,
 }))
 
 const StyledTextField = styled(TextField)(({ theme }) => ({
   "& .MuiOutlinedInput-root": {
     backgroundColor: "#ffffff",
-    borderRadius: "6px",
+    borderRadius: theme.breakpoints.down('sm') ? "4px" : "6px",
+    height: theme.breakpoints.down('sm') ? "40px" : "44px",
     "& fieldset": {
       borderColor: "#e0e0e0",
     },
@@ -248,23 +250,32 @@ export default function EditMemberDetails({ memberId }) {
   const days = Array.from({ length: 31 }, (_, i) => (i + 1).toString())
 
   return (
-    <Box sx={{ display: "flex", bgcolor: "#f9f9f9", minHeight: "100vh" }}>
-      {/* Sidebar */}
-      <Sidebar />
-
+    <AppLayout>
       {/* Main content */}
       <Box
         component="main"
         sx={{
-          flexGrow: 1,
-          p: 3,
-          ml: "240px",
-          pt: 2,
+          flex: 1,
+          p: { xs: 1.5, sm: 2, md: 3 },
+          pt: { xs: 2, sm: 2, md: 2 },
+          overflow: "auto",
         }}
       >
         {/* Header */}
-        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
-          <Typography variant="h5" component="h1" sx={{ color: "#ff2d55", fontWeight: 600 }}>
+        <Box sx={{ 
+          display: "flex", 
+          justifyContent: "space-between", 
+          alignItems: "center", 
+          mb: { xs: 2, sm: 3 },
+          flexDirection: { xs: "column", sm: "row" },
+          gap: { xs: 2, sm: 0 },
+        }}>
+          <Typography variant="h5" component="h1" sx={{ 
+            color: "#ff2d55", 
+            fontWeight: 600,
+            fontSize: { xs: "1.25rem", sm: "1.5rem", md: "1.75rem" },
+            lineHeight: 1.2,
+          }}>
             Edit Member Details
           </Typography>
      
@@ -274,9 +285,9 @@ export default function EditMemberDetails({ memberId }) {
         <StyledCard>
           <CardContent sx={{ p: 3 }}>
             <SectionTitle>Personal Details</SectionTitle>
-            <Grid container spacing={3}>
+            <Grid container spacing={{ xs: 2, sm: 2.5, md: 3 }}>
               <Grid item xs={12} md={3}>
-                <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
+                <Typography variant="body2" sx={{ mb: { xs: 0.5, sm: 1 }, fontWeight: 500 }}>
                   Preferred Name
                 </Typography>
                 <StyledTextField
@@ -287,7 +298,7 @@ export default function EditMemberDetails({ memberId }) {
                 />
               </Grid>
               <Grid item xs={12} md={3}>
-                <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
+                <Typography variant="body2" sx={{ mb: { xs: 0.5, sm: 1 }, fontWeight: 500 }}>
                   Email
                 </Typography>
                 <StyledTextField
@@ -298,7 +309,7 @@ export default function EditMemberDetails({ memberId }) {
                 />
               </Grid>
               <Grid item xs={12} md={3}>
-                <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
+                <Typography variant="body2" sx={{ mb: { xs: 0.5, sm: 1 }, fontWeight: 500 }}>
                   Mobile Number
                 </Typography>
                 <StyledTextField
@@ -309,7 +320,7 @@ export default function EditMemberDetails({ memberId }) {
                 />
               </Grid>
               <Grid item xs={12} md={3}>
-                <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
+                <Typography variant="body2" sx={{ mb: { xs: 0.5, sm: 1 }, fontWeight: 500 }}>
                   Gender
                 </Typography>
                 <Box sx={{ display: "flex", alignItems: "center" }}>
@@ -361,7 +372,7 @@ export default function EditMemberDetails({ memberId }) {
                 </Box>
               </Grid>
               <Grid item xs={12} md={6}>
-                <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
+                <Typography variant="body2" sx={{ mb: { xs: 0.5, sm: 1 }, fontWeight: 500 }}>
                   Date of Birth
                 </Typography>
                 <Box sx={{ display: "flex", gap: 2 }}>
@@ -407,7 +418,7 @@ export default function EditMemberDetails({ memberId }) {
                 </Box>
               </Grid>
               <Grid item xs={12} md={6}>
-                <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
+                <Typography variant="body2" sx={{ mb: { xs: 0.5, sm: 1 }, fontWeight: 500 }}>
                   Referral Code
                 </Typography>
                 <StyledTextField
@@ -427,7 +438,7 @@ export default function EditMemberDetails({ memberId }) {
             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
               <SectionTitle sx={{ mb: 0 }}>Membership Plan</SectionTitle>
               <Box>
-                <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
+                <Typography variant="body2" sx={{ mb: { xs: 0.5, sm: 1 }, fontWeight: 500 }}>
                   Coupon Code
                 </Typography>
                 <StyledTextField
@@ -536,15 +547,20 @@ export default function EditMemberDetails({ memberId }) {
         </StyledCard>
 
         {/* 1x2 Grid Layout: One Row, Two Equal Columns */}
-        <Box sx={{ display: "flex", gap: 3, alignItems: "flex-start" }}>
+        <Box sx={{ 
+          display: "flex", 
+          flexDirection: { xs: "column", lg: "row" },
+          gap: { xs: 2, sm: 2.5, md: 3 },
+          alignItems: "flex-start" 
+        }}>
           {/* Column 1: Optional Information (50% width) */}
-          <Box sx={{ flex: 1, width: "50%" }}>
+          <Box sx={{ flex: 1, width: { xs: "100%", lg: "50%" } }}>
             <StyledCard>
               <CardContent sx={{ p: 3 }}>
                 <SectionTitle>Optional Information</SectionTitle>
                 <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
                   <Box>
-                    <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
+                    <Typography variant="body2" sx={{ mb: { xs: 0.5, sm: 1 }, fontWeight: 500 }}>
                       Address
                     </Typography>
                     <StyledTextField
@@ -554,9 +570,13 @@ export default function EditMemberDetails({ memberId }) {
                       onChange={(e) => handleChange("address", e.target.value)}
                     />
                   </Box>
-                  <Box sx={{ display: "flex", gap: 2 }}>
+                  <Box sx={{ 
+                    display: "flex", 
+                    flexDirection: { xs: "column", sm: "row" },
+                    gap: { xs: 2, sm: 2 }
+                  }}>
                     <Box sx={{ flex: 1 }}>
-                      <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
+                      <Typography variant="body2" sx={{ mb: { xs: 0.5, sm: 1 }, fontWeight: 500 }}>
                         Marital Status
                       </Typography>
                       <StyledTextField
@@ -573,7 +593,7 @@ export default function EditMemberDetails({ memberId }) {
                       </StyledTextField>
                     </Box>
                     <Box sx={{ flex: 1 }}>
-                      <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
+                      <Typography variant="body2" sx={{ mb: { xs: 0.5, sm: 1 }, fontWeight: 500 }}>
                         Race
                       </Typography>
                       <StyledTextField
@@ -592,9 +612,13 @@ export default function EditMemberDetails({ memberId }) {
                       </StyledTextField>
                     </Box>
                   </Box>
-                  <Box sx={{ display: "flex", gap: 2 }}>
+                  <Box sx={{ 
+                    display: "flex", 
+                    flexDirection: { xs: "column", sm: "row" },
+                    gap: { xs: 2, sm: 2 }
+                  }}>
                     <Box sx={{ flex: 1 }}>
-                      <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
+                      <Typography variant="body2" sx={{ mb: { xs: 0.5, sm: 1 }, fontWeight: 500 }}>
                         Religion
                       </Typography>
                       <StyledTextField
@@ -615,7 +639,7 @@ export default function EditMemberDetails({ memberId }) {
                       </StyledTextField>
                     </Box>
                     <Box sx={{ flex: 1 }}>
-                      <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
+                      <Typography variant="body2" sx={{ mb: { xs: 0.5, sm: 1 }, fontWeight: 500 }}>
                         No of People in Household
                       </Typography>
                       <StyledTextField
@@ -634,7 +658,7 @@ export default function EditMemberDetails({ memberId }) {
                     </Box>
                   </Box>
                   <Box>
-                    <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
+                    <Typography variant="body2" sx={{ mb: { xs: 0.5, sm: 1 }, fontWeight: 500 }}>
                       Monthly Income
                     </Typography>
                     <StyledTextField
@@ -650,7 +674,13 @@ export default function EditMemberDetails({ memberId }) {
           </Box>
 
           {/* Column 2: Facilities and Payment Details Stacked (50% width) */}
-          <Box sx={{ flex: 1, width: "50%", display: "flex", flexDirection: "column", gap: 3 }}>
+          <Box sx={{ 
+            flex: 1, 
+            width: { xs: "100%", lg: "50%" }, 
+            display: "flex", 
+            flexDirection: "column", 
+            gap: { xs: 2, sm: 2.5, md: 3 }
+          }}>
             {/* Facilities and Services Section */}
             <StyledCard>
               <CardContent sx={{ p: 3 }}>
@@ -717,7 +747,7 @@ export default function EditMemberDetails({ memberId }) {
                 </Box>
                 <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
                   <Box>
-                    <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
+                    <Typography variant="body2" sx={{ mb: { xs: 0.5, sm: 1 }, fontWeight: 500 }}>
                       Card Number
                     </Typography>
                     <StyledTextField
@@ -729,7 +759,7 @@ export default function EditMemberDetails({ memberId }) {
                   </Box>
                   <Box sx={{ display: "flex", gap: 2 }}>
                     <Box sx={{ flex: 1 }}>
-                      <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
+                      <Typography variant="body2" sx={{ mb: { xs: 0.5, sm: 1 }, fontWeight: 500 }}>
                         Name
                       </Typography>
                       <StyledTextField
@@ -740,7 +770,7 @@ export default function EditMemberDetails({ memberId }) {
                       />
                     </Box>
                     <Box sx={{ flex: 1 }}>
-                      <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
+                      <Typography variant="body2" sx={{ mb: { xs: 0.5, sm: 1 }, fontWeight: 500 }}>
                         Phone
                       </Typography>
                       <StyledTextField
@@ -753,7 +783,7 @@ export default function EditMemberDetails({ memberId }) {
                   </Box>
                   <Box sx={{ display: "flex", gap: 2 }}>
                     <Box sx={{ flex: 1 }}>
-                      <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
+                      <Typography variant="body2" sx={{ mb: { xs: 0.5, sm: 1 }, fontWeight: 500 }}>
                         Expiry Date
                       </Typography>
                       <Box sx={{ display: "flex", gap: 1 }}>
@@ -790,7 +820,7 @@ export default function EditMemberDetails({ memberId }) {
                       </Box>
                     </Box>
                     <Box sx={{ flex: 1 }}>
-                      <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
+                      <Typography variant="body2" sx={{ mb: { xs: 0.5, sm: 1 }, fontWeight: 500 }}>
                         CVV
                       </Typography>
                       <StyledTextField
@@ -882,6 +912,6 @@ export default function EditMemberDetails({ memberId }) {
           </Alert>
         </Snackbar>
       </Box>
-    </Box>
+    </AppLayout>
   )
 }

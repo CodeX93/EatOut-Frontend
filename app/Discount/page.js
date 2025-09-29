@@ -2,13 +2,11 @@
 
 import { useEffect, useState } from "react"
 import { Box, Typography, Paper, Button, TextField, Dialog, DialogTitle, DialogContent, DialogActions, CircularProgress, Snackbar, Alert, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, IconButton, FormControl, InputLabel, Select, MenuItem } from "@mui/material"
-import SideNavbar from "../components/SideNavbar"
-import Header from "../components/Header"
+import AppLayout from "../components/AppLayout"
 import { db } from "../../firebaseConfig"
 import { collection, getDocs, addDoc, serverTimestamp, doc, deleteDoc, setDoc } from "firebase/firestore"
 import { Delete, Edit } from "@mui/icons-material"
 
-const drawerWidth = 240
 
 export default function DiscountPage() {
   const [loading, setLoading] = useState(true)
@@ -203,24 +201,16 @@ export default function DiscountPage() {
   }
 
   return (
-    <Box sx={{ display: "flex", bgcolor: "#f9f9f9", minHeight: "100vh" }}>
-      {/* Header */}
-      <Header />
-
-      {/* Sidebar */}
-      <SideNavbar />
-
-      {/* Main Content */}
+    <AppLayout>
       <Box
-        component="main"
         sx={{
-          flexGrow: 1,
-          p: { xs: 2, sm: 3 },
-          overflow: "hidden",
-          mt: { xs: 7, sm: 8 }, // Account for fixed header
-          ml: { xs: 0, sm: "240px" }, // Account for sidebar on larger screens
+          flex: 1,
+          p: { xs: 1.5, sm: 2, md: 3 },
+          pt: { xs: 2.5, sm: 3, md: 3 }, // Added top padding
+          pb: { xs: "80px", sm: "100px", md: "120px" }, // Added bottom padding
+          overflow: "auto",
           width: "100%",
-          maxWidth: "100%",
+          minHeight: "100%",
         }}
       >
         <Box sx={{ mb: 3, width: "100%", maxWidth: "100%" }}>
@@ -228,11 +218,12 @@ export default function DiscountPage() {
             sx={{
               display: "flex",
               justifyContent: "space-between",
-              alignItems: "center",
-              mb: 3,
+              alignItems: { xs: "flex-start", sm: "center" },
+              mb: { xs: 2.5, sm: 3 },
               flexWrap: "wrap",
-              gap: 2,
+              gap: { xs: 1.5, sm: 2 },
               width: "100%",
+              flexDirection: { xs: "column", sm: "row" },
             }}
           >
             <Box>
@@ -241,7 +232,9 @@ export default function DiscountPage() {
                 sx={{
                   fontWeight: 600,
                   color: "#da1818",
-                  fontSize: { xs: "1.5rem", sm: "2rem", md: "2.125rem" },
+                  fontSize: { xs: "1.5rem", sm: "1.75rem", md: "2rem" },
+                  lineHeight: 1.2,
+                  mb: { xs: 0.5, sm: 0 },
                 }}
               >
                 Discount Coupons
@@ -250,7 +243,7 @@ export default function DiscountPage() {
                 variant="body2"
                 sx={{
                   color: "#666",
-                  fontSize: "14px",
+                  fontSize: { xs: "12px", sm: "13px", md: "14px" },
                   mt: 0.5,
                 }}
               >
@@ -265,12 +258,14 @@ export default function DiscountPage() {
                 "&:hover": {
                   bgcolor: "#b71c1c",
                 },
-                px: 3,
-                py: 1,
-                borderRadius: "8px",
+                px: { xs: 2, sm: 3 },
+                py: { xs: 1.5, sm: 1 },
+                borderRadius: { xs: "6px", sm: "8px" },
                 textTransform: "none",
                 fontWeight: 600,
-                ml: "auto",
+                fontSize: { xs: "0.875rem", sm: "0.95rem" },
+                width: { xs: "100%", sm: "auto" },
+                ml: { xs: 0, sm: "auto" },
               }}
             >
               New Discount
@@ -293,24 +288,34 @@ export default function DiscountPage() {
               sx={{
                 bgcolor: "#ffffff",
                 border: "1px solid #dadada",
-                borderRadius: "12px",
+                borderRadius: { xs: "8px", sm: "10px", md: "12px" },
                 overflow: "hidden",
                 width: "100%",
                 maxWidth: "100%",
                 minWidth: "100%",
               }}
             >
-              <TableContainer sx={{ maxHeight: "600px", overflow: "auto", width: "100%", maxWidth: "100%", minWidth: "100%" }}>
-                <Table sx={{ width: "100%", minWidth: "100%", tableLayout: "fixed" }}>
+              <TableContainer sx={{ 
+                maxHeight: { xs: "400px", sm: "500px", md: "600px" }, 
+                overflow: "auto", 
+                width: "100%", 
+                maxWidth: "100%", 
+                minWidth: "100%" 
+              }}>
+                <Table sx={{ 
+                  width: "100%", 
+                  minWidth: "100%", 
+                  tableLayout: { xs: "auto", sm: "fixed" }
+                }}>
                 <TableHead>
                   <TableRow sx={{ bgcolor: "#f9f9f9" }}>
                     <TableCell
                       sx={{
                         color: "#8a8a8f",
                         fontWeight: 600,
-                        fontSize: { xs: "12px", sm: "14px" },
+                        fontSize: { xs: "11px", sm: "13px", md: "14px" },
                         borderBottom: "1px solid #dadada",
-                        py: 2,
+                        py: { xs: 1.5, sm: 2 },
                         width: "15%",
                       }}
                     >
@@ -320,9 +325,9 @@ export default function DiscountPage() {
                       sx={{
                         color: "#8a8a8f",
                         fontWeight: 600,
-                        fontSize: { xs: "12px", sm: "14px" },
+                        fontSize: { xs: "11px", sm: "13px", md: "14px" },
                         borderBottom: "1px solid #dadada",
-                        py: 2,
+                        py: { xs: 1.5, sm: 2 },
                         width: "12%",
                       }}
                     >
@@ -332,9 +337,9 @@ export default function DiscountPage() {
                       sx={{
                         color: "#8a8a8f",
                         fontWeight: 600,
-                        fontSize: { xs: "12px", sm: "14px" },
+                        fontSize: { xs: "11px", sm: "13px", md: "14px" },
                         borderBottom: "1px solid #dadada",
-                        py: 2,
+                        py: { xs: 1.5, sm: 2 },
                         width: "18%",
                       }}
                     >
@@ -344,9 +349,9 @@ export default function DiscountPage() {
                       sx={{
                         color: "#8a8a8f",
                         fontWeight: 600,
-                        fontSize: { xs: "12px", sm: "14px" },
+                        fontSize: { xs: "11px", sm: "13px", md: "14px" },
                         borderBottom: "1px solid #dadada",
-                        py: 2,
+                        py: { xs: 1.5, sm: 2 },
                         width: "20%",
                       }}
                     >
@@ -356,9 +361,9 @@ export default function DiscountPage() {
                       sx={{
                         color: "#8a8a8f",
                         fontWeight: 600,
-                        fontSize: { xs: "12px", sm: "14px" },
+                        fontSize: { xs: "11px", sm: "13px", md: "14px" },
                         borderBottom: "1px solid #dadada",
-                        py: 2,
+                        py: { xs: 1.5, sm: 2 },
                         textAlign: "center",
                         width: "10%",
                       }}
@@ -369,9 +374,9 @@ export default function DiscountPage() {
                       sx={{
                         color: "#8a8a8f",
                         fontWeight: 600,
-                        fontSize: { xs: "12px", sm: "14px" },
+                        fontSize: { xs: "11px", sm: "13px", md: "14px" },
                         borderBottom: "1px solid #dadada",
-                        py: 2,
+                        py: { xs: 1.5, sm: 2 },
                         width: "15%",
                       }}
                     >
@@ -381,9 +386,9 @@ export default function DiscountPage() {
                       sx={{
                         color: "#8a8a8f",
                         fontWeight: 600,
-                        fontSize: { xs: "12px", sm: "14px" },
+                        fontSize: { xs: "11px", sm: "13px", md: "14px" },
                         borderBottom: "1px solid #dadada",
-                        py: 2,
+                        py: { xs: 1.5, sm: 2 },
                         textAlign: "center",
                         width: "10%",
                       }}
@@ -432,8 +437,9 @@ export default function DiscountPage() {
                           fontWeight: 600, 
                           color: "#da1818", 
                           width: "15%",
-                          py: 2,
+                          py: { xs: 1.5, sm: 2 },
                           borderBottom: "1px solid #f0f0f0",
+                          fontSize: { xs: "11px", sm: "13px", md: "14px" },
                         }}
                       >
                         {d.id || "N/A"}
@@ -441,8 +447,9 @@ export default function DiscountPage() {
                       <TableCell 
                         sx={{ 
                           width: "12%",
-                          py: 2,
+                          py: { xs: 1.5, sm: 2 },
                           borderBottom: "1px solid #f0f0f0",
+                          fontSize: { xs: "11px", sm: "13px", md: "14px" },
                         }}
                       >
                         {discountDisplay}
@@ -450,8 +457,9 @@ export default function DiscountPage() {
                       <TableCell 
                         sx={{ 
                           width: "18%",
-                          py: 2,
+                          py: { xs: 1.5, sm: 2 },
                           borderBottom: "1px solid #f0f0f0",
+                          fontSize: { xs: "11px", sm: "13px", md: "14px" },
                         }}
                       >
                         {d["Valid For"] || "N/A"}
@@ -459,8 +467,9 @@ export default function DiscountPage() {
                       <TableCell 
                         sx={{ 
                           width: "20%",
-                          py: 2,
+                          py: { xs: 1.5, sm: 2 },
                           borderBottom: "1px solid #f0f0f0",
+                          fontSize: { xs: "11px", sm: "13px", md: "14px" },
                         }}
                       >
                         {d.Purpose || "N/A"}
@@ -478,8 +487,9 @@ export default function DiscountPage() {
                       <TableCell 
                         sx={{ 
                           width: "15%",
-                          py: 2,
+                          py: { xs: 1.5, sm: 2 },
                           borderBottom: "1px solid #f0f0f0",
+                          fontSize: { xs: "11px", sm: "13px", md: "14px" },
                         }}
                       >
                         {validityDate}
@@ -527,10 +537,27 @@ export default function DiscountPage() {
         </Box>
       </Box>
 
-        <Dialog open={open} onClose={() => setOpen(false)} maxWidth="sm" fullWidth>
-          <DialogTitle>Create Discount</DialogTitle>
-          <DialogContent sx={{ pt: 2, maxHeight: "70vh", overflow: "auto" }}>
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+        <Dialog 
+          open={open} 
+          onClose={() => setOpen(false)} 
+          maxWidth="sm" 
+          fullWidth
+          fullScreen={{ xs: true, sm: false }}
+        >
+          <DialogTitle sx={{ fontSize: { xs: "1.25rem", sm: "1.5rem" } }}>
+            Create Discount
+          </DialogTitle>
+          <DialogContent sx={{ 
+            pt: { xs: 1, sm: 2 }, 
+            pb: { xs: 2, sm: 3 },
+            maxHeight: { xs: "80vh", sm: "70vh" }, 
+            overflow: "auto" 
+          }}>
+            <Box sx={{ 
+              display: "flex", 
+              flexDirection: "column", 
+              gap: { xs: 1.5, sm: 2 } 
+            }}>
               <TextField label="Discount Code" value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} fullWidth />
               
               <FormControl fullWidth>
@@ -565,7 +592,19 @@ export default function DiscountPage() {
                 />
               )}
               
-              <TextField label="Valid For" value={form.validFor} onChange={(e) => setForm({ ...form, validFor: e.target.value })} fullWidth />
+              <FormControl fullWidth>
+                <InputLabel>Valid For</InputLabel>
+                <Select
+                  value={form.validFor}
+                  onChange={(e) => setForm({ ...form, validFor: e.target.value })}
+                  label="Valid For"
+                >
+                  <MenuItem value="3 months">3 months</MenuItem>
+                  <MenuItem value="Semi Annually">Semi Annually</MenuItem>
+                  <MenuItem value="Annually">Annually</MenuItem>
+                  <MenuItem value="All">All</MenuItem>
+                </Select>
+              </FormControl>
               <TextField label="Purpose" value={form.purpose} onChange={(e) => setForm({ ...form, purpose: e.target.value })} fullWidth />
               <TextField type="number" label="Quantity" value={form.quantity} onChange={(e) => setForm({ ...form, quantity: e.target.value })} fullWidth />
               <TextField type="date" label="Validity Date" value={form.validityDate} onChange={(e) => setForm({ ...form, validityDate: e.target.value })} fullWidth InputLabelProps={{ shrink: true }} />
@@ -580,10 +619,28 @@ export default function DiscountPage() {
         </Dialog>
 
         {/* Edit Discount Modal */}
-        <Dialog open={editOpen} onClose={() => setEditOpen(false)} maxWidth="sm" fullWidth>
-          <DialogTitle>Edit Discount</DialogTitle>
-          <DialogContent sx={{ maxHeight: "70vh", overflow: "auto" }}>
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 1 }}>
+        <Dialog 
+          open={editOpen} 
+          onClose={() => setEditOpen(false)} 
+          maxWidth="sm" 
+          fullWidth
+          fullScreen={{ xs: true, sm: false }}
+        >
+          <DialogTitle sx={{ fontSize: { xs: "1.25rem", sm: "1.5rem" } }}>
+            Edit Discount
+          </DialogTitle>
+          <DialogContent sx={{ 
+            pt: { xs: 1, sm: 2 }, 
+            pb: { xs: 2, sm: 3 },
+            maxHeight: { xs: "80vh", sm: "70vh" }, 
+            overflow: "auto" 
+          }}>
+            <Box sx={{ 
+              display: "flex", 
+              flexDirection: "column", 
+              gap: { xs: 1.5, sm: 2 }, 
+              pt: { xs: 0, sm: 1 } 
+            }}>
               <TextField 
                 label="Discount Code" 
                 value={form.code} 
@@ -621,7 +678,19 @@ export default function DiscountPage() {
                   fullWidth 
                 />
               )}
-              <TextField label="Valid For" value={form.validFor} onChange={(e) => setForm({ ...form, validFor: e.target.value })} fullWidth />
+              <FormControl fullWidth>
+                <InputLabel>Valid For</InputLabel>
+                <Select
+                  value={form.validFor}
+                  onChange={(e) => setForm({ ...form, validFor: e.target.value })}
+                  label="Valid For"
+                >
+                  <MenuItem value="3 months">3 months</MenuItem>
+                  <MenuItem value="Semi Annually">Semi Annually</MenuItem>
+                  <MenuItem value="Annually">Annually</MenuItem>
+                  <MenuItem value="All">All</MenuItem>
+                </Select>
+              </FormControl>
               <TextField label="Purpose" value={form.purpose} onChange={(e) => setForm({ ...form, purpose: e.target.value })} fullWidth />
               <TextField type="number" label="Quantity" value={form.quantity} onChange={(e) => setForm({ ...form, quantity: e.target.value })} fullWidth />
               <TextField type="date" label="Validity Date" value={form.validityDate} onChange={(e) => setForm({ ...form, validityDate: e.target.value })} fullWidth InputLabelProps={{ shrink: true }} />
@@ -638,7 +707,7 @@ export default function DiscountPage() {
         <Snackbar open={success} autoHideDuration={3000} onClose={() => setSuccess(false)} anchorOrigin={{ vertical: "top", horizontal: "right" }}>
           <Alert severity="success" onClose={() => setSuccess(false)}>Discount updated successfully</Alert>
         </Snackbar>
-    </Box>
+    </AppLayout>
   )
 }
 

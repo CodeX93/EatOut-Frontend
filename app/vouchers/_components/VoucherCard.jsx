@@ -114,10 +114,10 @@ const VoucherCard = ({
       sx={{
         position: "relative",
         width: "100%",
-        height: "180px",
+        height: { xs: "220px", sm: "200px" },
         backgroundColor: "#f5f5f5",
         borderRadius: "8px",
-        padding: "16px",
+        padding: { xs: "12px", sm: "16px" },
         display: "flex",
         flexDirection: "column",
         justifyContent: "space-between",
@@ -324,6 +324,8 @@ const VoucherCard = ({
           justifyContent: "space-between",
           alignItems: "center",
           marginTop: "auto",
+          minHeight: "32px",
+          paddingTop: "8px",
         }}
       >
         <Box sx={{ display: "flex", alignItems: "center", flex: 1 }}>

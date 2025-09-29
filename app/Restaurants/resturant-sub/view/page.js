@@ -232,13 +232,23 @@ function ViewPageContent() {
                 borderBottom: "1px solid #efeff4",
               }}
             >
-              <Toolbar sx={{ justifyContent: "space-between", px: 3 }}>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 3 }}>
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <Toolbar sx={{ 
+                justifyContent: "space-between", 
+                px: { xs: 1, sm: 2, md: 3 },
+                minHeight: { xs: "56px", sm: "64px" }
+              }}>
+                <Box sx={{ 
+                  display: "flex", 
+                  alignItems: "center", 
+                  gap: { xs: 1, sm: 2, md: 3 },
+                  flex: 1,
+                  minWidth: 0,
+                }}>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexShrink: 0 }}>
                     <Box
                       sx={{
-                        width: 32,
-                        height: 32,
+                        width: { xs: 28, sm: 32 },
+                        height: { xs: 28, sm: 32 },
                         bgcolor: "#ff2d55",
                         borderRadius: "50%",
                         display: "flex",
@@ -246,15 +256,24 @@ function ViewPageContent() {
                         justifyContent: "center",
                       }}
                     >
-                      <Typography sx={{ color: "white", fontWeight: "bold", fontSize: "14px" }}>E</Typography>
+                      <Typography sx={{ 
+                        color: "white", 
+                        fontWeight: "bold", 
+                        fontSize: { xs: "12px", sm: "14px" }
+                      }}>E</Typography>
                     </Box>
-                    <Typography sx={{ fontWeight: "bold", color: "#ff2d55", fontSize: "18px" }}>E.A.T</Typography>
+                    <Typography sx={{ 
+                      fontWeight: "bold", 
+                      color: "#ff2d55", 
+                      fontSize: { xs: "14px", sm: "16px", md: "18px" }
+                    }}>E.A.T</Typography>
                   </Box>
                   <TextField
                     placeholder="Search"
                     size="small"
                     sx={{
-                      width: 320,
+                      width: { xs: 0, sm: 200, md: 320 },
+                      display: { xs: "none", sm: "block" },
                       "& .MuiOutlinedInput-root": {
                         bgcolor: "#efeff4",
                         borderRadius: "8px",
@@ -271,46 +290,98 @@ function ViewPageContent() {
                     }}
                   />
                 </Box>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                <Box sx={{ 
+                  display: "flex", 
+                  alignItems: "center", 
+                  gap: { xs: 1, sm: 2 },
+                  flexShrink: 0,
+                }}>
                   <Button
                     variant="text"
                     startIcon={<CalendarToday />}
                     endIcon={<KeyboardArrowDown />}
-                    sx={{ color: "#666666", textTransform: "none" }}
+                    sx={{ 
+                      color: "#666666", 
+                      textTransform: "none",
+                      display: { xs: "none", sm: "flex" },
+                      fontSize: { sm: "0.75rem", md: "0.875rem" },
+                    }}
                   >
                     Wed 29 May 2026
                   </Button>
-                  <IconButton>
-                    <Notifications sx={{ color: "#666666" }} />
+                  <IconButton size={window.innerWidth < 600 ? "small" : "medium"}>
+                    <Notifications sx={{ 
+                      color: "#666666",
+                      fontSize: { xs: "18px", sm: "20px", md: "24px" }
+                    }} />
                   </IconButton>
-                  <IconButton>
-                    <Settings sx={{ color: "#666666" }} />
+                  <IconButton size={window.innerWidth < 600 ? "small" : "medium"}>
+                    <Settings sx={{ 
+                      color: "#666666",
+                      fontSize: { xs: "18px", sm: "20px", md: "24px" }
+                    }} />
                   </IconButton>
-                  <Avatar sx={{ width: 32, height: 32, bgcolor: "#c8c7cc", color: "#666666" }}>JM</Avatar>
+                  <Avatar sx={{ 
+                    width: { xs: 28, sm: 32 }, 
+                    height: { xs: 28, sm: 32 }, 
+                    bgcolor: "#c8c7cc", 
+                    color: "#666666",
+                    fontSize: { xs: "12px", sm: "14px" }
+                  }}>JM</Avatar>
                 </Box>
               </Toolbar>
             </AppBar>
 
             {/* Main Content */}
-            <Box component="main" sx={{ flexGrow: 1, p: 4 }}>
+            <Box component="main" sx={{ 
+              flexGrow: 1, 
+              p: { xs: 1.5, sm: 2, md: 3, lg: 4 },
+              mt: { xs: "56px", sm: "64px" }
+            }}>
               <Toolbar />
 
               {/* Page Title */}
-              <Typography variant="h4" sx={{ fontWeight: 600, color: "#ff2d55", mb: 4 }}>
+              <Typography variant="h4" sx={{ 
+                fontWeight: 600, 
+                color: "#ff2d55", 
+                mb: { xs: 2, sm: 3, md: 4 },
+                fontSize: { xs: "1.25rem", sm: "1.5rem", md: "2rem", lg: "2.125rem" },
+                lineHeight: 1.2,
+              }}>
                 View Restaurant Details
               </Typography>
 
               {/* Restaurant Details Card - Full Width */}
-              <Paper sx={{ p: 4, mb: 3, borderRadius: "8px", boxShadow: "0 1px 3px rgba(0,0,0,0.1)" }}>
-                <Typography variant="h6" sx={{ fontWeight: 600, color: "#ff2d55", mb: 3 }}>
+              <Paper sx={{ 
+                p: { xs: 2, sm: 3, md: 4 }, 
+                mb: { xs: 2, sm: 3, md: 3 }, 
+                borderRadius: { xs: "6px", sm: "8px" }, 
+                boxShadow: { xs: "none", sm: "0 1px 3px rgba(0,0,0,0.1)" }
+              }}>
+                <Typography variant="h6" sx={{ 
+                  fontWeight: 600, 
+                  color: "#ff2d55", 
+                  mb: { xs: 2, sm: 3 },
+                  fontSize: { xs: "1rem", sm: "1.125rem", md: "1.25rem" },
+                  lineHeight: 1.3,
+                }}>
                   Restaurant Details
                 </Typography>
 
-                <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                <Box sx={{ display: "flex", flexDirection: "column", gap: { xs: 2, sm: 2.5, md: 3 } }}>
                   {/* First Row - Name and Cuisines */}
-                  <Box sx={{ display: "flex", gap: 3 }}>
+                  <Box sx={{ 
+                    display: "flex", 
+                    flexDirection: { xs: "column", sm: "row" },
+                    gap: { xs: 2, sm: 3 }
+                  }}>
                     <Box sx={{ flex: 1 }}>
-                      <Typography variant="body2" sx={{ mb: 1, fontWeight: 500, color: "#000000" }}>
+                      <Typography variant="body2" sx={{ 
+                        mb: { xs: 0.5, sm: 1 }, 
+                        fontWeight: 500, 
+                        color: "#000000",
+                        fontSize: { xs: "0.75rem", sm: "0.875rem" },
+                      }}>
                         First Name
                       </Typography>
                       <TextField
@@ -322,10 +393,11 @@ function ViewPageContent() {
                         sx={{
                           "& .MuiOutlinedInput-root": {
                             bgcolor: "#ffffff",
-                            borderRadius: "6px",
-                            fontSize: "14px",
+                            borderRadius: { xs: "4px", sm: "6px" },
+                            fontSize: { xs: "13px", sm: "14px" },
                             fontWeight: 400,
                             color: "#333333",
+                            height: { xs: "40px", sm: "44px" },
                             "& fieldset": {
                               borderColor: "#e0e0e0",
                               borderWidth: "1px",
@@ -339,8 +411,8 @@ function ViewPageContent() {
                             },
                           },
                           "& .MuiInputBase-input": {
-                            padding: "10px 12px",
-                            fontSize: "14px",
+                            padding: { xs: "8px 10px", sm: "10px 12px" },
+                            fontSize: { xs: "13px", sm: "14px" },
                             fontWeight: 400,
                             color: "#333333",
                           },
@@ -348,20 +420,25 @@ function ViewPageContent() {
                       />
                     </Box>
                     <Box sx={{ flex: 1 }}>
-                      <Typography variant="body2" sx={{ mb: 1, fontWeight: 500, color: "#000000" }}>
+                      <Typography variant="body2" sx={{ 
+                        mb: { xs: 0.5, sm: 1 }, 
+                        fontWeight: 500, 
+                        color: "#000000",
+                        fontSize: { xs: "0.75rem", sm: "0.875rem" },
+                      }}>
                         Cuisines:
                       </Typography>
                       <Box
                         sx={{
                           display: "flex",
                           flexWrap: "wrap",
-                          gap: 1,
+                          gap: { xs: 0.5, sm: 1 },
                           alignItems: "center",
-                          p: "10px 12px",
+                          p: { xs: "8px 10px", sm: "10px 12px" },
                           border: "1px solid #e0e0e0",
-                          borderRadius: "6px",
+                          borderRadius: { xs: "4px", sm: "6px" },
                           bgcolor: "#ffffff",
-                          minHeight: "40px",
+                          minHeight: { xs: "40px", sm: "44px" },
                           "&:hover": {
                             borderColor: "#ff2d55",
                           },
@@ -372,17 +449,20 @@ function ViewPageContent() {
                             key={cuisine}
                             label={cuisine}
                             onDelete={() => removeCuisine(cuisine)}
-                            deleteIcon={<Close sx={{ fontSize: "16px !important" }} />}
+                            deleteIcon={<Close sx={{ fontSize: { xs: "14px !important", sm: "16px !important" } }} />}
                             sx={{
                               bgcolor: "#efeff4",
                               color: "#333333",
-                              borderRadius: "4px",
-                              height: "24px",
-                              fontSize: "12px",
+                              borderRadius: { xs: "3px", sm: "4px" },
+                              height: { xs: "20px", sm: "24px" },
+                              fontSize: { xs: "11px", sm: "12px" },
                               fontWeight: 400,
+                              "& .MuiChip-label": {
+                                px: { xs: 1, sm: 1.5 },
+                              },
                               "& .MuiChip-deleteIcon": {
                                 color: "#8a8a8f",
-                                fontSize: "16px",
+                                fontSize: { xs: "14px", sm: "16px" },
                                 "&:hover": {
                                   color: "#ff2d55",
                                 },
@@ -398,9 +478,18 @@ function ViewPageContent() {
                   </Box>
 
                   {/* Second Row - Address, City, Phone */}
-                  <Box sx={{ display: "flex", gap: 3 }}>
+                  <Box sx={{ 
+                    display: "flex", 
+                    flexDirection: { xs: "column", md: "row" },
+                    gap: { xs: 2, md: 3 }
+                  }}>
                     <Box sx={{ flex: 1 }}>
-                      <Typography variant="body2" sx={{ mb: 1, fontWeight: 500, color: "#000000" }}>
+                      <Typography variant="body2" sx={{ 
+                        mb: { xs: 0.5, sm: 1 }, 
+                        fontWeight: 500, 
+                        color: "#000000",
+                        fontSize: { xs: "0.75rem", sm: "0.875rem" },
+                      }}>
                         Full Address
                       </Typography>
                       <TextField
@@ -412,10 +501,11 @@ function ViewPageContent() {
                         sx={{
                           "& .MuiOutlinedInput-root": {
                             bgcolor: "#ffffff",
-                            borderRadius: "6px",
-                            fontSize: "14px",
+                            borderRadius: { xs: "4px", sm: "6px" },
+                            fontSize: { xs: "13px", sm: "14px" },
                             fontWeight: 400,
                             color: "#333333",
+                            height: { xs: "40px", sm: "44px" },
                             "& fieldset": {
                               borderColor: "#e0e0e0",
                               borderWidth: "1px",
@@ -429,8 +519,8 @@ function ViewPageContent() {
                             },
                           },
                           "& .MuiInputBase-input": {
-                            padding: "10px 12px",
-                            fontSize: "14px",
+                            padding: { xs: "8px 10px", sm: "10px 12px" },
+                            fontSize: { xs: "13px", sm: "14px" },
                             fontWeight: 400,
                             color: "#333333",
                           },
@@ -438,7 +528,12 @@ function ViewPageContent() {
                       />
                     </Box>
                     <Box sx={{ flex: 1 }}>
-                      <Typography variant="body2" sx={{ mb: 1, fontWeight: 500, color: "#000000" }}>
+                      <Typography variant="body2" sx={{ 
+                        mb: { xs: 0.5, sm: 1 }, 
+                        fontWeight: 500, 
+                        color: "#000000",
+                        fontSize: { xs: "0.75rem", sm: "0.875rem" },
+                      }}>
                         City/Location
                       </Typography>
                       <TextField
@@ -450,10 +545,11 @@ function ViewPageContent() {
                         sx={{
                           "& .MuiOutlinedInput-root": {
                             bgcolor: "#ffffff",
-                            borderRadius: "6px",
-                            fontSize: "14px",
+                            borderRadius: { xs: "4px", sm: "6px" },
+                            fontSize: { xs: "13px", sm: "14px" },
                             fontWeight: 400,
                             color: "#333333",
+                            height: { xs: "40px", sm: "44px" },
                             "& fieldset": {
                               borderColor: "#e0e0e0",
                               borderWidth: "1px",
@@ -467,8 +563,8 @@ function ViewPageContent() {
                             },
                           },
                           "& .MuiInputBase-input": {
-                            padding: "10px 12px",
-                            fontSize: "14px",
+                            padding: { xs: "8px 10px", sm: "10px 12px" },
+                            fontSize: { xs: "13px", sm: "14px" },
                             fontWeight: 400,
                             color: "#333333",
                           },
@@ -476,7 +572,12 @@ function ViewPageContent() {
                       />
                     </Box>
                     <Box sx={{ flex: 1 }}>
-                      <Typography variant="body2" sx={{ mb: 1, fontWeight: 500, color: "#000000" }}>
+                      <Typography variant="body2" sx={{ 
+                        mb: { xs: 0.5, sm: 1 }, 
+                        fontWeight: 500, 
+                        color: "#000000",
+                        fontSize: { xs: "0.75rem", sm: "0.875rem" },
+                      }}>
                         Telephone Number
                       </Typography>
                       <TextField
@@ -488,10 +589,11 @@ function ViewPageContent() {
                         sx={{
                           "& .MuiOutlinedInput-root": {
                             bgcolor: "#ffffff",
-                            borderRadius: "6px",
-                            fontSize: "14px",
+                            borderRadius: { xs: "4px", sm: "6px" },
+                            fontSize: { xs: "13px", sm: "14px" },
                             fontWeight: 400,
                             color: "#333333",
+                            height: { xs: "40px", sm: "44px" },
                             "& fieldset": {
                               borderColor: "#e0e0e0",
                               borderWidth: "1px",
@@ -505,8 +607,8 @@ function ViewPageContent() {
                             },
                           },
                           "& .MuiInputBase-input": {
-                            padding: "10px 12px",
-                            fontSize: "14px",
+                            padding: { xs: "8px 10px", sm: "10px 12px" },
+                            fontSize: { xs: "13px", sm: "14px" },
                             fontWeight: 400,
                             color: "#333333",
                           },
@@ -517,7 +619,12 @@ function ViewPageContent() {
 
                   {/* Third Row - Email */}
                   <Box>
-                    <Typography variant="body2" sx={{ mb: 1, fontWeight: 500, color: "#000000" }}>
+                    <Typography variant="body2" sx={{ 
+                      mb: { xs: 0.5, sm: 1 }, 
+                      fontWeight: 500, 
+                      color: "#000000",
+                      fontSize: { xs: "0.75rem", sm: "0.875rem" },
+                    }}>
                       Email Address
                     </Typography>
                     <TextField
@@ -529,10 +636,11 @@ function ViewPageContent() {
                       sx={{
                         "& .MuiOutlinedInput-root": {
                           bgcolor: "#ffffff",
-                          borderRadius: "6px",
-                          fontSize: "14px",
+                          borderRadius: { xs: "4px", sm: "6px" },
+                          fontSize: { xs: "13px", sm: "14px" },
                           fontWeight: 400,
                           color: "#333333",
+                          height: { xs: "40px", sm: "44px" },
                           "& fieldset": {
                             borderColor: "#e0e0e0",
                             borderWidth: "1px",
@@ -546,8 +654,8 @@ function ViewPageContent() {
                           },
                         },
                         "& .MuiInputBase-input": {
-                          padding: "10px 12px",
-                          fontSize: "14px",
+                          padding: { xs: "8px 10px", sm: "10px 12px" },
+                          fontSize: { xs: "13px", sm: "14px" },
                           fontWeight: 400,
                           color: "#333333",
                         },
@@ -558,31 +666,57 @@ function ViewPageContent() {
               </Paper>
 
               {/* Two Column Layout */}
-              <Box sx={{ display: "flex", gap: 3 }}>
+              <Box sx={{ 
+                display: "flex", 
+                flexDirection: { xs: "column", lg: "row" },
+                gap: { xs: 2, sm: 2.5, md: 3 }
+              }}>
                 {/* Left Column - Main Info Card */}
                 <Box sx={{ flex: 1 }}>
-                  <Paper sx={{ p: 4, borderRadius: "8px", boxShadow: "0 1px 3px rgba(0,0,0,0.1)", height: "fit-content" }}>
-                    <Typography variant="h6" sx={{ fontWeight: 600, color: "#ff2d55", mb: 3 }}>
+                  <Paper sx={{ 
+                    p: { xs: 2, sm: 3, md: 4 }, 
+                    borderRadius: { xs: "6px", sm: "8px" }, 
+                    boxShadow: { xs: "none", sm: "0 1px 3px rgba(0,0,0,0.1)" }, 
+                    height: "fit-content" 
+                  }}>
+                    <Typography variant="h6" sx={{ 
+                      fontWeight: 600, 
+                      color: "#ff2d55", 
+                      mb: { xs: 2, sm: 3 },
+                      fontSize: { xs: "1rem", sm: "1.125rem", md: "1.25rem" },
+                      lineHeight: 1.3,
+                    }}>
                       Main Info
                     </Typography>
 
-                    <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                    <Box sx={{ display: "flex", flexDirection: "column", gap: { xs: 2, sm: 2.5, md: 3 } }}>
                       {/* Opening Days */}
                       <Box>
-                        <Typography variant="body2" sx={{ mb: 1, fontWeight: 500, color: "#000000" }}>
+                        <Typography variant="body2" sx={{ 
+                          mb: { xs: 0.5, sm: 1 }, 
+                          fontWeight: 500, 
+                          color: "#000000",
+                          fontSize: { xs: "0.75rem", sm: "0.875rem" },
+                        }}>
                           Opening Days
                         </Typography>
-                        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                          <FormControl size="small" sx={{ flex: 1 }}>
+                        <Box sx={{ 
+                          display: "flex", 
+                          alignItems: "center", 
+                          gap: { xs: 1, sm: 2 },
+                          flexDirection: { xs: "column", sm: "row" }
+                        }}>
+                          <FormControl size="small" sx={{ flex: 1, width: { xs: "100%", sm: "auto" } }}>
                             <Select
                               value={restaurant.openingDays?.start || ""}
                               disabled
                               sx={{
                                 bgcolor: "#ffffff",
-                                borderRadius: "6px",
-                                fontSize: "14px",
+                                borderRadius: { xs: "4px", sm: "6px" },
+                                fontSize: { xs: "13px", sm: "14px" },
                                 fontWeight: 400,
                                 color: "#333333",
+                                height: { xs: "40px", sm: "44px" },
                                 "& fieldset": {
                                   borderColor: "#e0e0e0",
                                   borderWidth: "1px",
@@ -595,8 +729,8 @@ function ViewPageContent() {
                                   borderWidth: "2px",
                                 },
                                 "& .MuiSelect-select": {
-                                  padding: "10px 12px",
-                                  fontSize: "14px",
+                                  padding: { xs: "8px 10px", sm: "10px 12px" },
+                                  fontSize: { xs: "13px", sm: "14px" },
                                   fontWeight: 400,
                                   color: "#333333",
                                 },
@@ -607,17 +741,23 @@ function ViewPageContent() {
                               <MenuItem value="22-03-2025">22-03-2025</MenuItem>
                             </Select>
                           </FormControl>
-                          <Typography sx={{ color: "#8a8a8f", mx: 1, fontSize: "14px" }}>—</Typography>
-                          <FormControl size="small" sx={{ flex: 1 }}>
+                          <Typography sx={{ 
+                            color: "#8a8a8f", 
+                            mx: { xs: 0, sm: 1 }, 
+                            fontSize: { xs: "12px", sm: "14px" },
+                            display: { xs: "none", sm: "block" }
+                          }}>—</Typography>
+                          <FormControl size="small" sx={{ flex: 1, width: { xs: "100%", sm: "auto" } }}>
                             <Select
                               value={restaurant.openingDays?.end || ""}
                               disabled
                               sx={{
                                 bgcolor: "#ffffff",
-                                borderRadius: "6px",
-                                fontSize: "14px",
+                                borderRadius: { xs: "4px", sm: "6px" },
+                                fontSize: { xs: "13px", sm: "14px" },
                                 fontWeight: 400,
                                 color: "#333333",
+                                height: { xs: "40px", sm: "44px" },
                                 "& fieldset": {
                                   borderColor: "#e0e0e0",
                                   borderWidth: "1px",
@@ -630,8 +770,8 @@ function ViewPageContent() {
                                   borderWidth: "2px",
                                 },
                                 "& .MuiSelect-select": {
-                                  padding: "10px 12px",
-                                  fontSize: "14px",
+                                  padding: { xs: "8px 10px", sm: "10px 12px" },
+                                  fontSize: { xs: "13px", sm: "14px" },
                                   fontWeight: 400,
                                   color: "#333333",
                                 },
@@ -1066,7 +1206,7 @@ function ViewPageContent() {
                         />
                       </Box>
 
-                      <Grid container spacing={2}>
+                      <Grid container spacing={{ xs: 1.5, sm: 2 }}>
                         <Grid item xs={12} md={6}>
                           <TextField
                             fullWidth
@@ -1078,10 +1218,11 @@ function ViewPageContent() {
                             sx={{
                               "& .MuiOutlinedInput-root": {
                                 bgcolor: "#ffffff",
-                                borderRadius: "6px",
-                                fontSize: "14px",
+                                borderRadius: { xs: "4px", sm: "6px" },
+                                fontSize: { xs: "13px", sm: "14px" },
                                 fontWeight: 400,
                                 color: "#333333",
+                                height: { xs: "40px", sm: "44px" },
                                 "& fieldset": {
                                   borderColor: "#e0e0e0",
                                   borderWidth: "1px",
@@ -1095,12 +1236,13 @@ function ViewPageContent() {
                                 },
                               },
                               "& .MuiInputBase-input": {
-                                padding: "10px 12px",
-                                fontSize: "14px",
+                                padding: { xs: "8px 10px", sm: "10px 12px" },
+                                fontSize: { xs: "13px", sm: "14px" },
                                 fontWeight: 400,
                                 "&::placeholder": {
                                   color: "#8a8a8f",
                                   opacity: 1,
+                                  fontSize: { xs: "13px", sm: "14px" },
                                 },
                               },
                             }}

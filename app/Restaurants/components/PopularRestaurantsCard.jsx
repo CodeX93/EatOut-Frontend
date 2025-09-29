@@ -40,8 +40,12 @@ export default function PopularRestaurantsCard({
     <Card sx={{ 
       bgcolor: "#ffffff", 
       border: "1px solid #dadada", 
-      borderRadius: "12px",
+      borderRadius: { xs: "8px", sm: "10px", md: "12px" },
       width: "100%",
+      height: "100%",
+      display: "flex",
+      flexDirection: "column",
+      boxShadow: { xs: "none", sm: "0 1px 3px rgba(0,0,0,0.1)" },
     }}>
       <Box sx={{ 
         display: "flex", 
@@ -56,7 +60,8 @@ export default function PopularRestaurantsCard({
           sx={{ 
             fontWeight: 600, 
             color: "#da1818",
-            fontSize: { xs: "1rem", sm: "1.25rem" },
+            fontSize: { xs: "0.875rem", sm: "1rem", md: "1.125rem", lg: "1.25rem" },
+            lineHeight: 1.3,
           }}
         >
           {title}
@@ -66,35 +71,54 @@ export default function PopularRestaurantsCard({
             value={selectedPeriod} 
             onChange={handlePeriodChange}
             sx={{ 
-              minWidth: { xs: 70, sm: 80 }, 
-              borderRadius: "8px",
-              fontSize: { xs: "0.75rem", sm: "0.875rem" },
+              minWidth: { xs: "80px", sm: "90px", md: "100px" }, 
+              borderRadius: { xs: "6px", sm: "8px" },
+              fontSize: { xs: "0.75rem", sm: "0.8125rem", md: "0.875rem" },
+              height: { xs: "32px", sm: "34px", md: "36px" },
+              "& .MuiSelect-select": {
+                padding: { xs: "6px 10px", sm: "8px 12px" },
+              },
             }}
           >
-            <MenuItem value="Today">Today</MenuItem>
-            <MenuItem value="Week">Week</MenuItem>
-            <MenuItem value="Month">Month</MenuItem>
-            <MenuItem value="Year">Year</MenuItem>
+            <MenuItem value="Today" sx={{ fontSize: { xs: "0.75rem", sm: "0.8125rem", md: "0.875rem" } }}>Today</MenuItem>
+            <MenuItem value="Week" sx={{ fontSize: { xs: "0.75rem", sm: "0.8125rem", md: "0.875rem" } }}>Week</MenuItem>
+            <MenuItem value="Month" sx={{ fontSize: { xs: "0.75rem", sm: "0.8125rem", md: "0.875rem" } }}>Month</MenuItem>
+            <MenuItem value="Year" sx={{ fontSize: { xs: "0.75rem", sm: "0.8125rem", md: "0.875rem" } }}>Year</MenuItem>
           </Select>
         </FormControl>
       </Box>
-      <CardContent sx={{ pt: 0, p: { xs: 1.5, sm: 2 } }}>
-        <Box sx={{ display: "flex", flexDirection: "column", gap: { xs: 1.5, sm: 2 } }}>
+      <CardContent sx={{ 
+        pt: 0, 
+        p: { xs: 1.5, sm: 1.5, md: 2 },
+        flex: 1,
+        display: "flex",
+        flexDirection: "column",
+      }}>
+        <Box sx={{ 
+          display: "flex", 
+          flexDirection: "column", 
+          gap: { xs: 1, sm: 1.25, md: 1.5 },
+          flex: 1,
+        }}>
           {displayRestaurants.map((restaurant, index) => (
             <Box
               key={index}
               sx={{
                 display: "flex",
                 alignItems: "center",
-                gap: { xs: 1.5, sm: 2 },
-                p: { xs: 1.5, sm: 2 },
-                borderRadius: "8px",
+                gap: { xs: 1.25, sm: 1.5, md: 2 },
+                p: { xs: 1, sm: 1.25, md: 1.5 },
+                borderRadius: { xs: "6px", sm: "8px" },
                 bgcolor: restaurant.highlighted ? "#da1818" : "transparent",
                 color: restaurant.highlighted ? "white" : "inherit",
                 cursor: "pointer",
                 transition: "all 0.2s ease",
+                border: restaurant.highlighted ? "none" : "1px solid #f0f0f0",
                 "&:hover": {
-                  bgcolor: restaurant.highlighted ? "#c41515" : "#f5f5f5",
+                  bgcolor: restaurant.highlighted ? "#c41515" : "#f8f8f8",
+                  borderColor: restaurant.highlighted ? "none" : "#e0e0e0",
+                  transform: "translateY(-1px)",
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
                 },
               }}
             >

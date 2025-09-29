@@ -4,6 +4,7 @@ import { useState } from "react"
 import Box from "@mui/material/Box"
 import Typography from "@mui/material/Typography"
 import TextField from "@mui/material/TextField"
+import Grid from "@mui/material/Grid"
 import MenuItem from "@mui/material/MenuItem"
 import Checkbox from "@mui/material/Checkbox"
 import Radio from "@mui/material/Radio"
@@ -19,28 +20,30 @@ import CardContent from "@mui/material/CardContent"
 import { styled } from "@mui/material/styles"
 import VisibilityIcon from "@mui/icons-material/Visibility"
 
-// Sidebar component import
-import Sidebar from "../../../components/SideNavbar"
+// Layout component import
+import AppLayout from "../../../components/AppLayout"
 
 // Custom styled components
 const StyledCard = styled(Card)(({ theme }) => ({
-  borderRadius: "8px",
-  boxShadow: "0px 1px 3px rgba(0, 0, 0, 0.1)",
-  marginBottom: "24px",
+  borderRadius: theme.breakpoints.down('sm') ? "6px" : "8px",
+  boxShadow: theme.breakpoints.down('sm') ? "none" : "0px 1px 3px rgba(0, 0, 0, 0.1)",
+  marginBottom: theme.breakpoints.down('sm') ? "16px" : "24px",
   backgroundColor: "#ffffff",
 }))
 
 const SectionTitle = styled(Typography)(({ theme }) => ({
   color: "#ff2d55",
   fontWeight: 600,
-  fontSize: "16px",
-  marginBottom: "16px",
+  fontSize: theme.breakpoints.down('sm') ? "14px" : "16px",
+  marginBottom: theme.breakpoints.down('sm') ? "12px" : "16px",
+  lineHeight: 1.3,
 }))
 
 const StyledTextField = styled(TextField)(({ theme }) => ({
   "& .MuiOutlinedInput-root": {
     backgroundColor: "#f8f9fa",
-    borderRadius: "6px",
+    borderRadius: theme.breakpoints.down('sm') ? "4px" : "6px",
+    height: theme.breakpoints.down('sm') ? "40px" : "44px",
     "& fieldset": {
       borderColor: "#e0e0e0",
     },
@@ -52,32 +55,38 @@ const StyledTextField = styled(TextField)(({ theme }) => ({
     },
     "& input": {
       color: "#666666",
+      fontSize: theme.breakpoints.down('sm') ? "13px" : "14px",
+      padding: theme.breakpoints.down('sm') ? "8px 10px" : "10px 12px",
     },
   },
   "& .MuiInputLabel-root": {
     color: "#666666",
+    fontSize: theme.breakpoints.down('sm') ? "12px" : "14px",
   },
 }))
 
 const StyledChip = styled(Chip)(({ theme }) => ({
   backgroundColor: "#ff2d55",
   color: "#ffffff",
-  borderRadius: "4px",
-  margin: "0 8px 8px 0",
+  borderRadius: theme.breakpoints.down('sm') ? "3px" : "4px",
+  margin: theme.breakpoints.down('sm') ? "0 4px 4px 0" : "0 8px 8px 0",
+  height: theme.breakpoints.down('sm') ? "24px" : "32px",
+  fontSize: theme.breakpoints.down('sm') ? "11px" : "12px",
 }))
 
 const PaymentMethodChip = styled(Box)(({ theme, selected }) => ({
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  padding: "8px 12px",
-  borderRadius: "8px",
+  padding: theme.breakpoints.down('sm') ? "6px 8px" : "8px 12px",
+  borderRadius: theme.breakpoints.down('sm') ? "6px" : "8px",
   backgroundColor: selected ? "#fae3e3" : "#f8f8f8",
   border: selected ? "1px solid #ff2d55" : "1px solid #e0e0e0",
-  marginRight: "8px",
-  marginBottom: "8px",
-  minWidth: "80px",
+  marginRight: theme.breakpoints.down('sm') ? "4px" : "8px",
+  marginBottom: theme.breakpoints.down('sm') ? "4px" : "8px",
+  minWidth: theme.breakpoints.down('sm') ? "60px" : "80px",
   flex: "1 1 auto",
+  fontSize: theme.breakpoints.down('sm') ? "11px" : "12px",
 }))
 
 const DisabledButton = styled(Button)(({ theme }) => ({
@@ -173,34 +182,43 @@ export default function ViewMemberDetails({ memberId }) {
   const days = Array.from({ length: 31 }, (_, i) => (i + 1).toString())
 
   return (
-    <Box sx={{ display: "flex", bgcolor: "#f9f9f9", minHeight: "100vh" }}>
-      {/* Sidebar */}
-      <Sidebar />
-
+    <AppLayout>
       {/* Main content */}
       <Box
         component="main"
         sx={{
-          flexGrow: 1,
-          p: 3,
-          ml: "240px",
-          pt: 2,
+          flex: 1,
+          p: { xs: 1.5, sm: 2, md: 3 },
+          pt: { xs: 2, sm: 2, md: 2 },
+          overflow: "auto",
         }}
       >
         {/* Header */}
-        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
-          <Typography variant="h5" component="h1" sx={{ color: "#ff2d55", fontWeight: 600 }}>
+        <Box sx={{ 
+          display: "flex", 
+          justifyContent: "space-between", 
+          alignItems: "center", 
+          mb: { xs: 2, sm: 3 },
+          flexDirection: { xs: "column", sm: "row" },
+          gap: { xs: 2, sm: 0 },
+        }}>
+          <Typography variant="h5" component="h1" sx={{ 
+            color: "#ff2d55", 
+            fontWeight: 600,
+            fontSize: { xs: "1.25rem", sm: "1.5rem", md: "1.75rem" },
+            lineHeight: 1.2,
+          }}>
             View Member Details
           </Typography>
         </Box>
 
         {/* Personal Details Section - Full Width */}
         <StyledCard>
-          <CardContent sx={{ p: 3 }}>
+          <CardContent sx={{ p: { xs: 1.5, sm: 2.5, md: 3 } }}>
             <SectionTitle>Personal Details</SectionTitle>
-            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 3 }}>
-              <Box sx={{ minWidth: "200px", flex: "1 1 200px" }}>
-                <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
+            <Grid container spacing={{ xs: 2, sm: 2.5, md: 3 }}>
+              <Grid item xs={12} md={3}>
+                <Typography variant="body2" sx={{ mb: { xs: 0.5, sm: 1 }, fontWeight: 500 }}>
                   Preferred Name
                 </Typography>
                 <StyledTextField
@@ -209,21 +227,21 @@ export default function ViewMemberDetails({ memberId }) {
                   value={formData.preferredName}
                   InputProps={{ readOnly: true }}
                 />
-              </Box>
-              <Box sx={{ minWidth: "200px", flex: "1 1 200px" }}>
-                <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
+              </Grid>
+              <Grid item xs={12} md={3}>
+                <Typography variant="body2" sx={{ mb: { xs: 0.5, sm: 1 }, fontWeight: 500 }}>
                   Email
                 </Typography>
                 <StyledTextField fullWidth size="small" value={formData.email} InputProps={{ readOnly: true }} />
-              </Box>
-              <Box sx={{ minWidth: "200px", flex: "1 1 200px" }}>
-                <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
+              </Grid>
+              <Grid item xs={12} md={3}>
+                <Typography variant="body2" sx={{ mb: { xs: 0.5, sm: 1 }, fontWeight: 500 }}>
                   Mobile Number
                 </Typography>
                 <StyledTextField fullWidth size="small" value={formData.mobileNumber} InputProps={{ readOnly: true }} />
-              </Box>
-              <Box sx={{ minWidth: "200px", flex: "1 1 200px" }}>
-                <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
+              </Grid>
+              <Grid item xs={12} md={3}>
+                <Typography variant="body2" sx={{ mb: { xs: 0.5, sm: 1 }, fontWeight: 500 }}>
                   Gender
                 </Typography>
                 <Box sx={{ display: "flex", alignItems: "center" }}>
@@ -277,12 +295,12 @@ export default function ViewMemberDetails({ memberId }) {
                     <Typography sx={{ color: formData.gender === "female" ? "#ff2d55" : "#ccc" }}>Female</Typography>
                   </Box>
                 </Box>
-              </Box>
-              <Box sx={{ minWidth: "300px", flex: "1 1 300px" }}>
-                <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
+              </Grid>
+              <Grid item xs={12} md={12}>
+                <Typography variant="body2" sx={{ mb: { xs: 0.5, sm: 1 }, fontWeight: 500 }}>
                   Date of Birth
                 </Typography>
-                <Box sx={{ display: "flex", gap: 2 }}>
+                <Box sx={{ display: "flex", gap: { xs: 1, sm: 2 } }}>
                   <StyledTextField
                     select
                     size="small"
@@ -323,20 +341,20 @@ export default function ViewMemberDetails({ memberId }) {
                     ))}
                   </StyledTextField>
                 </Box>
-              </Box>
-              <Box sx={{ minWidth: "200px", flex: "1 1 200px" }}>
-                <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
+              </Grid>
+              <Grid item xs={12} md={12}>
+                <Typography variant="body2" sx={{ mb: { xs: 0.5, sm: 1 }, fontWeight: 500 }}>
                   Referral Code
                 </Typography>
                 <StyledTextField fullWidth size="small" value={formData.referralCode} InputProps={{ readOnly: true }} />
-              </Box>
-            </Box>
+              </Grid>
+            </Grid>
           </CardContent>
         </StyledCard>
 
         {/* Membership Plan Section - Full Width */}
         <StyledCard>
-          <CardContent sx={{ p: 3 }}>
+          <CardContent sx={{ p: { xs: 1.5, sm: 2.5, md: 3 } }}>
             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
               <SectionTitle sx={{ mb: 0 }}>Membership Plan</SectionTitle>
               <Box>
@@ -460,20 +478,29 @@ export default function ViewMemberDetails({ memberId }) {
         </StyledCard>
 
         {/* 1x2 Grid Layout: One Row, Two Equal Columns */}
-        <Box sx={{ display: "flex", gap: 3, alignItems: "flex-start" }}>
+        <Box sx={{ 
+          display: "flex", 
+          flexDirection: { xs: "column", lg: "row" },
+          gap: { xs: 1.5, sm: 2.5, md: 3 },
+          alignItems: "flex-start" 
+        }}>
           {/* Column 1: Optional Information (50% width) */}
-          <Box sx={{ flex: 1, width: "50%" }}>
+          <Box sx={{ flex: 1, width: { xs: "100%", lg: "50%" } }}>
             <StyledCard>
-              <CardContent sx={{ p: 3 }}>
+              <CardContent sx={{ p: { xs: 2, sm: 2.5, md: 3 } }}>
                 <SectionTitle>Optional Information</SectionTitle>
-                <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                <Box sx={{ display: "flex", flexDirection: "column", gap: { xs: 1.5, sm: 2 } }}>
                   <Box>
                     <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
                       Address
                     </Typography>
                     <StyledTextField fullWidth size="small" value={formData.address} InputProps={{ readOnly: true }} />
                   </Box>
-                  <Box sx={{ display: "flex", gap: 2 }}>
+                  <Box sx={{ 
+                    display: "flex", 
+                    flexDirection: { xs: "column", sm: "row" },
+                    gap: { xs: 1.5, sm: 2 }
+                  }}>
                     <Box sx={{ flex: 1 }}>
                       <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
                         Marital Status
@@ -511,7 +538,11 @@ export default function ViewMemberDetails({ memberId }) {
                       </StyledTextField>
                     </Box>
                   </Box>
-                  <Box sx={{ display: "flex", gap: 2 }}>
+                  <Box sx={{ 
+                    display: "flex", 
+                    flexDirection: { xs: "column", sm: "row" },
+                    gap: { xs: 1.5, sm: 2 }
+                  }}>
                     <Box sx={{ flex: 1 }}>
                       <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
                         Religion
@@ -569,10 +600,16 @@ export default function ViewMemberDetails({ memberId }) {
           </Box>
 
           {/* Column 2: Facilities and Payment Details Stacked (50% width) */}
-          <Box sx={{ flex: 1, width: "50%", display: "flex", flexDirection: "column", gap: 3 }}>
+          <Box sx={{ 
+            flex: 1, 
+            width: { xs: "100%", lg: "50%" }, 
+            display: "flex", 
+            flexDirection: "column", 
+            gap: { xs: 2, sm: 2.5, md: 3 }
+          }}>
             {/* Facilities and Services Section */}
             <StyledCard>
-              <CardContent sx={{ p: 3 }}>
+              <CardContent sx={{ p: { xs: 2, sm: 2.5, md: 3 } }}>
                 <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
                   <SectionTitle sx={{ mb: 0 }}>Facilities and Services</SectionTitle>
                   <IconButton
@@ -745,12 +782,18 @@ export default function ViewMemberDetails({ memberId }) {
         </Box>
 
         {/* Disabled Update Button */}
-        <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 3 }}>
+        <Box sx={{ 
+          display: "flex", 
+          justifyContent: "flex-end", 
+          mt: { xs: 2, sm: 3 },
+          mb: { xs: 2, sm: 3 },
+          pb: { xs: 2, sm: 0 }
+        }}>
           <DisabledButton variant="contained" disabled>
             Update
           </DisabledButton>
         </Box>
       </Box>
-    </Box>
+    </AppLayout>
   )
 }

@@ -10,8 +10,7 @@ import { db } from "../../firebaseConfig" // Adjust path as needed
 import { collection, query, getDocs, orderBy, where } from "firebase/firestore"
 
 // Import your existing components
-import Header from "../components/Header"
-import Sidebar from "../components/SideNavbar"
+import AppLayout from "../components/AppLayout"
 
 // Import the new components we created
 import SearchAndFilters from "./_components/SearchAndFilters"
@@ -19,7 +18,6 @@ import VouchersTable from "./_components/VouchersTable"
 import VoucherCarousel from "./_components/VoucherCarousel"
 import ReportTable from "./_components/ReportTable"
 
-const drawerWidth = 240
 
 export default function VouchersPage() {
   const router = useRouter()
@@ -353,18 +351,7 @@ export default function VouchersPage() {
   // Loading state
   if (loading) {
     return (
-      <Box
-        component="div"
-        sx={{
-          display: "flex",
-          backgroundColor: "#f9f9f9",
-          minHeight: "100vh",
-          height: "100vh",
-          width: "100vw",
-        }}
-      >
-        <Header />
-        <Sidebar />
+      <AppLayout>
         <Box
           component="div"
           sx={{
@@ -373,8 +360,6 @@ export default function VouchersPage() {
             width: "100%",
             display: "flex",
             flexDirection: "column",
-            ml: { xs: 0, sm: `${drawerWidth}px` },
-            mt: { xs: "56px", sm: "64px" },
             justifyContent: "center",
             alignItems: "center",
           }}
@@ -384,25 +369,14 @@ export default function VouchersPage() {
             Loading vouchers data...
           </Typography>
         </Box>
-      </Box>
+      </AppLayout>
     )
   }
 
   // Error state
   if (error) {
     return (
-      <Box
-        component="div"
-        sx={{
-          display: "flex",
-          backgroundColor: "#f9f9f9",
-          minHeight: "100vh",
-          height: "100vh",
-          width: "100vw",
-        }}
-      >
-        <Header />
-        <Sidebar />
+      <AppLayout>
         <Box
           component="div"
           sx={{
@@ -411,8 +385,6 @@ export default function VouchersPage() {
             width: "100%",
             display: "flex",
             flexDirection: "column",
-            ml: { xs: 0, sm: `${drawerWidth}px` },
-            mt: { xs: "56px", sm: "64px" },
             p: 3,
           }}
         >
@@ -437,27 +409,12 @@ export default function VouchersPage() {
             </Button>
           </Alert>
         </Box>
-      </Box>
+      </AppLayout>
     )
   }
 
   return (
-    <Box
-      component="div"
-      sx={{
-        display: "flex",
-        backgroundColor: "#f9f9f9",
-        minHeight: "100vh",
-        height: "100vh",
-        width: "100vw",
-      }}
-    >
-      {/* Header */}
-      <Header />
-      
-      {/* Sidebar */}
-      <Sidebar />
-
+    <AppLayout>
       {/* Main Content */}
       <Box
         component="div"
@@ -467,7 +424,6 @@ export default function VouchersPage() {
           width: "100%",
           display: "flex",
           flexDirection: "column",
-          ml: { xs: 0, sm: `${drawerWidth}px` },
           mt: { xs: "56px", sm: "64px" },
           overflow: "hidden",
         }}
@@ -704,6 +660,6 @@ export default function VouchersPage() {
           </Box>
         </Box>
       </Box>
-    </Box>
+    </AppLayout>
   )
 }

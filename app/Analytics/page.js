@@ -10,8 +10,7 @@ import TopCustomersTable from "./components/TopCustomersTable"
 import CustomerStatusCards from "./components/CustomerStatusCards"
 import TotalCustomersChart from "./components/TotalCustomersChart"
 import RecentVouchersTable from "./components/RecentVouchersTable"
-import Sidebar from "../components/SideNavbar"
-import Header from "../components/Header"
+import AppLayout from "../components/AppLayout"
 
 const drawerWidth = 240
 
@@ -88,22 +87,13 @@ export default function Analytics() {
   ]
 
   return (
-    <Box sx={{ display: "flex", bgcolor: "#f9f9f9", minHeight: "100vh" }}>
-      {/* Header */}
-      <Header />
-
-      {/* Sidebar */}
-      <Sidebar />
-
-      {/* Main Content */}
+    <AppLayout>
       <Box
-        component="main"
         sx={{
-          flexGrow: 1,
+          flex: 1,
           p: { xs: 1, sm: 2, md: 3 },
-          width: { sm: `calc(100% - ${drawerWidth}px)` },
-          ml: { sm: `${drawerWidth}px` },
-          mt: { xs: "56px", sm: "64px" }, // Account for header height on different screens
+          overflow: "auto",
+          height: "100%",
         }}
       >
         <Box
@@ -247,6 +237,6 @@ export default function Analytics() {
           </Box>
         </Box>
       </Box>
-    </Box>
+    </AppLayout>
   )
 }

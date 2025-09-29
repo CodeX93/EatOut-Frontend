@@ -11,8 +11,7 @@ import {
   useMediaQuery, 
   useTheme
 } from "@mui/material"
-import Header from "../components/Header"
-import Sidebar from "../components/SideNavbar"
+import AppLayout from "../components/AppLayout"
 import StatsCards from "./components/statscard"
 import OverviewChart from "./components/OverviewCart"
 import VoucherCharts from "./components/VoucherChart"
@@ -66,48 +65,38 @@ export default function Dashboard() {
   const isDesktop = useMediaQuery(theme.breakpoints.up("lg"))
   const isLargeScreen = useMediaQuery(theme.breakpoints.up("xl"))
 
-  // Dynamic sidebar width based on screen size
-  const getSidebarWidth = () => {
-    if (isMobile) return 0 // Hidden on mobile
-    if (isTablet) return 200
-    return 240
-  }
-
-  // Dynamic spacing based on screen size
-  const getSpacing = () => {
-    if (isMobile) return 1
-    if (isTablet) return 2
-    return 3
-  }
-
-  const sidebarWidth = getSidebarWidth()
-  const spacing = getSpacing()
 
   return (
-    <Box sx={{ bgcolor: "#f9f9f9", minHeight: "100vh" }}>
-      <Header />
-      <Sidebar />
-
+    <AppLayout>
       <Box
-        component="main"
         sx={{
-          flexGrow: 1,
-          p: { xs: 2, sm: 3 },
-          overflow: "hidden",
-          mt: { xs: 7, sm: 8 }, // Account for fixed header
-          ml: { xs: 0, sm: "240px" }, // Account for sidebar on larger screens
+          flex: 1,
+          p: { xs: 1, sm: 2, md: 3 },
+          overflow: "auto",
+          height: "100%",
         }}
       >
-          <Grid container spacing={spacing}>
-            {/* Left Section - More responsive column distribution */}
-            <Grid item xs={12} sm={12} md={12} lg={8} xl={8}>
-              {/* Overview Header with better responsive styling */}
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: { xs: "column", lg: "row" },
+            gap: { xs: 2, md: 3 },
+          }}
+        >
+          {/* Left Column */}
+          <Box
+            sx={{
+              flex: { lg: "1 1 66%" },
+              width: { xs: "100%", lg: "66%" },
+            }}
+          >
+            <Box sx={{ mb: { xs: 2, md: 3 } }}>
               <Box
                 sx={{
                   display: "flex",
                   justifyContent: "space-between",
                   alignItems: { xs: "flex-start", sm: "center" },
-                  mb: { xs: 1.5, sm: 2, md: 3 },
+                  mb: { xs: 2, md: 3 },
                   flexDirection: { xs: "column", sm: "row" },
                   gap: { xs: 1, sm: 1.5, md: 2 },
                 }}
@@ -116,15 +105,16 @@ export default function Dashboard() {
                   variant="h4"
                   sx={{
                     fontWeight: "bold",
-                    color: "#000",
+                    color: "#da1818",
                     fontSize: { 
-                      xs: "20px", 
-                      sm: "24px", 
-                      md: "28px", 
-                      lg: "32px",
-                      xl: "36px" 
+                      xs: "1.5rem", 
+                      sm: "1.75rem", 
+                      md: "2rem", 
+                      lg: "2.25rem",
+                      xl: "2.5rem" 
                     },
                     lineHeight: 1.2,
+                    mt: { xs: 1, sm: 0, md: 0 },
                   }}
                 >
                   Overview
@@ -132,15 +122,18 @@ export default function Dashboard() {
 
                 <FormControl 
                   size={isMobile ? "small" : "medium"}
-                  sx={{ minWidth: { xs: "100%", sm: 140, md: 160 } }}
+                  sx={{ 
+                    minWidth: { xs: "100%", sm: 140, md: 160 },
+                    width: { xs: "100%", sm: "auto" }
+                  }}
                 >
                   <Select
                     value={selectedPeriod}
                     onChange={(e) => setSelectedPeriod(e.target.value)}
                     sx={{
-                      borderRadius: "8px",
+                      borderRadius: { xs: "6px", sm: "8px" },
                       bgcolor: "#ffffff",
-                      fontSize: { xs: "14px", sm: "16px" },
+                      fontSize: { xs: "13px", sm: "14px", md: "16px" },
                       "& .MuiSelect-select": {
                         py: { xs: 1, sm: 1.5 },
                       }
@@ -152,88 +145,92 @@ export default function Dashboard() {
                   </Select>
                 </FormControl>
               </Box>
+            </Box>
 
-              {/* Stats Cards with responsive spacing */}
-              <Box sx={{ mb: { xs: 1.5, sm: 2, md: 3 } }}>
-                <StatsCards selectedPeriod={selectedPeriod} dateRange={dateRange} />
-              </Box>
+            {/* Stats Cards */}
+            <Box sx={{ 
+              mb: { xs: 2, md: 3 },
+              width: "100%",
+            }}>
+              <StatsCards selectedPeriod={selectedPeriod} dateRange={dateRange} />
+            </Box>
 
-              {/* Main Overview Chart with responsive height */}
-              <Box 
-                sx={{ 
-                  mb: { xs: 1.5, sm: 2, md: 3 },
-                  "& > *": {
-                    minHeight: { 
-                      xs: "250px", 
-                      sm: "300px", 
-                      md: "350px", 
-                      lg: "400px" 
-                    }
+            {/* Main Overview Chart */}
+            <Box 
+              sx={{ 
+                mb: { xs: 2, md: 3 },
+                "& > *": {
+                  minHeight: { 
+                    xs: "250px", 
+                    sm: "300px", 
+                    md: "350px" 
                   }
-                }}
-              >
-                <OverviewChart selectedPeriod={selectedPeriod} dateRange={dateRange} />
+                }
+              }}
+            >
+              <OverviewChart selectedPeriod={selectedPeriod} dateRange={dateRange} />
+            </Box>
+
+            {/* Voucher Charts Row */}
+            <Box 
+              sx={{ 
+                display: "flex", 
+                flexDirection: { xs: "column", md: "row" },
+                gap: { xs: 2, md: 3 },
+                mb: { xs: 2, md: 3 }
+              }}
+            >
+              <Box sx={{ flex: 1 }}>
+                <VoucherCharts title="Earned Vouchers" selectedPeriod={selectedPeriod} dateRange={dateRange} />
               </Box>
+              <Box sx={{ flex: 1 }}>
+                <VoucherCharts title="Redeemed Vouchers" selectedPeriod={selectedPeriod} dateRange={dateRange} />
+              </Box>
+            </Box>
 
-              {/* Voucher Charts Row - Stack on mobile/tablet, side by side on desktop */}
-              <Grid 
-                container 
-                spacing={spacing} 
-                sx={{ mb: { xs: 1.5, sm: 2, md: 3 } }}
-              >
-                <Grid item xs={12} sm={12} md={6} lg={6}>
-                  <VoucherCharts title="Earned Vouchers" selectedPeriod={selectedPeriod} dateRange={dateRange} />
-                </Grid>
-                <Grid item xs={12} sm={12} md={6} lg={6}>
-                  <VoucherCharts title="Redeemed Vouchers" selectedPeriod={selectedPeriod} dateRange={dateRange} />
-                </Grid>
-              </Grid>
-
-              {/* Peak Hours Chart with responsive styling */}
-              <Box 
-                sx={{ 
-                  mb: { xs: 1.5, sm: 2, md: 3 },
-                  "& > *": {
-                    minHeight: { 
-                      xs: "200px", 
-                      sm: "250px", 
-                      md: "300px" 
-                    }
+            {/* Peak Hours Chart */}
+            <Box 
+              sx={{ 
+                mb: { xs: 2, md: 3 },
+                "& > *": {
+                  minHeight: { 
+                    xs: "200px", 
+                    sm: "250px", 
+                    md: "300px" 
                   }
-                }}
-              >
-                <PeakHoursChart selectedPeriod={selectedPeriod} dateRange={dateRange} />
-              </Box>
-            </Grid>
+                }
+              }}
+            >
+              <PeakHoursChart selectedPeriod={selectedPeriod} dateRange={dateRange} />
+            </Box>
+          </Box>
 
-            {/* Right Section - Better responsive behavior */}
-            <Grid item xs={12} sm={12} md={12} lg={4} xl={4}>
-              <Box
-                sx={{
-                  display: "flex",
-                  flexDirection: { xs: "column", sm: "row", lg: "column" },
-                  gap: { xs: 1.5, sm: 2, md: 3 },
-                  "& > *": {
-                    flex: { xs: "none", sm: "1", lg: "none" },
-                    minWidth: { xs: "100%", sm: "0", lg: "100%" }
-                  }
-                }}
-              >
-                {/* Vouchers Performance */}
-                <VouchersPerformance selectedPeriod={selectedPeriod} dateRange={dateRange} />
+          {/* Right Column */}
+          <Box
+            sx={{
+              flex: { lg: "1 1 33%" },
+              width: { xs: "100%", lg: "33%" },
+            }}
+          >
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: { xs: "column", sm: "row", lg: "column" },
+                gap: { xs: 2, md: 3 },
+              }}
+            >
+              {/* Vouchers Performance */}
+              <VouchersPerformance selectedPeriod={selectedPeriod} dateRange={dateRange} />
 
-                {/* Vouchers Breakdown */}
-                <VouchersBreakdown selectedPeriod={selectedPeriod} dateRange={dateRange} />
+              {/* Vouchers Breakdown */}
+              <VouchersBreakdown selectedPeriod={selectedPeriod} dateRange={dateRange} />
 
-                {/* Recent Redeemed Vouchers */}
-                <RecentRedeemedVouchers selectedPeriod={selectedPeriod} dateRange={dateRange} />
-              </Box>
-            </Grid>
-          </Grid>
-
-          {/* Add some bottom padding for better mobile scrolling */}
-          <Box sx={{ height: { xs: "20px", sm: "40px" } }} />
+              {/* Recent Redeemed Vouchers */}
+              <RecentRedeemedVouchers selectedPeriod={selectedPeriod} dateRange={dateRange} />
+            </Box>
+          </Box>
+        </Box>
       </Box>
-    </Box>
+    </AppLayout>
   )
 }

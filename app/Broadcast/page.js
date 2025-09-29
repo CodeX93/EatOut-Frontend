@@ -4,8 +4,7 @@ import { useState } from "react"
 import { Box } from "@mui/material"
 
 // Import your existing components
-import Header from "../components/Header"
-import Sidebar from "../components/SideNavbar"
+import AppLayout from "../components/AppLayout"
 
 // Import the new components we created
 import BroadcastBreadcrumb from "./_components/BroadcastBreadcrumb"
@@ -49,38 +48,33 @@ export default function BroadcastPage() {
   }
 
   return (
-    <Box 
-      component="div"
-      sx={{ 
-        display: "flex", 
-        bgcolor: "#f9f9f9", 
-        minHeight: "100vh",
-        width: "100%"
-      }}
-    >
-      {/* Header */}
-      <Header />
-      
-      {/* Sidebar */}
-      <Sidebar />
-
-      {/* Main Content */}
+    <AppLayout>
       <Box 
         component="main" 
         sx={{ 
           flexGrow: 1, 
-          p: 3,
-          marginTop: '64px',
-          marginLeft: '240px',
-          '@media (max-width: 900px)': {
-            marginLeft: 0,
-          }
+          p: { xs: 1.5, sm: 2, md: 3 },
+          pt: { xs: 2.5, sm: 3, md: 3 },
+          pb: { xs: "80px", sm: "100px", md: "120px" },
+          overflow: "auto",
+          width: "100%",
+          minHeight: "100%",
         }}
       >
         {/* Content Area */}
-        <Box sx={{ display: "flex", flexGrow: 1, overflow: "hidden" }}>
+        <Box sx={{ 
+          display: "flex", 
+          flexGrow: 1, 
+          flexDirection: { xs: "column", lg: "row" },
+          gap: { xs: 2, sm: 2.5, md: 3 }
+        }}>
           {/* Main Content */}
-          <Box sx={{ flexGrow: 1, p: { xs: 2, sm: 3 }, overflow: "auto" }}>
+          <Box sx={{ 
+            flexGrow: 1, 
+            p: { xs: 1.5, sm: 2, md: 3 }, 
+            overflow: "auto",
+            width: { xs: "100%", lg: "auto" }
+          }}>
             {/* Breadcrumb */}
             <BroadcastBreadcrumb />
 
@@ -104,9 +98,10 @@ export default function BroadcastPage() {
           <Box
             sx={{
               width: { xs: "100%", lg: 320 },
-              p: { xs: 2, sm: 3 },
-              pl: { xs: 2, lg: 0 },
+              p: { xs: 1.5, sm: 2, md: 3 },
+              pl: { xs: 1.5, lg: 0 },
               display: { xs: "none", lg: "block" },
+              flexShrink: 0,
             }}
           >
             <RecentBroadcastsList />
@@ -114,10 +109,14 @@ export default function BroadcastPage() {
         </Box>
 
         {/* Mobile Recent Broadcasts - Show below form on mobile */}
-        <Box sx={{ display: { xs: "block", lg: "none" }, p: { xs: 2, sm: 3 }, pt: 0 }}>
+        <Box sx={{ 
+          display: { xs: "block", lg: "none" }, 
+          p: { xs: 1.5, sm: 2, md: 3 }, 
+          pt: 0 
+        }}>
           <RecentBroadcastsList />
         </Box>
       </Box>
-    </Box>
+    </AppLayout>
   )
 }

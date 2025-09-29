@@ -147,8 +147,8 @@ export default function OverviewChart({ selectedPeriod, dateRange }) {
       <Paper
         elevation={0}
         sx={{
-          p: { xs: 2, sm: 3 },
-          borderRadius: "10px",
+          p: { xs: 1.5, sm: 2, md: 3 },
+          borderRadius: { xs: "8px", sm: "10px" },
           height: "100%",
           minHeight: { xs: 350, sm: 400, md: 450 },
           bgcolor: "#ffffff",
@@ -172,8 +172,8 @@ export default function OverviewChart({ selectedPeriod, dateRange }) {
     <Paper
       elevation={0}
       sx={{
-        p: { xs: 2, sm: 3 },
-        borderRadius: "10px",
+        p: { xs: 1.5, sm: 2, md: 3 },
+        borderRadius: { xs: "8px", sm: "10px" },
         height: "100%",
         minHeight: { xs: 350, sm: 400, md: 450 },
         bgcolor: "#ffffff",
