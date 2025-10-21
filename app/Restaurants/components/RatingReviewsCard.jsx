@@ -2,10 +2,11 @@ import { Box, Typography, Card, CardContent } from "@mui/material"
 import { SentimentVerySatisfied, SentimentVeryDissatisfied, Info } from "@mui/icons-material"
 
 export default function RatingReviewsCard({
-  rating = 4.8,
-  positivePercentage = 97,
-  negativePercentage = 3,
+  rating = 0,
+  positivePercentage = 0,
+  negativePercentage = 0,
   title = "Rating And Reviews",
+  bottomLabel = "Reviews",
 }) {
   // Generate star rating display
   const renderStars = () => {
@@ -39,11 +40,11 @@ export default function RatingReviewsCard({
         width: "100%",
         maxWidth: "100%",
         minWidth: 0,
-        height: "fit-content",
-        overflow: "hidden",
+        height: "auto",
+        overflow: "visible",
       }}
     >
-      <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
+      <CardContent sx={{ p: { xs: 2, sm: 3 }, pb: { xs: 3, sm: 4 } }}>
         <Typography
           variant="h6"
           sx={{
@@ -77,7 +78,7 @@ export default function RatingReviewsCard({
               ml: 1,
             }}
           >
-            {rating.toFixed(2)} Star
+            {Number(rating || 0).toFixed(2)} Star
           </Typography>
           <Info
             sx={{
@@ -202,6 +203,7 @@ export default function RatingReviewsCard({
             bgcolor: "#E8E8E8",
             borderRadius: "8px",
             p: { xs: 1, sm: 1.5 },
+            mb: { xs: 1, sm: 1.5 },
           }}
         >
           <Typography
@@ -212,7 +214,7 @@ export default function RatingReviewsCard({
               fontWeight: 500,
             }}
           >
-            Al Baik Reviews
+            {bottomLabel}
           </Typography>
         </Box>
       </CardContent>

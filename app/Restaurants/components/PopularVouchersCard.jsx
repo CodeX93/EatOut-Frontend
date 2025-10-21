@@ -58,7 +58,7 @@ export default function PopularVouchersCard({
     voucherCode: v.voucherCode,
     usedDate: v.expiry || v.usedDate,
     type: v.type || "review",
-  })) : defaultVouchers
+  })) : []
 
   const handlePeriodChange = (event) => {
     const newPeriod = event.target.value
@@ -112,12 +112,17 @@ export default function PopularVouchersCard({
             <MenuItem value="Week">Week</MenuItem>
             <MenuItem value="Month">Month</MenuItem>
             <MenuItem value="Year">Year</MenuItem>
+            <MenuItem value="All" sx={{ fontSize: { xs: "0.75rem", sm: "0.875rem" } }}>All-time</MenuItem>
           </Select>
         </FormControl>
       </Box>
       <CardContent sx={{ pt: 0, p: { xs: 1.5, sm: 2 } }}>
         <Box sx={{ display: "flex", flexDirection: "column", gap: { xs: 1.5, sm: 2 } }}>
-          {displayVouchers.map((voucher, index) => (
+          {displayVouchers.length === 0 ? (
+            <Box sx={{ textAlign: "center", color: "#8a8a8f", py: 3, fontSize: { xs: "12px", sm: "13px" } }}>
+              No data for this period
+            </Box>
+          ) : displayVouchers.map((voucher, index) => (
             <VoucherCard
               key={index}
               discount={voucher.discount}

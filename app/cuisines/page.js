@@ -87,9 +87,18 @@ export default function CuisinesPage() {
         const data = adminDoc.data()
         const cuisines = data.cuisines || {}
         
+        // Duplicate guard (case-insensitive)
+        const exists = Object.keys(cuisines).some(
+          (k) => k.trim().toLowerCase() === cuisineName.trim().toLowerCase()
+        )
+        if (exists) {
+          return false
+        }
+        
         // Add new cuisine
         cuisines[cuisineName] = {
           numberOfRestUsing: 0,
+          isActive: true,
         }
         
         await updateDoc(adminDocRef, {
@@ -112,6 +121,7 @@ export default function CuisinesPage() {
           cuisines: {
             [cuisineName]: {
               numberOfRestUsing: 0,
+              isActive: true,
             }
           }
         })
@@ -138,6 +148,17 @@ export default function CuisinesPage() {
         const data = adminDoc.data()
         const cuisines = data.cuisines || {}
         
+        // If renaming, prevent duplicates (case-insensitive)
+        const isRenaming = oldName.trim().toLowerCase() !== newName.trim().toLowerCase()
+        if (isRenaming) {
+          const exists = Object.keys(cuisines).some(
+            (k) => k.trim().toLowerCase() === newName.trim().toLowerCase()
+          )
+          if (exists) {
+            return false
+          }
+        }
+        
         // Remove old cuisine and add new one
         if (cuisines[oldName]) {
           const cuisineData = cuisines[oldName]
@@ -151,12 +172,14 @@ export default function CuisinesPage() {
             cuisines: cuisines,
           })
           
-          // Update local state
-          const updatedCuisines = cuisines.map(c => 
-            c.name === oldName 
-              ? { ...c, name: newName, isActive: isActive }
-              : c
-          ).sort((a, b) => a.name.localeCompare(b.name))
+          // Update local state from object -> array
+          const updatedCuisines = Object.entries(cuisines)
+            .map(([name, cdata]) => ({
+              name,
+              numberOfRestUsing: cdata.numberOfRestUsing || 0,
+              isActive: cdata.isActive !== false,
+            }))
+            .sort((a, b) => a.name.localeCompare(b.name))
           
           setCuisines(updatedCuisines)
           setFilteredCuisines(updatedCuisines)

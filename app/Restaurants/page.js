@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { Box, Typography, CircularProgress } from "@mui/material"
-import { collection, getDocs } from "firebase/firestore"
+import { collection, getDocs, query, where, doc, getDoc } from "firebase/firestore"
 import { db } from "../../firebaseConfig"
 
 // Import layout components
@@ -64,6 +64,8 @@ const computeTimeWindowMs = (period) => {
       return now - 7 * 24 * 60 * 60 * 1000
     case "Year":
       return now - 365 * 24 * 60 * 60 * 1000
+    case "All":
+      return 0
     case "Month":
     default:
       return now - 30 * 24 * 60 * 60 * 1000
@@ -77,10 +79,13 @@ const fetchPopularRestaurants = async (period, emailToNameMap = {}) => {
   const vouchersSnap = await getDocs(collection(db, "voucher"))
 
   const emailToStats = new Map()
+  const normalizeEmail = (e) => (e || "").toLowerCase().trim()
 
   for (const voucherDoc of vouchersSnap.docs) {
     const voucherData = voucherDoc.data() || {}
-    const restaurantEmail = voucherData.restaurantEmail || "unknown"
+    const restaurantEmail = normalizeEmail(voucherData.restaurantEmail || "unknown")
+    const isDebugEmail = (restaurantEmail || "").toLowerCase().trim() === "nanyangcafe@gmail.com" || (restaurantEmail || "").toLowerCase().trim() === "mmm@gmail.com"
+    let debugVoucher = { id: voucherDoc.id, createdAt: voucherData.createdAt, quantity: voucherData.quantity, available: voucherData.available, countedFromRedeemedUsers: 0, countedFromFallback: 0 }
     // Load redeemedUsers for this voucher
     try {
       const redeemedSnap = await getDocs(collection(db, "voucher", voucherDoc.id, "redeemedUsers"))
@@ -91,13 +96,44 @@ const fetchPopularRestaurants = async (period, emailToNameMap = {}) => {
       }
       redeemedSnap.forEach((ru) => {
         const r = ru.data() || {}
-        const redeemedAt = typeof r.redeemedAt === "number" ? r.redeemedAt : (typeof r.validUntil === "number" ? r.validUntil : 0)
+        // Robust timestamp parsing (supports number ms/seconds, Firestore Timestamp, Date string)
+        let redeemedAtMs = 0
+        const val = r.redeemedAt ?? r.validUntil ?? r.updatedAt ?? r.createdAt
+        if (typeof val === 'number') {
+          redeemedAtMs = val > 1e12 ? val : val * 1000
+        } else if (val && typeof val.toDate === 'function') {
+          redeemedAtMs = val.toDate().getTime()
+        } else if (val && typeof val.seconds === 'number') {
+          redeemedAtMs = val.seconds * 1000
+        } else if (typeof val === 'string') {
+          const t = Date.parse(val)
+          redeemedAtMs = isNaN(t) ? 0 : t
+        } else if (voucherData.createdAt?.seconds) {
+          redeemedAtMs = voucherData.createdAt.seconds * 1000
+        }
+
         const used = r.used === true || r.used === false ? r.used : true
-        if (redeemedAt >= fromTs && used) {
+        if (redeemedAtMs >= fromTs && used) {
           stats.orders += 1
           if (r.userEmail) stats.memberSet.add(r.userEmail)
         }
       })
+
+      // Fallback: if no redeemedUsers found for this voucher, try voucher-level counters
+      if (redeemedSnap.size === 0) {
+        const quantity = Number(voucherData.quantity ?? 0)
+        const available = Number(voucherData.available ?? quantity)
+        const voucherUsed = Math.max(0, quantity - available)
+        // If voucher has createdAt within window, include its used count as approximate orders
+        let createdMs = 0
+        const c = voucherData.createdAt
+        if (c && typeof c.toDate === 'function') createdMs = c.toDate().getTime()
+        else if (c && typeof c.seconds === 'number') createdMs = c.seconds * 1000
+        else if (typeof c === 'number') createdMs = c > 1e12 ? c : c * 1000
+        if (voucherUsed > 0 && createdMs >= fromTs) {
+          stats.orders += voucherUsed
+        }
+      }
     } catch (e) {
       // Ignore subcollection errors for robustness
       // console.warn("Failed loading redeemedUsers for", voucherDoc.id, e)
@@ -106,16 +142,25 @@ const fetchPopularRestaurants = async (period, emailToNameMap = {}) => {
 
   // Build ranked list
   const avgOrderValue = 85
+  // Debug: surface stats for specific restaurants if present
+  const debugEmails = new Set(["nanyangcafe@gmail.com", "mmm@gmail.com"]) 
+  emailToStats.forEach((s, email) => {
+    if (debugEmails.has(email)) {
+      console.log("PopularRestaurants Debug:", { email, orders: s.orders, uniqueMembers: s.memberSet.size, period, fromTs })
+    }
+  })
+
   const results = Array.from(emailToStats.entries())
     .map(([email, s]) => {
       const members = s.memberSet.size
       const orders = s.orders
-      const revenue = `$${(orders * avgOrderValue).toLocaleString()}`
-      // Derive a pseudo-rating from orders (bounded 3.5 - 5.0)
-      const rating = Math.max(3.5, Math.min(5.0, 3.5 + (orders / 100)))
+      const revenueNumber = orders * avgOrderValue
+      const revenue = `$${revenueNumber.toLocaleString()}`
+      // Approximate rating from redemption density, clamp between 3.5 and 5.0
+      const rating = Math.max(3.5, Math.min(5.0, 3.5 + (orders / Math.max(50, members * 5))))
       return {
         id: email,
-        name: emailToNameMap[email] || email,
+        name: emailToNameMap[normalizeEmail(email)] || email,
         rating: Number(rating.toFixed(1)),
         reviews: members,
         revenue,
@@ -124,7 +169,7 @@ const fetchPopularRestaurants = async (period, emailToNameMap = {}) => {
         members,
       }
     })
-    .sort((a, b) => b.orders - a.orders)
+    .sort((a, b) => b.orders - a.orders || b.revenueNumber - a.revenueNumber)
     .slice(0, 5)
 
   // Highlight the top 1
@@ -140,17 +185,58 @@ const fetchPopularVouchers = async (period) => {
 
   for (const vDoc of vouchersSnap.docs) {
     const vData = vDoc.data() || {}
+    const restaurantEmail = (vData.restaurantEmail || "").toLowerCase().trim()
+    const isDebugEmail = restaurantEmail === "nanyangcafe@gmail.com" || restaurantEmail === "mmm@gmail.com"
     let usedCountWindow = 0
+    let debugVoucher = { id: vDoc.id, countedFromRedeemedUsers: 0, countedFromFallback: 0 }
     try {
       const redeemedSnap = await getDocs(collection(db, "voucher", vDoc.id, "redeemedUsers"))
       redeemedSnap.forEach((ru) => {
         const r = ru.data() || {}
-        const redeemedAt = typeof r.redeemedAt === "number" ? r.redeemedAt : (typeof r.validUntil === "number" ? r.validUntil : 0)
+        // Robust timestamp parsing
+        let redeemedAtMs = 0
+        const val = r.redeemedAt ?? r.validUntil ?? r.updatedAt ?? r.createdAt
+        if (typeof val === 'number') redeemedAtMs = val > 1e12 ? val : val * 1000
+        else if (val && typeof val.toDate === 'function') redeemedAtMs = val.toDate().getTime()
+        else if (val && typeof val.seconds === 'number') redeemedAtMs = val.seconds * 1000
+        else if (typeof val === 'string') {
+          const t = Date.parse(val); redeemedAtMs = isNaN(t) ? 0 : t
+        }
         const used = r.used === true || r.used === false ? r.used : true
-        if (redeemedAt >= fromTs && used) usedCountWindow += 1
+        if (redeemedAtMs >= fromTs && used) {
+          usedCountWindow += 1
+          debugVoucher.countedFromRedeemedUsers += 1
+        }
       })
+      // Fallback: approximate by quantity-available and last activity time from voucher-level fields
+      if (redeemedSnap.size === 0) {
+        const quantity = Number(vData.quantity ?? 0)
+        const available = Number(vData.available ?? quantity)
+        const usedApprox = Math.max(0, quantity - available)
+
+        // Derive lastActivityMs from various voucher fields (createdAt, expiryDate)
+        const candidates = []
+        const pushTs = (val) => {
+          if (typeof val === 'number') candidates.push(val > 1e12 ? val : val * 1000)
+          else if (val && typeof val.toDate === 'function') candidates.push(val.toDate().getTime())
+          else if (val && typeof val.seconds === 'number') candidates.push(val.seconds * 1000)
+          else if (typeof val === 'string') { const t = Date.parse(val); if (!isNaN(t)) candidates.push(t) }
+        }
+        pushTs(vData.updatedAt)
+        pushTs(vData.createdAt)
+        pushTs(vData.expiryDate)
+        const lastActivityMs = candidates.length ? Math.max(...candidates) : 0
+
+        if (usedApprox > 0 && lastActivityMs >= fromTs) {
+          usedCountWindow += usedApprox
+          debugVoucher.countedFromFallback += usedApprox
+        }
+      }
     } catch (e) {
       // ignore
+    }
+    if (isDebugEmail && (debugVoucher.countedFromRedeemedUsers > 0 || debugVoucher.countedFromFallback > 0)) {
+      console.log("TopVouchers Debug voucher:", restaurantEmail, debugVoucher)
     }
 
     // Only include vouchers with at least one use in window
@@ -182,6 +268,7 @@ export default function Restaurants() {
   const [loading, setLoading] = useState(true)
   const [popularRestaurantsLoading, setPopularRestaurantsLoading] = useState(false)
   const [popularVouchersLoading, setPopularVouchersLoading] = useState(false)
+  const [reviewsStats, setReviewsStats] = useState({ rating: 0, pos: 0, neg: 0, label: "Reviews" })
 
   // Static data that doesn't change often
   const topVouchersData = [
@@ -223,17 +310,67 @@ export default function Restaurants() {
             redeemed: 0,
           })
         })
+        // Derive vouchers and redeemed counts per restaurant from backend
+        const restaurantsWithStats = await Promise.all(
+          restaurants.map(async (r) => {
+            try {
+              if (!r.email) return r
+              const vq = query(collection(db, "voucher"), where("restaurantEmail", "==", r.email))
+              const vouchersSnap = await getDocs(vq)
+              let voucherCount = vouchersSnap.size
+              let redeemedCount = 0
+              for (const vDoc of vouchersSnap.docs) {
+                try {
+                  const redeemedSnap = await getDocs(collection(db, "voucher", vDoc.id, "redeemedUsers"))
+                  redeemedSnap.forEach((ru) => {
+                    const ruData = ru.data() || {}
+                    const used = ruData.used === true || ruData.used === false ? ruData.used : true
+                    if (used) redeemedCount += 1
+                  })
+                } catch (_) {}
+              }
+              return { ...r, vouchers: voucherCount, redeemed: redeemedCount }
+            } catch {
+              return r
+            }
+          })
+        )
+
         // Build a map from email to restaurantName for nicer labels
-        const emailToName = restaurants.reduce((acc, r) => {
+        const emailToName = restaurantsWithStats.reduce((acc, r) => {
           if (r.email) acc[r.email] = r.name
           return acc
         }, {})
+
+        // Compute simple reviews metrics for the first restaurant (or a chosen primary)
+        let firstRestaurantEmail = restaurants[0]?.email || null
+        let reviewsAgg = { rating: 0, pos: 0, neg: 0, count: 0 }
+        if (firstRestaurantEmail) {
+          try {
+            const reviewsCol = collection(db, "registeredRestaurants", firstRestaurantEmail, "reviews")
+            const reviewsSnap = await getDocs(reviewsCol)
+            reviewsSnap.forEach((r) => {
+              const d = r.data() || {}
+              const stars = Number(d.rating ?? 0)
+              if (!isNaN(stars) && stars > 0) {
+                reviewsAgg.rating += stars
+                reviewsAgg.count += 1
+                if (stars >= 4) reviewsAgg.pos += 1
+                else if (stars <= 2) reviewsAgg.neg += 1
+              }
+            })
+          } catch (_) {}
+        }
+        const avgRating = reviewsAgg.count > 0 ? reviewsAgg.rating / reviewsAgg.count : 0
+        const posPct = reviewsAgg.count > 0 ? Math.round((reviewsAgg.pos / reviewsAgg.count) * 100) : 0
+        const negPct = reviewsAgg.count > 0 ? Math.round((reviewsAgg.neg / reviewsAgg.count) * 100) : 0
+        setReviewsStats({ rating: Number(avgRating.toFixed(2)), pos: posPct, neg: negPct, label: restaurants[0]?.name ? `${restaurants[0].name} Reviews` : "Reviews" })
 
         const [popularRestaurants, popularVouchers] = await Promise.all([
           fetchPopularRestaurants("Month", emailToName),
           fetchPopularVouchers("Month"),
         ])
-        setRestaurantsData(restaurants)
+        setRestaurantsData(restaurantsWithStats)
         setPopularRestaurantsData(popularRestaurants)
         setPopularVouchersData(popularVouchers)
       } catch (error) {
@@ -319,7 +456,8 @@ export default function Restaurants() {
         sx={{
           flex: 1,
           overflow: "auto",
-          height: "100%",
+          height: "auto",
+          minHeight: "100%",
         }}
       >
         {/* Content Container with Scroll */}
@@ -327,8 +465,8 @@ export default function Restaurants() {
           sx={{
             flex: 1,
             p: { xs: 1, sm: 1.5, md: 2, lg: 3 },
-            overflow: "auto",
-            height: "100%",
+            overflow: "visible",
+            height: "auto",
           }}
         >
           {/* Page Header */}
@@ -414,9 +552,9 @@ export default function Restaurants() {
                 display: "flex",
                 flexDirection: "column",
                 gap: { xs: 1.5, sm: 2, md: 2.5, lg: 3 },
-                minHeight: { xs: "auto", lg: "100%" },
-                maxHeight: { xs: "none", lg: "calc(100vh - 120px)" },
-                overflowY: { lg: "auto" },
+                minHeight: { xs: "auto", lg: "auto" },
+                maxHeight: { xs: "none", lg: "none" },
+                overflowY: "visible",
                 order: { xs: 1, lg: 2 },
               }}
             >
@@ -470,10 +608,11 @@ export default function Restaurants() {
                   minHeight: { xs: "180px", sm: "200px", md: "220px" }
                 }}>
                   <RatingReviewsCard
-                    rating={4.8}
-                    positivePercentage={97}
-                    negativePercentage={3}
+                    rating={reviewsStats.rating}
+                    positivePercentage={reviewsStats.pos}
+                    negativePercentage={reviewsStats.neg}
                     title="Rating And Reviews"
+                    bottomLabel={reviewsStats.label}
                   />
                 </Box>
 

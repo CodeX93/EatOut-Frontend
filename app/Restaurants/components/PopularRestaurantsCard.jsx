@@ -26,7 +26,7 @@ export default function PopularRestaurantsCard({
     { name: "Al Baik", rating: 4.7, reviews: 89, revenue: "$127,999", highlighted: true },
   ]
 
-  const displayRestaurants = restaurants.length > 0 ? restaurants : defaultRestaurants
+  const displayRestaurants = restaurants.length > 0 ? restaurants : []
 
   const handlePeriodChange = (event) => {
     const newPeriod = event.target.value
@@ -84,6 +84,7 @@ export default function PopularRestaurantsCard({
             <MenuItem value="Week" sx={{ fontSize: { xs: "0.75rem", sm: "0.8125rem", md: "0.875rem" } }}>Week</MenuItem>
             <MenuItem value="Month" sx={{ fontSize: { xs: "0.75rem", sm: "0.8125rem", md: "0.875rem" } }}>Month</MenuItem>
             <MenuItem value="Year" sx={{ fontSize: { xs: "0.75rem", sm: "0.8125rem", md: "0.875rem" } }}>Year</MenuItem>
+            <MenuItem value="All" sx={{ fontSize: { xs: "0.75rem", sm: "0.8125rem", md: "0.875rem" } }}>All-time</MenuItem>
           </Select>
         </FormControl>
       </Box>
@@ -100,7 +101,11 @@ export default function PopularRestaurantsCard({
           gap: { xs: 1, sm: 1.25, md: 1.5 },
           flex: 1,
         }}>
-          {displayRestaurants.map((restaurant, index) => (
+          {displayRestaurants.length === 0 ? (
+            <Box sx={{ textAlign: "center", color: "#8a8a8f", py: 3, fontSize: { xs: "12px", sm: "13px" } }}>
+              No data for this period
+            </Box>
+          ) : displayRestaurants.map((restaurant, index) => (
             <Box
               key={index}
               sx={{

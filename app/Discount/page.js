@@ -1,11 +1,11 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Box, Typography, Paper, Button, TextField, Dialog, DialogTitle, DialogContent, DialogActions, CircularProgress, Snackbar, Alert, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, IconButton, FormControl, InputLabel, Select, MenuItem } from "@mui/material"
+import { Box, Typography, Paper, Button, TextField, Dialog, DialogTitle, DialogContent, DialogActions, CircularProgress, Snackbar, Alert, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, IconButton, FormControl, InputLabel, Select, MenuItem, InputAdornment } from "@mui/material"
 import AppLayout from "../components/AppLayout"
 import { db } from "../../firebaseConfig"
 import { collection, getDocs, addDoc, serverTimestamp, doc, deleteDoc, setDoc } from "firebase/firestore"
-import { Delete, Edit } from "@mui/icons-material"
+import { Delete, Edit, Search } from "@mui/icons-material"
 
 
 export default function DiscountPage() {
@@ -17,6 +17,7 @@ export default function DiscountPage() {
   const [saving, setSaving] = useState(false)
   const [success, setSuccess] = useState(false)
   const [editingDiscount, setEditingDiscount] = useState(null)
+  const [searchTerm, setSearchTerm] = useState("")
 
   const [form, setForm] = useState({
     code: "",
@@ -78,6 +79,7 @@ export default function DiscountPage() {
         quantity: Number(form.quantity),
         validityDate: new Date(form.validityDate),
         createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
       }
       
       if (form.type === "amount") {
@@ -158,7 +160,8 @@ export default function DiscountPage() {
         quantity: Number(form.quantity),
         validityDate: new Date(form.validityDate),
         type: form.type,
-        createdAt: editingDiscount.createdAt || serverTimestamp()
+        createdAt: editingDiscount.createdAt || serverTimestamp(),
+        updatedAt: serverTimestamp(),
       }
       
       if (form.type === "amount") {
@@ -272,6 +275,38 @@ export default function DiscountPage() {
             </Button>
           </Box>
 
+          {/* Search Bar */}
+          <Box sx={{ mb: { xs: 2.5, sm: 3 }, width: "100%" }}>
+            <TextField
+              fullWidth
+              placeholder="Search discounts..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Search sx={{ color: "#8a8a8f" }} />
+                  </InputAdornment>
+                ),
+              }}
+              sx={{
+                "& .MuiOutlinedInput-root": {
+                  borderRadius: { xs: "6px", sm: "8px" },
+                  backgroundColor: "#f8f9fa",
+                  "& fieldset": {
+                    borderColor: "#e0e0e0",
+                  },
+                  "&:hover fieldset": {
+                    borderColor: "#da1818",
+                  },
+                  "&.Mui-focused fieldset": {
+                    borderColor: "#da1818",
+                  },
+                },
+              }}
+            />
+          </Box>
+
           {error && (
             <Alert severity="error" sx={{ mb: 3 }}>
               {error}
@@ -309,6 +344,19 @@ export default function DiscountPage() {
                 }}>
                 <TableHead>
                   <TableRow sx={{ bgcolor: "#f9f9f9" }}>
+                    <TableCell
+                      sx={{
+                        color: "#8a8a8f",
+                        fontWeight: 600,
+                        fontSize: { xs: "11px", sm: "13px", md: "14px" },
+                        borderBottom: "1px solid #dadada",
+                        py: { xs: 1.5, sm: 2 },
+                        width: "6%",
+                        textAlign: "center",
+                      }}
+                    >
+                      No.
+                    </TableCell>
                     <TableCell
                       sx={{
                         color: "#8a8a8f",
@@ -377,10 +425,34 @@ export default function DiscountPage() {
                         fontSize: { xs: "11px", sm: "13px", md: "14px" },
                         borderBottom: "1px solid #dadada",
                         py: { xs: 1.5, sm: 2 },
-                        width: "15%",
+                        width: "14%",
                       }}
                     >
                       Validity Date
+                    </TableCell>
+                    <TableCell
+                      sx={{
+                        color: "#8a8a8f",
+                        fontWeight: 600,
+                        fontSize: { xs: "11px", sm: "13px", md: "14px" },
+                        borderBottom: "1px solid #dadada",
+                        py: { xs: 1.5, sm: 2 },
+                        width: "12%",
+                      }}
+                    >
+                      Date Created
+                    </TableCell>
+                    <TableCell
+                      sx={{
+                        color: "#8a8a8f",
+                        fontWeight: 600,
+                        fontSize: { xs: "11px", sm: "13px", md: "14px" },
+                        borderBottom: "1px solid #dadada",
+                        py: { xs: 1.5, sm: 2 },
+                        width: "14%",
+                      }}
+                    >
+                      Last Edited
                     </TableCell>
                     <TableCell
                       sx={{
@@ -398,7 +470,18 @@ export default function DiscountPage() {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {discounts.map((d) => {
+                  {discounts
+                    .filter((d) => {
+                      const term = searchTerm.trim().toLowerCase()
+                      if (!term) return true
+                      return (
+                        (d.id || "").toLowerCase().includes(term) ||
+                        (d.Purpose || "").toLowerCase().includes(term) ||
+                        (d["Valid For"] || "").toLowerCase().includes(term) ||
+                        (d.type || "").toLowerCase().includes(term)
+                      )
+                    })
+                    .map((d, idx) => {
                     console.log("Rendering discount:", d)
                     // Format discount display based on type
                     const discountDisplay = d.type === "amount" 
@@ -418,6 +501,20 @@ export default function DiscountPage() {
                       }) : 
                       (typeof ts === 'string' ? ts : "N/A")
                     console.log("Formatted validity date:", validityDate)
+
+                    const createdTs = d.createdAt
+                    const createdAt = createdTs?.toDate
+                      ? createdTs.toDate().toLocaleDateString('en-US', {
+                          year: 'numeric', month: 'long', day: 'numeric'
+                        })
+                      : (createdTs ? new Date(createdTs).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : 'N/A')
+
+                    const updatedTs = d.updatedAt
+                    const updatedAt = updatedTs?.toDate
+                      ? updatedTs.toDate().toLocaleString('en-US', {
+                          year: 'numeric', month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit'
+                        })
+                      : (updatedTs ? new Date(updatedTs).toLocaleString('en-US', { year: 'numeric', month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' }) : 'N/A')
                     
                     return (
                     <TableRow 
@@ -432,6 +529,17 @@ export default function DiscountPage() {
                         },
                       }}
                     >
+                      <TableCell 
+                        sx={{ 
+                          width: "6%",
+                          py: { xs: 1.5, sm: 2 },
+                          textAlign: "center",
+                          borderBottom: "1px solid #f0f0f0",
+                          fontSize: { xs: "11px", sm: "13px", md: "14px" },
+                        }}
+                      >
+                        {idx + 1}
+                      </TableCell>
                       <TableCell 
                         sx={{ 
                           fontWeight: 600, 
@@ -496,6 +604,26 @@ export default function DiscountPage() {
                       </TableCell>
                       <TableCell 
                         sx={{ 
+                          width: "12%",
+                          py: { xs: 1.5, sm: 2 },
+                          borderBottom: "1px solid #f0f0f0",
+                          fontSize: { xs: "11px", sm: "13px", md: "14px" },
+                        }}
+                      >
+                        {createdAt}
+                      </TableCell>
+                      <TableCell 
+                        sx={{ 
+                          width: "14%",
+                          py: { xs: 1.5, sm: 2 },
+                          borderBottom: "1px solid #f0f0f0",
+                          fontSize: { xs: "11px", sm: "13px", md: "14px" },
+                        }}
+                      >
+                        {updatedAt}
+                      </TableCell>
+                      <TableCell 
+                        sx={{ 
                           width: "10%",
                           py: 2,
                           textAlign: "center",
@@ -524,7 +652,7 @@ export default function DiscountPage() {
                   })}
                   {discounts.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={7} sx={{ textAlign: "center", py: 4, color: "#666" }}>
+                      <TableCell colSpan={10} sx={{ textAlign: "center", py: 4, color: "#666" }}>
                         No discount coupons found
                       </TableCell>
                     </TableRow>

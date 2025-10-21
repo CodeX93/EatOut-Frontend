@@ -70,13 +70,17 @@ function CustomerStatusCard({
 }
 
 export default function CustomerStatusCards({ 
-  activePercentage = 75, 
-  activeCount = 900, 
-  activeTrend = 17,
-  inactivePercentage = 25, 
-  inactiveCount = 100, 
-  inactiveTrend = -17 
+  activeCount = 0,
+  inactiveCount = 0
 }) {
+  const total = activeCount + inactiveCount || 1 // Avoid division by zero
+  const activePercentage = Math.round((activeCount / total) * 100)
+  const inactivePercentage = Math.round((inactiveCount / total) * 100)
+  
+  // For trends, we can set to 0 or calculate from historical data if available
+  const activeTrend = 0
+  const inactiveTrend = 0
+
   return (
     <Box sx={{ display: "flex", gap: 2 }}>
       <CustomerStatusCard

@@ -1,5 +1,6 @@
 "use client"
-import { Box, Typography } from "@mui/material"
+import { useState, useEffect } from "react"
+import { Box, Typography, CircularProgress } from "@mui/material"
 import { MonetizationOn, TrendingFlat, Store, Groups, TrendingDown, TrendingUp } from "@mui/icons-material"
 
 // Import all the modular components
@@ -12,79 +13,220 @@ import TotalCustomersChart from "./components/TotalCustomersChart"
 import RecentVouchersTable from "./components/RecentVouchersTable"
 import AppLayout from "../components/AppLayout"
 
+// Import analytics utilities
+import {
+  fetchAnalyticsData,
+  calculateTotalMetrics,
+  calculateMonthlyRevenue,
+  calculateMonthlyMetrics,
+  calculateEarnedVouchers,
+  getTopCustomers,
+  getRecentRedemptions,
+  calculateCustomerStatus,
+  calculateCustomersGrowth,
+} from "./utils/analyticsUtils"
+import { testFirebaseConnection } from "./utils/firebaseTest"
+
 const drawerWidth = 240
 
 export default function Analytics() {
-  // Sample data - in a real app, this would come from props or API calls
-  const topMetrics = [
-    {
-      icon: <MonetizationOn />,
-      title: "Total Revenue",
-      value: "$89,900",
-      trend: "12%",
-      trendDirection: "up",
-      trendText: "+12% this week",
-    },
-    {
-      icon: <TrendingFlat />,
-      title: "Total Profit",
-      value: "$243,00",
-      trend: "12%",
-      trendDirection: "down",
-      trendText: "+17% this week",
-    },
-    {
-      icon: <Store />,
-      title: "Total Restaurant",
-      value: "323",
-      trend: "31%",
-      trendDirection: "up",
-      trendText: "+0.49% this week",
-    },
-    {
-      icon: <Groups />,
-      title: "Total Members",
-      value: "4,834",
-      trend: "17%",
-      trendDirection: "up",
-      trendText: "+0.17% this week",
-    },
-  ]
+  const [loading, setLoading] = useState(true)
+  const [analyticsData, setAnalyticsData] = useState(null)
+  const [topMetrics, setTopMetrics] = useState([])
+  const [bottomMetrics, setBottomMetrics] = useState([])
+  const [monthlyRevenueData, setMonthlyRevenueData] = useState([])
+  const [earnedVouchersData, setEarnedVouchersData] = useState({})
+  const [topCustomers, setTopCustomers] = useState([])
+  const [recentRedemptions, setRecentRedemptions] = useState([])
+  const [customerStatus, setCustomerStatus] = useState({ active: 0, inactive: 0 })
+  const [customersGrowth, setCustomersGrowth] = useState([])
 
-  const bottomMetrics = [
-    {
-      icon: <MonetizationOn />,
-      title: "Average Revenue",
-      value: "$9,500",
-      trend: "12%",
-      trendDirection: "up",
-      trendText: "+12% this week",
-    },
-    {
-      icon: <TrendingDown />,
-      title: "Monthly Expense",
-      value: "$3,000",
-      trend: "3.1%",
-      trendDirection: "up",
-      trendText: "+0.49% this week",
-    },
-    {
-      icon: <TrendingUp />,
-      title: "Monthly Income",
-      value: "$9,900",
-      trend: "12%",
-      trendDirection: "down",
-      trendText: "+12% this week",
-    },
-    {
-      icon: <TrendingFlat />,
-      title: "Monthly Profit",
-      value: "$7,500",
-      trend: "17%",
-      trendDirection: "up",
-      trendText: "+0.17% this week",
-    },
-  ]
+  useEffect(() => {
+    loadAnalyticsData()
+  }, [])
+
+  const loadAnalyticsData = async () => {
+    try {
+      setLoading(true)
+
+      // Test Firebase connection first
+      console.log("Testing Firebase connection...")
+      await testFirebaseConnection()
+
+      // Fetch all data from Firebase
+      console.log("Fetching analytics data from Firebase...")
+      const data = await fetchAnalyticsData()
+      console.log("Fetched data:", data)
+      setAnalyticsData(data)
+
+      // Calculate metrics
+      const totalMetrics = calculateTotalMetrics(data)
+      console.log("Total metrics:", totalMetrics)
+      
+      const monthlyMetrics = calculateMonthlyMetrics(data)
+      console.log("Monthly metrics:", monthlyMetrics)
+      
+      const monthlyRevenue = calculateMonthlyRevenue(data)
+      console.log("Monthly revenue:", monthlyRevenue)
+      
+      const earnedVouchers = calculateEarnedVouchers(data)
+      console.log("Earned vouchers:", earnedVouchers)
+      
+      const customers = getTopCustomers(data)
+      console.log("Top customers:", customers)
+      
+      const redemptions = getRecentRedemptions(data)
+      console.log("Recent redemptions:", redemptions)
+      
+      const status = calculateCustomerStatus(data)
+      console.log("Customer status:", status)
+      
+      const growth = calculateCustomersGrowth(data)
+      console.log("Customers growth:", growth)
+
+      // Set top metrics
+      setTopMetrics([
+        {
+          icon: <MonetizationOn />,
+          title: "Total Revenue",
+          value: `$${Number(totalMetrics.totalRevenue).toLocaleString()}`,
+          trend: `${Math.abs(totalMetrics.revenueTrend)}%`,
+          trendDirection: totalMetrics.revenueTrend >= 0 ? "up" : "down",
+          trendText: `${totalMetrics.revenueTrend >= 0 ? "+" : ""}${totalMetrics.revenueTrend}% this week`,
+        },
+        {
+          icon: <TrendingFlat />,
+          title: "Total Profit",
+          value: `$${Number(totalMetrics.totalProfit).toLocaleString()}`,
+          trend: `${Math.abs(totalMetrics.profitTrend)}%`,
+          trendDirection: totalMetrics.profitTrend >= 0 ? "up" : "down",
+          trendText: `${totalMetrics.profitTrend >= 0 ? "+" : ""}${totalMetrics.profitTrend}% this week`,
+        },
+        {
+          icon: <Store />,
+          title: "Total Restaurant",
+          value: totalMetrics.totalRestaurants.toString(),
+          trend: "0%",
+          trendDirection: "up",
+          trendText: "Active restaurants",
+        },
+        {
+          icon: <Groups />,
+          title: "Total Members",
+          value: totalMetrics.totalMembers.toLocaleString(),
+          trend: "0%",
+          trendDirection: "up",
+          trendText: "Registered members",
+        },
+      ])
+
+      // Set bottom metrics
+      setBottomMetrics([
+        {
+          icon: <MonetizationOn />,
+          title: "Average Revenue",
+          value: `$${Number(monthlyMetrics.averageRevenue).toLocaleString()}`,
+          trend: `${Math.abs(monthlyMetrics.monthlyTrend)}%`,
+          trendDirection: monthlyMetrics.monthlyTrend >= 0 ? "up" : "down",
+          trendText: `${monthlyMetrics.monthlyTrend >= 0 ? "+" : ""}${monthlyMetrics.monthlyTrend}% vs last month`,
+        },
+        {
+          icon: <TrendingDown />,
+          title: "Monthly Expense",
+          value: `$${Number(monthlyMetrics.monthlyExpense).toLocaleString()}`,
+          trend: "0%",
+          trendDirection: "up",
+          trendText: "Current month",
+        },
+        {
+          icon: <TrendingUp />,
+          title: "Monthly Income",
+          value: `$${Number(monthlyMetrics.monthlyIncome).toLocaleString()}`,
+          trend: `${Math.abs(monthlyMetrics.monthlyTrend)}%`,
+          trendDirection: monthlyMetrics.monthlyTrend >= 0 ? "up" : "down",
+          trendText: `${monthlyMetrics.monthlyTrend >= 0 ? "+" : ""}${monthlyMetrics.monthlyTrend}% vs last month`,
+        },
+        {
+          icon: <TrendingFlat />,
+          title: "Monthly Profit",
+          value: `$${Number(monthlyMetrics.monthlyProfit).toLocaleString()}`,
+          trend: `${Math.abs(monthlyMetrics.monthlyTrend)}%`,
+          trendDirection: monthlyMetrics.monthlyTrend >= 0 ? "up" : "down",
+          trendText: `${monthlyMetrics.monthlyTrend >= 0 ? "+" : ""}${monthlyMetrics.monthlyTrend}% vs last month`,
+        },
+      ])
+
+      setMonthlyRevenueData(monthlyRevenue)
+      setEarnedVouchersData(earnedVouchers)
+      setTopCustomers(customers)
+      setRecentRedemptions(redemptions)
+      setCustomerStatus(status)
+      setCustomersGrowth(growth)
+    } catch (error) {
+      console.error("Error loading analytics data:", error)
+      // Set fallback data when there's an error
+      setTopMetrics([
+        {
+          icon: <MonetizationOn />,
+          title: "Total Revenue",
+          value: "$0",
+          trend: "0%",
+          trendDirection: "up",
+          trendText: "No data available",
+        },
+        {
+          icon: <TrendingFlat />,
+          title: "Total Profit",
+          value: "$0",
+          trend: "0%",
+          trendDirection: "up",
+          trendText: "No data available",
+        },
+        {
+          icon: <Store />,
+          title: "Total Restaurant",
+          value: "0",
+          trend: "0%",
+          trendDirection: "up",
+          trendText: "No data available",
+        },
+        {
+          icon: <Groups />,
+          title: "Total Members",
+          value: "0",
+          trend: "0%",
+          trendDirection: "up",
+          trendText: "No data available",
+        },
+      ])
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <AppLayout>
+        <Box
+          sx={{
+            flex: 1,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            height: "100vh",
+            width: "100%",
+          }}
+        >
+          <Box sx={{ textAlign: "center" }}>
+            <CircularProgress sx={{ color: "#da1818", mb: 2 }} />
+            <Typography variant="h6" sx={{ color: "#8a8a8f" }}>
+              Loading analytics data...
+            </Typography>
+          </Box>
+        </Box>
+      </AppLayout>
+    )
+  }
 
   return (
     <AppLayout>
@@ -156,7 +298,7 @@ export default function Analytics() {
                 overflow: "hidden", // Prevent horizontal scroll on mobile
               }}
             >
-              <MonthlyRevenueChart />
+              <MonthlyRevenueChart data={monthlyRevenueData} />
             </Box>
 
             {/* Bottom 4 Metric Cards */}
@@ -187,7 +329,13 @@ export default function Analytics() {
 
             {/* Earned Vouchers */}
             <Box sx={{ overflow: "hidden" }}>
-              <EarnedVouchersChart />
+              <EarnedVouchersChart
+                data={earnedVouchersData.data}
+                totalEarned={earnedVouchersData.totalEarned}
+                growthPercentage={earnedVouchersData.growthPercentage}
+                changeAmount={earnedVouchersData.changeAmount}
+                changePercentage={earnedVouchersData.changePercentage}
+              />
             </Box>
           </Box>
 
@@ -205,7 +353,7 @@ export default function Analytics() {
                 overflow: "hidden",
               }}
             >
-              <TopCustomersTable />
+              <TopCustomersTable customers={topCustomers} />
             </Box>
 
             {/* Active vs Inactive Customers */}
@@ -217,7 +365,10 @@ export default function Analytics() {
                 gap: { xs: 1, sm: 2 },
               }}
             >
-              <CustomerStatusCards />
+              <CustomerStatusCards
+                activeCount={customerStatus.active}
+                inactiveCount={customerStatus.inactive}
+              />
             </Box>
 
             {/* Total Customers Chart */}
@@ -227,12 +378,12 @@ export default function Analytics() {
                 overflow: "hidden",
               }}
             >
-              <TotalCustomersChart />
+              <TotalCustomersChart data={customersGrowth} />
             </Box>
 
             {/* Recent Redeemed Vouchers */}
             <Box sx={{ overflow: "hidden" }}>
-              <RecentVouchersTable />
+              <RecentVouchersTable redemptions={recentRedemptions} />
             </Box>
           </Box>
         </Box>

@@ -16,37 +16,19 @@ import {
   TableRow,
 } from "@mui/material"
 
-export default function RecentVouchersTable({ vouchers = [], onPeriodChange }) {
+export default function RecentVouchersTable({ redemptions = [], onPeriodChange }) {
   const [selectedPeriod, setSelectedPeriod] = useState("Last 24h")
 
-  const defaultVouchers = [
-    {
-      code: "SAVE10",
-      times: "112 times",
-      discount: "$1,120",
-      revenue: "$8,400",
-      lastUsed: "13 May, 2025",
-      status: "Active",
-    },
-    {
-      code: "FIRSTBUY",
-      times: "86 times",
-      discount: "$860",
-      revenue: "$6,100",
-      lastUsed: "12 May, 2025",
-      status: "Expired",
-    },
-    {
-      code: "FREESHIP",
-      times: "150 times",
-      discount: "$0",
-      revenue: "$5,200",
-      lastUsed: "14 May, 2025",
-      status: "Active",
-    },
-  ]
-
-  const tableData = vouchers.length > 0 ? vouchers : defaultVouchers
+  const formatDate = (date) => {
+    if (!date) return "-"
+    return new Intl.DateTimeFormat("en-US", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    }).format(date)
+  }
 
   const handlePeriodChange = (event) => {
     const newPeriod = event.target.value
@@ -74,55 +56,58 @@ export default function RecentVouchersTable({ vouchers = [], onPeriodChange }) {
           </Select>
         </FormControl>
       </Box>
-      <TableContainer>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell sx={{ color: "#8a8a8f", fontWeight: 500, fontSize: "10px" }}>
-                Voucher Code
-              </TableCell>
-              <TableCell sx={{ color: "#8a8a8f", fontWeight: 500, fontSize: "10px" }}>
-                Times Redeemed
-              </TableCell>
-              <TableCell sx={{ color: "#8a8a8f", fontWeight: 500, fontSize: "10px" }}>
-                Total Discount
-              </TableCell>
-              <TableCell sx={{ color: "#8a8a8f", fontWeight: 500, fontSize: "10px" }}>
-                Total Revenue
-              </TableCell>
-              <TableCell sx={{ color: "#8a8a8f", fontWeight: 500, fontSize: "10px" }}>
-                Last Used
-              </TableCell>
-              <TableCell sx={{ color: "#8a8a8f", fontWeight: 500, fontSize: "10px" }}>
-                Status
-              </TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {tableData.map((voucher, index) => (
-              <TableRow key={index}>
-                <TableCell sx={{ fontSize: "10px" }}>{voucher.code}</TableCell>
-                <TableCell sx={{ fontSize: "10px" }}>{voucher.times}</TableCell>
-                <TableCell sx={{ fontSize: "10px" }}>{voucher.discount}</TableCell>
-                <TableCell sx={{ fontSize: "10px" }}>{voucher.revenue}</TableCell>
-                <TableCell sx={{ fontSize: "10px" }}>{voucher.lastUsed}</TableCell>
-                <TableCell>
-                  <Chip
-                    label={voucher.status}
-                    size="small"
-                    sx={{
-                      bgcolor: voucher.status === "Active" ? "#e8f5e8" : "#ffeaea",
-                      color: voucher.status === "Active" ? "#00c17c" : "#da1818",
-                      fontWeight: 500,
-                      fontSize: "8px",
-                    }}
-                  />
+      {redemptions.length === 0 ? (
+        <Box sx={{ textAlign: "center", py: 4 }}>
+          <Typography variant="body2" sx={{ color: "#8a8a8f" }}>
+            No recent redemptions found
+          </Typography>
+        </Box>
+      ) : (
+        <TableContainer>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell sx={{ color: "#8a8a8f", fontWeight: 500, fontSize: "10px" }}>
+                  Voucher Code
+                </TableCell>
+                <TableCell sx={{ color: "#8a8a8f", fontWeight: 500, fontSize: "10px" }}>
+                  Title
+                </TableCell>
+                <TableCell sx={{ color: "#8a8a8f", fontWeight: 500, fontSize: "10px" }}>
+                  User
+                </TableCell>
+                <TableCell sx={{ color: "#8a8a8f", fontWeight: 500, fontSize: "10px" }}>
+                  Restaurant
+                </TableCell>
+                <TableCell sx={{ color: "#8a8a8f", fontWeight: 500, fontSize: "10px" }}>
+                  Redeemed At
                 </TableCell>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+            </TableHead>
+            <TableBody>
+              {redemptions.map((redemption, index) => (
+                <TableRow key={index}>
+                  <TableCell sx={{ fontSize: "10px", fontWeight: 600 }}>
+                    {redemption.voucherCode || "-"}
+                  </TableCell>
+                  <TableCell sx={{ fontSize: "10px" }}>
+                    {redemption.title || "-"}
+                  </TableCell>
+                  <TableCell sx={{ fontSize: "10px" }}>
+                    {redemption.user || "-"}
+                  </TableCell>
+                  <TableCell sx={{ fontSize: "10px" }}>
+                    {redemption.restaurant || "-"}
+                  </TableCell>
+                  <TableCell sx={{ fontSize: "10px" }}>
+                    {formatDate(redemption.redeemedAt)}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      )}
     </Card>
   )
 }
