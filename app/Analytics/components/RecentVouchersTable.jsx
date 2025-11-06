@@ -39,7 +39,7 @@ export default function RecentVouchersTable({ redemptions = [], onPeriodChange }
   }
 
   return (
-    <Card sx={{ bgcolor: "#ffffff", border: "1px solid #dadada", borderRadius: "12px" }}>
+    <Card sx={{ bgcolor: "#ffffff", border: "1px solid #dadada", borderRadius: "12px", overflow: "hidden", width: "100%", maxWidth: "100%", minWidth: "100%" }}>
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", p: 2 }}>
         <Typography variant="h6" sx={{ fontWeight: 600 }}>
           Recent redeemed vouchers
@@ -63,30 +63,39 @@ export default function RecentVouchersTable({ redemptions = [], onPeriodChange }
           </Typography>
         </Box>
       ) : (
-        <TableContainer>
-          <Table>
+        <TableContainer sx={{ height: "400px", overflow: "auto", width: "100%", maxWidth: "100%", minWidth: "100%", pb: 2 }}>
+          <Table sx={{ width: "100%", minWidth: "100%" }}>
             <TableHead>
-              <TableRow>
-                <TableCell sx={{ color: "#8a8a8f", fontWeight: 500, fontSize: "10px" }}>
+              <TableRow sx={{ bgcolor: "#f9f9f9" }}>
+                <TableCell sx={{ color: "#8a8a8f", fontWeight: 500, fontSize: "10px", borderBottom: "1px solid #dadada" }}>
                   Voucher Code
                 </TableCell>
-                <TableCell sx={{ color: "#8a8a8f", fontWeight: 500, fontSize: "10px" }}>
+                <TableCell sx={{ color: "#8a8a8f", fontWeight: 500, fontSize: "10px", borderBottom: "1px solid #dadada" }}>
                   Title
                 </TableCell>
-                <TableCell sx={{ color: "#8a8a8f", fontWeight: 500, fontSize: "10px" }}>
+                <TableCell sx={{ color: "#8a8a8f", fontWeight: 500, fontSize: "10px", borderBottom: "1px solid #dadada" }}>
                   User
                 </TableCell>
-                <TableCell sx={{ color: "#8a8a8f", fontWeight: 500, fontSize: "10px" }}>
+                <TableCell sx={{ color: "#8a8a8f", fontWeight: 500, fontSize: "10px", borderBottom: "1px solid #dadada" }}>
                   Restaurant
                 </TableCell>
-                <TableCell sx={{ color: "#8a8a8f", fontWeight: 500, fontSize: "10px" }}>
+                <TableCell sx={{ color: "#8a8a8f", fontWeight: 500, fontSize: "10px", borderBottom: "1px solid #dadada" }}>
+                  Amount
+                </TableCell>
+                <TableCell sx={{ color: "#8a8a8f", fontWeight: 500, fontSize: "10px", borderBottom: "1px solid #dadada" }}>
                   Redeemed At
                 </TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {redemptions.map((redemption, index) => (
-                <TableRow key={index}>
+                <TableRow 
+                  key={index}
+                  sx={{
+                    "&:last-child td, &:last-child th": { border: 0 },
+                    "&:hover": { bgcolor: "#f9f9f9" },
+                  }}
+                >
                   <TableCell sx={{ fontSize: "10px", fontWeight: 600 }}>
                     {redemption.voucherCode || "-"}
                   </TableCell>
@@ -99,11 +108,18 @@ export default function RecentVouchersTable({ redemptions = [], onPeriodChange }
                   <TableCell sx={{ fontSize: "10px" }}>
                     {redemption.restaurant || "-"}
                   </TableCell>
+                  <TableCell sx={{ fontSize: "10px", fontWeight: 600 }}>
+                    {redemption.amount > 0 ? `$${redemption.amount.toFixed(2)}` : "-"}
+                  </TableCell>
                   <TableCell sx={{ fontSize: "10px" }}>
                     {formatDate(redemption.redeemedAt)}
                   </TableCell>
                 </TableRow>
               ))}
+              {/* Spacer row to ensure last row is fully visible */}
+              <TableRow>
+                <TableCell colSpan={6} sx={{ height: "20px", border: "none", p: 0 }} />
+              </TableRow>
             </TableBody>
           </Table>
         </TableContainer>

@@ -224,8 +224,8 @@ export default function VouchersPage() {
       setReviewVouchers(review.slice(0, 10)) // Limit to 10 for carousel
       setExpiredVouchers(expired.slice(0, 10)) // Limit to 10 for carousel
 
-      // Generate usage summary from voucher data
-      generateUsageSummary(allVouchers)
+      // Generate usage summary and reports from real redemption data
+      await generateUsageSummary(allVouchers)
 
     } catch (err) {
       console.error("Error fetching voucher data:", err)
@@ -235,86 +235,208 @@ export default function VouchersPage() {
     }
   }
 
-  // Generate usage summary from voucher data
-  const generateUsageSummary = (vouchers) => {
-    const usageSummary = vouchers
-      .filter(voucher => voucher.usedCount > 0)
-      .map(voucher => {
-        const { 
-          voucherCode, 
-          usedCount = 0, 
-          valueOfSavings, 
-          voucherType 
-        } = voucher
+  // Generate usage summary and reports from real redemption data
+  const generateUsageSummary = async (vouchers) => {
+    try {
+      const avgOrderValue = 85
+      const allRedemptions = []
+      const memberStats = new Map() // email -> { name, vouchersUsed, totalDiscount, totalSpend }
+      const merchantStats = new Map() // restaurantEmail -> { name, vouchersApplied, totalDiscount, salesGenerated, voucherCounts }
+      const voucherStats = new Map() // voucherCode -> { usedCount, totalDiscount, ordersGenerated }
 
-        // Calculate estimated values (you might want to track these separately)
-        const avgOrderValue = 85 // Estimated average order value
-        const totalDiscount = voucherType === "Percentage Discount" 
-          ? `$${(usedCount * avgOrderValue * valueOfSavings / 100).toFixed(0)}`
-          : `$${(usedCount * valueOfSavings).toFixed(0)}`
-        
-        const ordersGenerated = `$${(usedCount * avgOrderValue).toFixed(0)}`
-        const memberSavings = totalDiscount
-        const merchantSales = `$${(usedCount * avgOrderValue * 0.98).toFixed(0)}` // Minus small fee
+      // Fetch redemptions for each voucher
+      for (const voucher of vouchers) {
+        try {
+          const redeemedSnap = await getDocs(
+            collection(db, "voucher", voucher.id, "redeemedUsers")
+          )
 
-        return {
-          code: voucherCode,
-          totalUsed: usedCount,
-          totalDiscount,
-          ordersGenerated,
-          memberSavings,
-          merchantSales,
+          let voucherUsedCount = 0
+          let voucherTotalDiscount = 0
+          let voucherOrdersGenerated = 0
+
+          redeemedSnap.forEach((rDoc) => {
+            const rData = rDoc.data() || {}
+            
+            // Only count redemptions where used === true
+            if (rData.used === true) {
+              const userEmail = rData.userEmail || rData.email || rDoc.id
+              const restaurantEmail = voucher.restaurantEmail || ""
+              
+              // Calculate discount based on voucher type
+              let discount = 0
+              if (voucher.voucherType === "Percentage Discount") {
+                discount = (avgOrderValue * voucher.valueOfSavings) / 100
+              } else if (
+                voucher.voucherType === "Fixed Amount Discount" ||
+                voucher.voucherType === "Cash Voucher"
+              ) {
+                discount = Number(voucher.valueOfSavings) || 0
+              }
+
+              const orderValue = avgOrderValue
+              const memberSpend = orderValue
+
+              // Track redemption
+              allRedemptions.push({
+                voucherId: voucher.id,
+                voucherCode: voucher.voucherCode,
+                userEmail,
+                restaurantEmail,
+                discount,
+                orderValue,
+                redeemedAt: rData.redeemedAt || voucher.createdAt || new Date(),
+              })
+
+              // Update voucher stats
+              voucherUsedCount++
+              voucherTotalDiscount += discount
+              voucherOrdersGenerated += orderValue
+
+              // Update member stats
+              if (userEmail) {
+                if (!memberStats.has(userEmail)) {
+                  memberStats.set(userEmail, {
+                    email: userEmail,
+                    name: userEmail.split("@")[0], // Will be updated if member data available
+                    vouchersUsed: 0,
+                    totalDiscount: 0,
+                    totalSpend: 0,
+                  })
+                }
+                const member = memberStats.get(userEmail)
+                member.vouchersUsed++
+                member.totalDiscount += discount
+                member.totalSpend += memberSpend
+              }
+
+              // Update merchant stats
+              if (restaurantEmail) {
+                if (!merchantStats.has(restaurantEmail)) {
+                  merchantStats.set(restaurantEmail, {
+                    email: restaurantEmail,
+                    name: restaurantEmail.split("@")[0], // Will be updated if restaurant data available
+                    vouchersApplied: 0,
+                    totalDiscount: 0,
+                    salesGenerated: 0,
+                    voucherCounts: new Map(), // voucherCode -> count
+                  })
+                }
+                const merchant = merchantStats.get(restaurantEmail)
+                merchant.vouchersApplied++
+                merchant.totalDiscount += discount
+                merchant.salesGenerated += orderValue
+                
+                // Track top voucher
+                const voucherCount = merchant.voucherCounts.get(voucher.voucherCode) || 0
+                merchant.voucherCounts.set(voucher.voucherCode, voucherCount + 1)
+              }
+            }
+          })
+
+          // Store voucher-level stats for usage summary
+          if (voucherUsedCount > 0) {
+            voucherStats.set(voucher.voucherCode, {
+              usedCount: voucherUsedCount,
+              totalDiscount: voucherTotalDiscount,
+              ordersGenerated: voucherOrdersGenerated,
+            })
+          }
+        } catch (error) {
+          console.error(`Error fetching redemptions for voucher ${voucher.id}:`, error)
         }
-      })
-      .slice(0, 4) // Top 4 most used vouchers
+      }
 
-    setVoucherUsageSummary(usageSummary)
+      // Fetch member names if available
+      try {
+        const membersSnap = await getDocs(collection(db, "members"))
+        membersSnap.forEach((doc) => {
+          const memberData = doc.data() || {}
+          if (memberData.email && memberStats.has(memberData.email)) {
+            const member = memberStats.get(memberData.email)
+            member.name = memberData.name || member.email.split("@")[0]
+          }
+        })
+      } catch (error) {
+        console.error("Error fetching members:", error)
+      }
 
-    // Generate mock member and merchant reports (replace with real data if available)
-    generateMockReports()
-  }
+      // Fetch restaurant names if available
+      try {
+        const restaurantsSnap = await getDocs(collection(db, "registeredRestaurants"))
+        restaurantsSnap.forEach((doc) => {
+          const restaurantData = doc.data() || {}
+          if (restaurantData.email && merchantStats.has(restaurantData.email)) {
+            const merchant = merchantStats.get(restaurantData.email)
+            merchant.name = restaurantData.restaurantName || restaurantData.name || merchant.email.split("@")[0]
+          }
+        })
+      } catch (error) {
+        console.error("Error fetching restaurants:", error)
+      }
 
-  // Generate mock reports (replace with real data fetching)
-  const generateMockReports = () => {
-    const memberData = [
-      { name: "Sarah A", email: "sarah@gmail.com", vouchersUsed: 5, totalDiscount: "$100", totalSpend: "$850" },
-      { name: "Omar A", email: "omar@gmail.com", vouchersUsed: 3, totalDiscount: "$75", totalSpend: "$620" },
-      { name: "John D", email: "john@gmail.com", vouchersUsed: 2, totalDiscount: "$50", totalSpend: "$450" },
-    ]
+      // Generate Voucher Usage Summary
+      const usageSummary = Array.from(voucherStats.entries())
+        .map(([voucherCode, stats]) => ({
+          code: voucherCode,
+          totalUsed: stats.usedCount,
+          totalDiscount: `$${stats.totalDiscount.toFixed(0)}`,
+          ordersGenerated: `$${stats.ordersGenerated.toFixed(0)}`,
+          memberSavings: `$${stats.totalDiscount.toFixed(0)}`,
+          merchantSales: `$${(stats.ordersGenerated * 0.98).toFixed(0)}`, // Minus small fee
+        }))
+        .sort((a, b) => b.totalUsed - a.totalUsed)
+        .slice(0, 4) // Top 4 most used vouchers
 
-    const merchantData = [
-      {
-        name: "Merchant A",
-        vouchersApplied: 65,
-        totalDiscount: "$1,750",
-        salesGenerated: "$4,250",
-        topVoucher: "MERCH50",
-      },
-      {
-        name: "Merchant B",
-        vouchersApplied: 40,
-        totalDiscount: "$1,250",
-        salesGenerated: "$2,250",
-        topVoucher: "SAVE10",
-      },
-      { 
-        name: "Merchant C", 
-        vouchersApplied: 30, 
-        totalDiscount: "$750", 
-        salesGenerated: "$1,250", 
-        topVoucher: "SAVE20" 
-      },
-      { 
-        name: "Merchant D", 
-        vouchersApplied: 20, 
-        totalDiscount: "$350", 
-        salesGenerated: "$750", 
-        topVoucher: "MERCH70" 
-      },
-    ]
+      setVoucherUsageSummary(usageSummary)
 
-    setMemberBasedReport(memberData)
-    setMerchantBasedReport(merchantData)
+      // Generate Member-Based Report
+      const memberReport = Array.from(memberStats.values())
+        .map(member => ({
+          name: member.name,
+          email: member.email,
+          vouchersUsed: member.vouchersUsed,
+          totalDiscount: `$${member.totalDiscount.toFixed(2)}`,
+          totalSpend: `$${member.totalSpend.toFixed(2)}`,
+        }))
+        .sort((a, b) => b.vouchersUsed - a.vouchersUsed)
+        .slice(0, 10) // Top 10 members
+
+      setMemberBasedReport(memberReport)
+
+      // Generate Merchant-Based Report
+      const merchantReport = Array.from(merchantStats.values())
+        .map(merchant => {
+          // Find top voucher
+          let topVoucher = "N/A"
+          let maxCount = 0
+          merchant.voucherCounts.forEach((count, voucherCode) => {
+            if (count > maxCount) {
+              maxCount = count
+              topVoucher = voucherCode
+            }
+          })
+
+          return {
+            name: merchant.name,
+            vouchersApplied: merchant.vouchersApplied,
+            totalDiscount: `$${merchant.totalDiscount.toFixed(2)}`,
+            salesGenerated: `$${merchant.salesGenerated.toFixed(2)}`,
+            topVoucher: topVoucher,
+          }
+        })
+        .sort((a, b) => b.vouchersApplied - a.vouchersApplied)
+        .slice(0, 10) // Top 10 merchants
+
+      setMerchantBasedReport(merchantReport)
+
+    } catch (error) {
+      console.error("Error generating reports:", error)
+      // Set empty data on error
+      setVoucherUsageSummary([])
+      setMemberBasedReport([])
+      setMerchantBasedReport([])
+    }
   }
 
   // Fetch data on component mount

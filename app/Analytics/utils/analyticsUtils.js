@@ -3,18 +3,19 @@ import { db } from "../../../firebaseConfig"
 
 /**
  * Fetch all analytics data from Firebase
- * This includes vouchers, restaurants, members, and redemptions
+ * This includes vouchers, restaurants, members, redemptions, and purchases
  */
 export async function fetchAnalyticsData() {
   try {
     console.log("Starting Firebase data fetch...")
     
     // Fetch all necessary collections in parallel
-    const [vouchersSnap, restaurantsSnap, membersSnap, referralsSnap] = await Promise.all([
+    const [vouchersSnap, restaurantsSnap, membersSnap, referralsSnap, purchasesSnap] = await Promise.all([
       getDocs(collection(db, "voucher")),
       getDocs(collection(db, "registeredRestaurants")),
       getDocs(collection(db, "members")),
       getDocs(collection(db, "referrals")),
+      getDocs(collection(db, "purchases")),
     ])
     
     console.log("Firebase collections fetched:")
@@ -22,6 +23,7 @@ export async function fetchAnalyticsData() {
     console.log("- Restaurants:", restaurantsSnap.size)
     console.log("- Members:", membersSnap.size)
     console.log("- Referrals:", referralsSnap.size)
+    console.log("- Purchases:", purchasesSnap.size)
 
     // Process vouchers and their redemptions
     const vouchers = []
@@ -71,6 +73,37 @@ export async function fetchAnalyticsData() {
       }
     }
 
+    // Process purchases collection
+    const purchases = []
+    purchasesSnap.forEach((pDoc) => {
+      const pData = pDoc.data() || {}
+      console.log(`Purchase data for ${pDoc.id}:`, pData)
+      
+      // Convert purchaseDate to JavaScript Date
+      let purchaseDate = new Date()
+      if (pData.purchaseDate) {
+        if (pData.purchaseDate.toDate) {
+          purchaseDate = pData.purchaseDate.toDate()
+        } else if (typeof pData.purchaseDate === 'number') {
+          purchaseDate = new Date(pData.purchaseDate)
+        } else if (pData.purchaseDate.seconds) {
+          purchaseDate = new Date(pData.purchaseDate.seconds * 1000)
+        }
+      }
+
+      purchases.push({
+        id: pDoc.id,
+        transactionId: pData.transactionId || pDoc.id,
+        email: pData.email || '',
+        amountPaid: Number(pData.amountPaid) || 0,
+        couponUsed: pData.couponUsed || '',
+        subscriptionType: pData.subscriptionType || '',
+        purchaseDate: purchaseDate,
+      })
+    })
+
+    console.log(`Processed ${purchases.length} purchases`)
+
     // Process restaurants
     const restaurants = []
     restaurantsSnap.forEach((doc) => {
@@ -109,6 +142,7 @@ export async function fetchAnalyticsData() {
     console.log("- Total restaurants:", restaurants.length)
     console.log("- Total members:", members.length)
     console.log("- Total referrals:", referrals.length)
+    console.log("- Total purchases:", purchases.length)
 
     return {
       vouchers,
@@ -116,6 +150,7 @@ export async function fetchAnalyticsData() {
       restaurants,
       members,
       referrals,
+      purchases,
       emailToName,
       avgOrderValue,
     }
@@ -157,17 +192,42 @@ function calculateRedemptionRevenue(redemption, avgOrderValue) {
 }
 
 /**
+ * Calculate revenue from a purchase
+ */
+function calculatePurchaseRevenue(purchase) {
+  // Use the actual amountPaid from the purchase
+  const revenue = purchase.amountPaid || 0
+  const expense = revenue * 0.3 // Estimate expenses as 30% of revenue
+  const profit = revenue - expense
+
+  return {
+    revenue,
+    expense,
+    profit,
+  }
+}
+
+/**
  * Calculate total metrics
  */
 export function calculateTotalMetrics(data) {
-  const { allRedemptions, restaurants, members, avgOrderValue } = data
+  const { allRedemptions, restaurants, members, purchases, avgOrderValue } = data
 
   let totalRevenue = 0
   let totalExpense = 0
   let totalProfit = 0
 
+  // Add revenue from redemptions
   allRedemptions.forEach((redemption) => {
     const calc = calculateRedemptionRevenue(redemption, avgOrderValue)
+    totalRevenue += calc.revenue
+    totalExpense += calc.expense
+    totalProfit += calc.profit
+  })
+
+  // Add revenue from purchases
+  purchases.forEach((purchase) => {
+    const calc = calculatePurchaseRevenue(purchase)
     totalRevenue += calc.revenue
     totalExpense += calc.expense
     totalProfit += calc.profit
@@ -185,6 +245,14 @@ export function calculateTotalMetrics(data) {
     (r) => r.redeemedAt >= fourteenDaysAgo && r.redeemedAt < sevenDaysAgo
   )
 
+  // Include purchases in trend calculation
+  const lastWeekPurchases = purchases.filter(
+    (p) => p.purchaseDate >= sevenDaysAgo
+  )
+  const previousWeekPurchases = purchases.filter(
+    (p) => p.purchaseDate >= fourteenDaysAgo && p.purchaseDate < sevenDaysAgo
+  )
+
   let lastWeekRevenue = 0
   let previousWeekRevenue = 0
 
@@ -193,6 +261,14 @@ export function calculateTotalMetrics(data) {
   })
   previousWeekRedemptions.forEach((r) => {
     previousWeekRevenue += calculateRedemptionRevenue(r, avgOrderValue).revenue
+  })
+
+  // Add purchase revenue
+  lastWeekPurchases.forEach((p) => {
+    lastWeekRevenue += calculatePurchaseRevenue(p).revenue
+  })
+  previousWeekPurchases.forEach((p) => {
+    previousWeekRevenue += calculatePurchaseRevenue(p).revenue
   })
 
   const revenueTrend =
@@ -217,12 +293,13 @@ export function calculateTotalMetrics(data) {
  * Calculate monthly revenue data for the chart
  */
 export function calculateMonthlyRevenue(data) {
-  const { allRedemptions, avgOrderValue } = data
+  const { allRedemptions, purchases, avgOrderValue } = data
 
   // Group redemptions by month
   const monthlyData = {}
   const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 
+  // Add revenue from redemptions
   allRedemptions.forEach((redemption) => {
     const date = redemption.redeemedAt
     const monthKey = `${date.getFullYear()}-${date.getMonth()}`
@@ -238,6 +315,26 @@ export function calculateMonthlyRevenue(data) {
     }
 
     const calc = calculateRedemptionRevenue(redemption, avgOrderValue)
+    monthlyData[monthKey].revenue += calc.revenue
+    monthlyData[monthKey].count += 1
+  })
+
+  // Add revenue from purchases
+  purchases.forEach((purchase) => {
+    const date = purchase.purchaseDate
+    const monthKey = `${date.getFullYear()}-${date.getMonth()}`
+    const monthName = monthNames[date.getMonth()]
+
+    if (!monthlyData[monthKey]) {
+      monthlyData[monthKey] = {
+        month: monthName,
+        year: date.getFullYear(),
+        revenue: 0,
+        count: 0,
+      }
+    }
+
+    const calc = calculatePurchaseRevenue(purchase)
     monthlyData[monthKey].revenue += calc.revenue
     monthlyData[monthKey].count += 1
   })
@@ -261,7 +358,7 @@ export function calculateMonthlyRevenue(data) {
  * Calculate monthly expense, income, and profit
  */
 export function calculateMonthlyMetrics(data) {
-  const { allRedemptions, avgOrderValue } = data
+  const { allRedemptions, purchases, avgOrderValue } = data
 
   // Get current month's data
   const now = new Date()
@@ -273,12 +370,26 @@ export function calculateMonthlyMetrics(data) {
     return date.getMonth() === currentMonth && date.getFullYear() === currentYear
   })
 
+  // Include current month purchases
+  const currentMonthPurchases = purchases.filter((p) => {
+    const date = p.purchaseDate
+    return date.getMonth() === currentMonth && date.getFullYear() === currentYear
+  })
+
   let monthlyRevenue = 0
   let monthlyExpense = 0
   let monthlyProfit = 0
 
   currentMonthRedemptions.forEach((redemption) => {
     const calc = calculateRedemptionRevenue(redemption, avgOrderValue)
+    monthlyRevenue += calc.revenue
+    monthlyExpense += calc.expense
+    monthlyProfit += calc.profit
+  })
+
+  // Add purchase revenue
+  currentMonthPurchases.forEach((purchase) => {
+    const calc = calculatePurchaseRevenue(purchase)
     monthlyRevenue += calc.revenue
     monthlyExpense += calc.expense
     monthlyProfit += calc.profit
@@ -380,11 +491,12 @@ export function calculateEarnedVouchers(data) {
  * Get top customers by spending
  */
 export function getTopCustomers(data) {
-  const { allRedemptions, emailToName, avgOrderValue } = data
+  const { allRedemptions, purchases, emailToName, avgOrderValue } = data
 
   // Aggregate by user
   const userStats = {}
 
+  // Add redemption spending
   allRedemptions.forEach((redemption) => {
     const email = redemption.userEmail
     if (!email) return
@@ -405,6 +517,26 @@ export function getTopCustomers(data) {
     userStats[email].totalDiscount += calc.discount
   })
 
+  // Add purchase spending
+  purchases.forEach((purchase) => {
+    const email = purchase.email
+    if (!email) return
+
+    if (!userStats[email]) {
+      userStats[email] = {
+        email,
+        name: emailToName[email] || email.split("@")[0],
+        orders: 0,
+        totalSpent: 0,
+        totalDiscount: 0,
+      }
+    }
+
+    const calc = calculatePurchaseRevenue(purchase)
+    userStats[email].orders += 1
+    userStats[email].totalSpent += calc.revenue
+  })
+
   // Convert to array and sort by total spent
   const customers = Object.values(userStats)
     .sort((a, b) => b.totalSpent - a.totalSpent)
@@ -421,31 +553,61 @@ export function getTopCustomers(data) {
 }
 
 /**
- * Get recent voucher redemptions
+ * Get recent voucher redemptions and purchases
  */
 export function getRecentRedemptions(data) {
-  const { allRedemptions, emailToName } = data
+  const { allRedemptions, purchases, emailToName } = data
 
-  return allRedemptions
-    .sort((a, b) => b.redeemedAt - a.redeemedAt)
+  // Map redemptions to display format
+  const redemptionItems = allRedemptions.map((redemption) => ({
+    type: 'redemption',
+    id: redemption.voucherId || 'unknown',
+    voucherCode: redemption.voucherData.voucherId || redemption.voucherId || 'N/A',
+    title: redemption.voucherData.title || "Unknown Voucher",
+    restaurant: redemption.voucherData.restaurantEmail || "Unknown Restaurant",
+    user: emailToName[redemption.userEmail] || redemption.userEmail || "Unknown User",
+    userEmail: redemption.userEmail,
+    date: redemption.redeemedAt,
+    amount: 0,
+    subscriptionType: null,
+  }))
+
+  // Map purchases to display format
+  const purchaseItems = purchases.map((purchase) => ({
+    type: 'purchase',
+    id: purchase.id || purchase.transactionId,
+    voucherCode: purchase.couponUsed || 'Direct Purchase',
+    title: `Subscription: ${purchase.subscriptionType || 'Unknown'}`,
+    restaurant: 'N/A',
+    user: emailToName[purchase.email] || purchase.email || "Unknown User",
+    userEmail: purchase.email,
+    date: purchase.purchaseDate,
+    amount: purchase.amountPaid || 0,
+    subscriptionType: purchase.subscriptionType,
+  }))
+
+  // Combine and sort by date
+  const allItems = [...redemptionItems, ...purchaseItems]
+    .sort((a, b) => b.date - a.date)
     .slice(0, 5)
-    .map((redemption) => ({
-      voucherCode: redemption.voucherData.voucherId || redemption.voucherId,
-      title: redemption.voucherData.title || "Unknown Voucher",
-      restaurant: redemption.voucherData.restaurantEmail || "Unknown Restaurant",
-      user: emailToName[redemption.userEmail] || redemption.userEmail || "Unknown User",
-      userEmail: redemption.userEmail,
-      redeemedAt: redemption.redeemedAt,
-      voucherType: redemption.voucherData.voucherType || "Unknown",
-      discount: redemption.voucherData.valueOfSavings || 0,
+    .map((item) => ({
+      voucherCode: item.voucherCode,
+      title: item.title,
+      restaurant: item.restaurant,
+      user: item.user,
+      redeemedAt: item.date,
+      amount: item.amount,
+      type: item.type,
     }))
+
+  return allItems
 }
 
 /**
  * Calculate customer status (active vs inactive)
  */
 export function calculateCustomerStatus(data) {
-  const { members, allRedemptions } = data
+  const { members, allRedemptions, purchases } = data
 
   const now = new Date()
   const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
@@ -455,6 +617,13 @@ export function calculateCustomerStatus(data) {
   allRedemptions.forEach((r) => {
     if (r.redeemedAt >= thirtyDaysAgo && r.userEmail) {
       activeEmails.add(r.userEmail)
+    }
+  })
+
+  // Get emails of users who made purchases in last 30 days
+  purchases.forEach((p) => {
+    if (p.purchaseDate >= thirtyDaysAgo && p.email) {
+      activeEmails.add(p.email)
     }
   })
 

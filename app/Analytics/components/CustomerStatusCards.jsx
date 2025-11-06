@@ -25,7 +25,7 @@ function CustomerStatusCard({
         <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, fontSize: "14px" }}>
           {title}
         </Typography>
-        <Box sx={{ position: "relative", display: "inline-flex", mb: 2 }}>
+        <Box sx={{ position: "relative", display: "inline-flex", mb: 2, width: 80, height: 80 }}>
           <ResponsiveContainer width={80} height={80}>
             <PieChart>
               <Pie
@@ -44,13 +44,24 @@ function CustomerStatusCard({
           <Box
             sx={{
               position: "absolute",
-              inset: 0,
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
+              pointerEvents: "none",
             }}
           >
-            <Typography variant="h4" sx={{ fontWeight: "bold", color }}>
+            <Typography 
+              sx={{ 
+                fontWeight: "bold", 
+                color,
+                fontSize: "18px",
+                lineHeight: 1,
+              }}
+            >
               {percentage}%
             </Typography>
           </Box>
@@ -58,12 +69,22 @@ function CustomerStatusCard({
         <Typography variant="body2" sx={{ color: "#8a8a8f", mb: 1, fontSize: "11px" }}>
           {title} ({count})
         </Typography>
-        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <TrendIcon sx={{ width: 12, height: 12, color: trendColor, mr: 0.5 }} />
-          <Typography variant="body2" sx={{ color: trendColor, fontSize: "11px" }}>
-            {Math.abs(trend)}%
-          </Typography>
-        </Box>
+        {trend !== 0 && (
+          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <TrendIcon sx={{ width: 12, height: 12, color: trendColor, mr: 0.5 }} />
+            <Typography variant="body2" sx={{ color: trendColor, fontSize: "11px" }}>
+              {Math.abs(trend)}%
+            </Typography>
+          </Box>
+        )}
+        {trend === 0 && (
+          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <TrendingDown sx={{ width: 12, height: 12, color: "#8a8a8f", mr: 0.5 }} />
+            <Typography variant="body2" sx={{ color: "#8a8a8f", fontSize: "11px" }}>
+              0%
+            </Typography>
+          </Box>
+        )}
       </CardContent>
     </Card>
   )
@@ -91,7 +112,7 @@ export default function CustomerStatusCards({
         isActive={true}
       />
       <CustomerStatusCard
-        title="In Active Customer"
+        title="Inactive Customer"
         percentage={inactivePercentage}
         count={inactiveCount}
         trend={inactiveTrend}

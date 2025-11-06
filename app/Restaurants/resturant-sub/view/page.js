@@ -85,43 +85,6 @@ const theme = createTheme({
 
 const drawerWidth = 240
 
-const mockRestaurantData = {
-  id: "1",
-  name: "Scenic Brewing Company",
-  cuisines: ["Chinese", "Italian", "Korean", "European", "Asian"],
-  address: "334 Rosewood Dr. Deptford, NJ 08096",
-  city: "Scenic Brewing Company",
-  phone: "Scenic Brewing Company",
-  email: "334 Rosewood Dr. Deptford, NJ 08096",
-  openingDays: {
-    start: "20-03-2025",
-    end: "25-03-2025",
-  },
-  openingHours: {
-    start: "09:00 AM",
-    end: "09:20 AM",
-  },
-  closingHours: {
-    start: "09:00 PM",
-    end: "10:00 PM",
-  },
-  priceRange: "$1000",
-  specialty: "Special Scenic Brewing Burger",
-  description: "Description",
-  facilities: ["Air Conditioning", "Catering Available", "Baby Chair Available"],
-  paymentOptions: ["Cash", "E-Wallets (Cashless Payment)"],
-  socialMedia: {
-    website: "",
-    facebook: "",
-    instagram: "",
-    tiktok: "",
-  },
-}
-
-const fetchRestaurantData = async (id) => {
-  return mockRestaurantData
-}
-
 function ViewPageContent() {
   const searchParams = useSearchParams()
   const restaurantId = searchParams.get("id")

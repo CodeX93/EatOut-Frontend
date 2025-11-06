@@ -382,7 +382,7 @@ export default function Analytics() {
             </Box>
 
             {/* Recent Redeemed Vouchers */}
-            <Box sx={{ overflow: "hidden" }}>
+            <Box>
               <RecentVouchersTable redemptions={recentRedemptions} />
             </Box>
           </Box>
