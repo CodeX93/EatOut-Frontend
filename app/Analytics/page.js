@@ -84,7 +84,7 @@ export default function Analytics() {
       const growth = calculateCustomersGrowth(data)
       console.log("Customers growth:", growth)
 
-      // Set top metrics
+      // Set top metrics (only real data)
       setTopMetrics([
         {
           icon: <MonetizationOn />,
@@ -96,15 +96,15 @@ export default function Analytics() {
         },
         {
           icon: <TrendingFlat />,
-          title: "Total Profit",
-          value: `$${Number(totalMetrics.totalProfit).toLocaleString()}`,
-          trend: `${Math.abs(totalMetrics.profitTrend)}%`,
-          trendDirection: totalMetrics.profitTrend >= 0 ? "up" : "down",
-          trendText: `${totalMetrics.profitTrend >= 0 ? "+" : ""}${totalMetrics.profitTrend}% this week`,
+          title: "Purchase Revenue",
+          value: `$${Number(totalMetrics.totalRevenueFromPurchases).toLocaleString()}`,
+          trend: "Real Data",
+          trendDirection: "up",
+          trendText: "Actual subscription purchases",
         },
         {
           icon: <Store />,
-          title: "Total Restaurant",
+          title: "Total Restaurants",
           value: totalMetrics.totalRestaurants.toString(),
           trend: "0%",
           trendDirection: "up",
@@ -112,47 +112,47 @@ export default function Analytics() {
         },
         {
           icon: <Groups />,
-          title: "Total Members",
-          value: totalMetrics.totalMembers.toLocaleString(),
-          trend: "0%",
+          title: "Total Redemptions",
+          value: totalMetrics.totalRedemptions.toLocaleString(),
+          trend: "Count",
           trendDirection: "up",
-          trendText: "Registered members",
+          trendText: "Vouchers redeemed",
         },
       ])
 
-      // Set bottom metrics
+      // Set bottom metrics (real data only)
       setBottomMetrics([
         {
           icon: <MonetizationOn />,
-          title: "Average Revenue",
-          value: `$${Number(monthlyMetrics.averageRevenue).toLocaleString()}`,
-          trend: `${Math.abs(monthlyMetrics.monthlyTrend)}%`,
-          trendDirection: monthlyMetrics.monthlyTrend >= 0 ? "up" : "down",
-          trendText: `${monthlyMetrics.monthlyTrend >= 0 ? "+" : ""}${monthlyMetrics.monthlyTrend}% vs last month`,
-        },
-        {
-          icon: <TrendingDown />,
-          title: "Monthly Expense",
-          value: `$${Number(monthlyMetrics.monthlyExpense).toLocaleString()}`,
-          trend: "0%",
-          trendDirection: "up",
-          trendText: "Current month",
-        },
-        {
-          icon: <TrendingUp />,
-          title: "Monthly Income",
+          title: "Monthly Revenue",
           value: `$${Number(monthlyMetrics.monthlyIncome).toLocaleString()}`,
           trend: `${Math.abs(monthlyMetrics.monthlyTrend)}%`,
           trendDirection: monthlyMetrics.monthlyTrend >= 0 ? "up" : "down",
           trendText: `${monthlyMetrics.monthlyTrend >= 0 ? "+" : ""}${monthlyMetrics.monthlyTrend}% vs last month`,
         },
         {
+          icon: <TrendingUp />,
+          title: "Monthly Purchases",
+          value: `$${Number(monthlyMetrics.monthlyRevenueFromPurchases).toLocaleString()}`,
+          trend: "Real Data",
+          trendDirection: "up",
+          trendText: `${monthlyMetrics.currentMonthPurchasesCount} transactions`,
+        },
+        {
           icon: <TrendingFlat />,
-          title: "Monthly Profit",
-          value: `$${Number(monthlyMetrics.monthlyProfit).toLocaleString()}`,
-          trend: `${Math.abs(monthlyMetrics.monthlyTrend)}%`,
-          trendDirection: monthlyMetrics.monthlyTrend >= 0 ? "up" : "down",
-          trendText: `${monthlyMetrics.monthlyTrend >= 0 ? "+" : ""}${monthlyMetrics.monthlyTrend}% vs last month`,
+          title: "Average Revenue",
+          value: `$${Number(monthlyMetrics.averageRevenue).toLocaleString()}`,
+          trend: "Monthly Avg",
+          trendDirection: "up",
+          trendText: "Historical average",
+        },
+        {
+          icon: <Groups />,
+          title: "Total Members",
+          value: totalMetrics.totalMembers.toLocaleString(),
+          trend: "Active",
+          trendDirection: "up",
+          trendText: "Registered users",
         },
       ])
 
@@ -176,7 +176,7 @@ export default function Analytics() {
         },
         {
           icon: <TrendingFlat />,
-          title: "Total Profit",
+          title: "Purchase Revenue",
           value: "$0",
           trend: "0%",
           trendDirection: "up",
@@ -184,8 +184,42 @@ export default function Analytics() {
         },
         {
           icon: <Store />,
-          title: "Total Restaurant",
+          title: "Total Restaurants",
           value: "0",
+          trend: "0%",
+          trendDirection: "up",
+          trendText: "No data available",
+        },
+        {
+          icon: <Groups />,
+          title: "Total Redemptions",
+          value: "0",
+          trend: "0%",
+          trendDirection: "up",
+          trendText: "No data available",
+        },
+      ])
+      setBottomMetrics([
+        {
+          icon: <MonetizationOn />,
+          title: "Monthly Revenue",
+          value: "$0",
+          trend: "0%",
+          trendDirection: "up",
+          trendText: "No data available",
+        },
+        {
+          icon: <TrendingUp />,
+          title: "Monthly Purchases",
+          value: "$0",
+          trend: "0%",
+          trendDirection: "up",
+          trendText: "No data available",
+        },
+        {
+          icon: <TrendingFlat />,
+          title: "Average Revenue",
+          value: "$0",
           trend: "0%",
           trendDirection: "up",
           trendText: "No data available",

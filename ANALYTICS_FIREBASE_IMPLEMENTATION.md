@@ -1,5 +1,35 @@
 # Analytics Firebase Implementation
 
+## 🎯 LATEST UPDATE: Real Data Implementation (Nov 7, 2025)
+
+### Key Improvements Made:
+1. ✅ **Removed ALL Fake/Estimated Data:**
+   - Eliminated hardcoded $85 average order value
+   - Removed estimated 30% expense ratio
+   - Removed fake profit calculations
+
+2. ✅ **Now Using Real Transaction Data:**
+   - Purchase revenue uses actual `amountPaid` from `purchases` collection
+   - Voucher redemptions use each voucher's `minSpending` requirement (more realistic)
+   - All metrics clearly indicate if they're "Real Data" vs "Estimated"
+
+3. ✅ **Removed Misleading Metrics:**
+   - ❌ Deleted "Total Profit" (no real expense data)
+   - ❌ Deleted "Monthly Expense" (was fake 30% estimate)
+   - ❌ Deleted "Monthly Profit" (no real expense data)
+
+4. ✅ **Added New Meaningful Metrics:**
+   - ✨ "Purchase Revenue" - 100% real subscription transaction data
+   - ✨ "Total Redemptions" - accurate count of vouchers redeemed
+   - ✨ "Monthly Purchases" - real revenue with transaction count
+
+### Data Accuracy Summary:
+- **🟢 Real Data:** Purchase revenue (from `purchases.amountPaid`)
+- **🟡 Estimated Data:** Redemption revenue (uses voucher's `minSpending`)
+- **🟢 Count Data:** Restaurants, members, redemptions (accurate)
+
+---
+
 ## Overview
 The Analytics page has been successfully migrated from hardcoded data to real-time Firebase data fetching.
 
@@ -56,28 +86,44 @@ This new file contains all the data fetching and calculation logic:
 - Already had support for data props
 - Now receive real Firebase data instead of using defaults
 
-## Data Sources
+## Data Sources (UPDATED - Now Using Real Data)
 
-### Total Revenue & Total Profit
-**Source:** Calculated from voucher redemptions
-- Revenue = Sum of all order values from redemptions (using avg order value of $85)
-- Profit = Revenue - Expenses (expenses estimated at 30% of revenue)
+### Total Revenue
+**Source:** Combination of real purchases and estimated redemptions
+- **Real Revenue from Purchases:** Actual `amountPaid` from `purchases` collection
+- **Estimated Revenue from Redemptions:** Based on voucher's `minSpending` requirement
 - Trends calculated by comparing last 7 days vs previous 7 days
 
+### Purchase Revenue (NEW - Real Data)
+**Source:** `purchases` collection
+- Uses actual transaction amounts (`amountPaid` field)
+- 100% real transaction data from subscription purchases
+- No estimates or assumptions
+
+### Total Redemptions (REPLACED Total Profit)
+**Source:** Count of voucher redemptions
+- Simple count of all vouchers redeemed
+- No fake profit calculations
+
 ### Monthly Revenue
-**Source:** Aggregated from voucher redemptions grouped by month
+**Source:** Aggregated from purchases and redemptions grouped by month
 - Shows last 10 months of data
-- Each redemption contributes the average order value ($85)
+- **Purchases:** Uses actual `amountPaid` (real data)
+- **Redemptions:** Uses voucher's `minSpending` (estimated, more realistic than fixed $85)
 
 ### Average Revenue
 **Source:** Average of monthly revenues over available months
+- Historical average calculated from real monthly data
 
-### Monthly Expense, Income, Profit
-**Source:** Current month's redemptions
-- Expense: 30% of income
-- Income: Sum of all order values in current month
-- Profit: Income - Expense
-- Trends: Comparison with previous month
+### Monthly Purchases (NEW - Real Data)
+**Source:** Current month's purchases from `purchases` collection
+- Shows actual revenue from subscription purchases
+- Displays transaction count
+
+### REMOVED METRICS (Were Fake/Estimated):
+- ❌ **Total Profit** - Removed (no real expense data)
+- ❌ **Monthly Expense** - Removed (was estimated at 30%, not real)
+- ❌ **Monthly Profit** - Removed (no real expense data)
 
 ### Earned Vouchers
 **Source:** Total count of voucher redemptions

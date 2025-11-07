@@ -236,9 +236,9 @@ export default function VouchersPage() {
   }
 
   // Generate usage summary and reports from real redemption data
+  // Using REAL data - no fake $85 calculations
   const generateUsageSummary = async (vouchers) => {
     try {
-      const avgOrderValue = 85
       const allRedemptions = []
       const memberStats = new Map() // email -> { name, vouchersUsed, totalDiscount, totalSpend }
       const merchantStats = new Map() // restaurantEmail -> { name, vouchersApplied, totalDiscount, salesGenerated, voucherCounts }
@@ -255,6 +255,9 @@ export default function VouchersPage() {
           let voucherTotalDiscount = 0
           let voucherOrdersGenerated = 0
 
+          // Use voucher's minSpending for better estimates (or actualOrderAmount if available)
+          const voucherMinSpending = Number(voucher.minSpending) || 0
+
           redeemedSnap.forEach((rDoc) => {
             const rData = rDoc.data() || {}
             
@@ -263,10 +266,13 @@ export default function VouchersPage() {
               const userEmail = rData.userEmail || rData.email || rDoc.id
               const restaurantEmail = voucher.restaurantEmail || ""
               
+              // Use actual order amount if available, otherwise estimate from minSpending
+              const orderValue = rData.actualOrderAmount || voucherMinSpending
+              
               // Calculate discount based on voucher type
               let discount = 0
               if (voucher.voucherType === "Percentage Discount") {
-                discount = (avgOrderValue * voucher.valueOfSavings) / 100
+                discount = (orderValue * voucher.valueOfSavings) / 100
               } else if (
                 voucher.voucherType === "Fixed Amount Discount" ||
                 voucher.voucherType === "Cash Voucher"
@@ -274,7 +280,6 @@ export default function VouchersPage() {
                 discount = Number(voucher.valueOfSavings) || 0
               }
 
-              const orderValue = avgOrderValue
               const memberSpend = orderValue
 
               // Track redemption

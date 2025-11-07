@@ -28,7 +28,6 @@ export async function fetchAnalyticsData() {
     // Process vouchers and their redemptions
     const vouchers = []
     const allRedemptions = []
-    const avgOrderValue = 85 // Average order value for calculations
 
     for (const vDoc of vouchersSnap.docs) {
       const vData = vDoc.data() || {}
@@ -52,11 +51,19 @@ export async function fetchAnalyticsData() {
           console.log(`Redemption used status: ${used}`)
           
           if (used) {
+            // Use actual order amount if available, otherwise estimate from minSpending
+            // This supports the actualOrderAmount field for 100% accuracy when available
+            const actualOrderAmount = rData.actualOrderAmount ? Number(rData.actualOrderAmount) : null
+            const estimatedOrderValue = actualOrderAmount || (vData.minSpending ? Number(vData.minSpending) : 0)
+            const isRealData = actualOrderAmount !== null
+            
             const redemption = {
               voucherId: vDoc.id,
               voucherData: vData,
               redemptionData: rData,
               userEmail: rData.userEmail || rData.email,
+              estimatedOrderValue, // Real if actualOrderAmount exists, otherwise estimated from minSpending
+              isRealData, // Flag to track if this is real transaction data
               redeemedAt:
                 typeof rData.redeemedAt === "number"
                   ? new Date(rData.redeemedAt)
@@ -64,7 +71,7 @@ export async function fetchAnalyticsData() {
                   ? new Date(vData.createdAt.seconds * 1000)
                   : new Date(),
             }
-            console.log(`Adding redemption:`, redemption)
+            console.log(`Adding redemption with ${isRealData ? 'REAL' : 'estimated'} order value: $${estimatedOrderValue}`)
             allRedemptions.push(redemption)
           }
         })
@@ -152,7 +159,6 @@ export async function fetchAnalyticsData() {
       referrals,
       purchases,
       emailToName,
-      avgOrderValue,
     }
   } catch (error) {
     console.error("Error fetching analytics data:", error)
@@ -161,77 +167,56 @@ export async function fetchAnalyticsData() {
 }
 
 /**
- * Calculate revenue from a redemption
+ * Calculate estimated revenue from a redemption based on minSpending
+ * Note: This is an ESTIMATE since we don't track actual transaction amounts
  */
-function calculateRedemptionRevenue(redemption, avgOrderValue) {
-  const voucherType = redemption.voucherData.voucherType || ""
-  const value = redemption.voucherData.valueOfSavings ?? 0
-
-  let discount = 0
-  if (voucherType === "Percentage Discount") {
-    discount = (avgOrderValue * value) / 100
-  } else if (
-    voucherType === "Fixed Amount Discount" ||
-    voucherType === "Cash Voucher"
-  ) {
-    discount = Number(value) || 0
-  }
-
-  // Revenue = Order value (discount represents what customer saved)
-  // Profit = Revenue - expenses (we'll estimate expenses as 30% of revenue)
-  const revenue = avgOrderValue
-  const expense = revenue * 0.3
-  const profit = revenue - expense
-
+function calculateRedemptionRevenue(redemption) {
+  // Use the estimated order value stored in the redemption (based on minSpending)
+  const estimatedRevenue = redemption.estimatedOrderValue || 0
+  
   return {
-    revenue,
-    expense,
-    profit,
-    discount,
+    revenue: estimatedRevenue,
+    isEstimate: true, // Flag to indicate this is estimated data
   }
 }
 
 /**
- * Calculate revenue from a purchase
+ * Calculate revenue from a purchase (REAL DATA)
  */
 function calculatePurchaseRevenue(purchase) {
-  // Use the actual amountPaid from the purchase
+  // Use the actual amountPaid from the purchase - this is REAL data
   const revenue = purchase.amountPaid || 0
-  const expense = revenue * 0.3 // Estimate expenses as 30% of revenue
-  const profit = revenue - expense
 
   return {
     revenue,
-    expense,
-    profit,
+    isEstimate: false, // This is real transaction data
   }
 }
 
 /**
- * Calculate total metrics
+ * Calculate total metrics using REAL data only
  */
 export function calculateTotalMetrics(data) {
-  const { allRedemptions, restaurants, members, purchases, avgOrderValue } = data
+  const { allRedemptions, restaurants, members, purchases } = data
 
-  let totalRevenue = 0
-  let totalExpense = 0
-  let totalProfit = 0
+  // Calculate real revenue from actual purchases only
+  let totalRevenueFromPurchases = 0
+  let totalEstimatedRevenueFromRedemptions = 0
 
-  // Add revenue from redemptions
-  allRedemptions.forEach((redemption) => {
-    const calc = calculateRedemptionRevenue(redemption, avgOrderValue)
-    totalRevenue += calc.revenue
-    totalExpense += calc.expense
-    totalProfit += calc.profit
-  })
-
-  // Add revenue from purchases
+  // Real revenue from purchases (actual transaction data)
   purchases.forEach((purchase) => {
     const calc = calculatePurchaseRevenue(purchase)
-    totalRevenue += calc.revenue
-    totalExpense += calc.expense
-    totalProfit += calc.profit
+    totalRevenueFromPurchases += calc.revenue
   })
+
+  // Estimated revenue from redemptions (based on minSpending)
+  allRedemptions.forEach((redemption) => {
+    const calc = calculateRedemptionRevenue(redemption)
+    totalEstimatedRevenueFromRedemptions += calc.revenue
+  })
+
+  // Total combined (real + estimated)
+  const totalRevenue = totalRevenueFromPurchases + totalEstimatedRevenueFromRedemptions
 
   // Calculate weekly trends (compare last 7 days vs previous 7 days)
   const now = new Date()
@@ -245,7 +230,6 @@ export function calculateTotalMetrics(data) {
     (r) => r.redeemedAt >= fourteenDaysAgo && r.redeemedAt < sevenDaysAgo
   )
 
-  // Include purchases in trend calculation
   const lastWeekPurchases = purchases.filter(
     (p) => p.purchaseDate >= sevenDaysAgo
   )
@@ -257,13 +241,12 @@ export function calculateTotalMetrics(data) {
   let previousWeekRevenue = 0
 
   lastWeekRedemptions.forEach((r) => {
-    lastWeekRevenue += calculateRedemptionRevenue(r, avgOrderValue).revenue
+    lastWeekRevenue += calculateRedemptionRevenue(r).revenue
   })
   previousWeekRedemptions.forEach((r) => {
-    previousWeekRevenue += calculateRedemptionRevenue(r, avgOrderValue).revenue
+    previousWeekRevenue += calculateRedemptionRevenue(r).revenue
   })
 
-  // Add purchase revenue
   lastWeekPurchases.forEach((p) => {
     lastWeekRevenue += calculatePurchaseRevenue(p).revenue
   })
@@ -276,16 +259,14 @@ export function calculateTotalMetrics(data) {
       ? ((lastWeekRevenue - previousWeekRevenue) / previousWeekRevenue) * 100
       : 0
 
-  const profitTrend = revenueTrend // Simplified: profit trend follows revenue trend
-
   return {
     totalRevenue: totalRevenue.toFixed(2),
-    totalProfit: totalProfit.toFixed(2),
+    totalRevenueFromPurchases: totalRevenueFromPurchases.toFixed(2),
+    totalEstimatedRevenueFromRedemptions: totalEstimatedRevenueFromRedemptions.toFixed(2),
+    totalRedemptions: allRedemptions.length,
     totalRestaurants: restaurants.length,
     totalMembers: members.length,
     revenueTrend: revenueTrend.toFixed(2),
-    profitTrend: profitTrend.toFixed(2),
-    totalExpense: totalExpense.toFixed(2),
   }
 }
 
@@ -293,13 +274,13 @@ export function calculateTotalMetrics(data) {
  * Calculate monthly revenue data for the chart
  */
 export function calculateMonthlyRevenue(data) {
-  const { allRedemptions, purchases, avgOrderValue } = data
+  const { allRedemptions, purchases } = data
 
-  // Group redemptions by month
+  // Group by month
   const monthlyData = {}
   const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
 
-  // Add revenue from redemptions
+  // Add revenue from redemptions (estimated based on minSpending)
   allRedemptions.forEach((redemption) => {
     const date = redemption.redeemedAt
     const monthKey = `${date.getFullYear()}-${date.getMonth()}`
@@ -314,12 +295,12 @@ export function calculateMonthlyRevenue(data) {
       }
     }
 
-    const calc = calculateRedemptionRevenue(redemption, avgOrderValue)
+    const calc = calculateRedemptionRevenue(redemption)
     monthlyData[monthKey].revenue += calc.revenue
     monthlyData[monthKey].count += 1
   })
 
-  // Add revenue from purchases
+  // Add revenue from purchases (real data)
   purchases.forEach((purchase) => {
     const date = purchase.purchaseDate
     const monthKey = `${date.getFullYear()}-${date.getMonth()}`
@@ -355,10 +336,10 @@ export function calculateMonthlyRevenue(data) {
 }
 
 /**
- * Calculate monthly expense, income, and profit
+ * Calculate monthly metrics using REAL data
  */
 export function calculateMonthlyMetrics(data) {
-  const { allRedemptions, purchases, avgOrderValue } = data
+  const { allRedemptions, purchases } = data
 
   // Get current month's data
   const now = new Date()
@@ -370,32 +351,29 @@ export function calculateMonthlyMetrics(data) {
     return date.getMonth() === currentMonth && date.getFullYear() === currentYear
   })
 
-  // Include current month purchases
   const currentMonthPurchases = purchases.filter((p) => {
     const date = p.purchaseDate
     return date.getMonth() === currentMonth && date.getFullYear() === currentYear
   })
 
-  let monthlyRevenue = 0
-  let monthlyExpense = 0
-  let monthlyProfit = 0
+  let monthlyRevenueFromRedemptions = 0
+  let monthlyRevenueFromPurchases = 0
 
+  // Estimated revenue from redemptions
   currentMonthRedemptions.forEach((redemption) => {
-    const calc = calculateRedemptionRevenue(redemption, avgOrderValue)
-    monthlyRevenue += calc.revenue
-    monthlyExpense += calc.expense
-    monthlyProfit += calc.profit
+    const calc = calculateRedemptionRevenue(redemption)
+    monthlyRevenueFromRedemptions += calc.revenue
   })
 
-  // Add purchase revenue
+  // Real revenue from purchases
   currentMonthPurchases.forEach((purchase) => {
     const calc = calculatePurchaseRevenue(purchase)
-    monthlyRevenue += calc.revenue
-    monthlyExpense += calc.expense
-    monthlyProfit += calc.profit
+    monthlyRevenueFromPurchases += calc.revenue
   })
 
-  // Calculate average revenue
+  const monthlyRevenue = monthlyRevenueFromRedemptions + monthlyRevenueFromPurchases
+
+  // Calculate average revenue from historical data
   const monthlyData = calculateMonthlyRevenue(data)
   const avgRevenue =
     monthlyData.length > 0
@@ -411,9 +389,17 @@ export function calculateMonthlyMetrics(data) {
     return date.getMonth() === lastMonth && date.getFullYear() === lastMonthYear
   })
 
+  const lastMonthPurchases = purchases.filter((p) => {
+    const date = p.purchaseDate
+    return date.getMonth() === lastMonth && date.getFullYear() === lastMonthYear
+  })
+
   let lastMonthRevenue = 0
   lastMonthRedemptions.forEach((r) => {
-    lastMonthRevenue += calculateRedemptionRevenue(r, avgOrderValue).revenue
+    lastMonthRevenue += calculateRedemptionRevenue(r).revenue
+  })
+  lastMonthPurchases.forEach((p) => {
+    lastMonthRevenue += calculatePurchaseRevenue(p).revenue
   })
 
   const monthlyTrend =
@@ -423,16 +409,20 @@ export function calculateMonthlyMetrics(data) {
 
   console.log("Monthly metrics calculation:")
   console.log("- Current month redemptions:", currentMonthRedemptions.length)
+  console.log("- Current month purchases:", currentMonthPurchases.length)
   console.log("- Last month redemptions:", lastMonthRedemptions.length)
+  console.log("- Last month purchases:", lastMonthPurchases.length)
   console.log("- Monthly revenue:", monthlyRevenue)
   console.log("- Last month revenue:", lastMonthRevenue)
   console.log("- Monthly trend:", monthlyTrend)
 
   return {
     averageRevenue: avgRevenue.toFixed(2),
-    monthlyExpense: monthlyExpense.toFixed(2),
     monthlyIncome: monthlyRevenue.toFixed(2),
-    monthlyProfit: monthlyProfit.toFixed(2),
+    monthlyRevenueFromPurchases: monthlyRevenueFromPurchases.toFixed(2),
+    monthlyRevenueFromRedemptions: monthlyRevenueFromRedemptions.toFixed(2),
+    currentMonthRedemptionsCount: currentMonthRedemptions.length,
+    currentMonthPurchasesCount: currentMonthPurchases.length,
     monthlyTrend: monthlyTrend.toFixed(2),
   }
 }
@@ -488,15 +478,15 @@ export function calculateEarnedVouchers(data) {
 }
 
 /**
- * Get top customers by spending
+ * Get top customers by spending (using real + estimated data)
  */
 export function getTopCustomers(data) {
-  const { allRedemptions, purchases, emailToName, avgOrderValue } = data
+  const { allRedemptions, purchases, emailToName } = data
 
   // Aggregate by user
   const userStats = {}
 
-  // Add redemption spending
+  // Add redemption spending (estimated)
   allRedemptions.forEach((redemption) => {
     const email = redemption.userEmail
     if (!email) return
@@ -507,17 +497,15 @@ export function getTopCustomers(data) {
         name: emailToName[email] || email.split("@")[0],
         orders: 0,
         totalSpent: 0,
-        totalDiscount: 0,
       }
     }
 
-    const calc = calculateRedemptionRevenue(redemption, avgOrderValue)
+    const calc = calculateRedemptionRevenue(redemption)
     userStats[email].orders += 1
     userStats[email].totalSpent += calc.revenue
-    userStats[email].totalDiscount += calc.discount
   })
 
-  // Add purchase spending
+  // Add purchase spending (real data)
   purchases.forEach((purchase) => {
     const email = purchase.email
     if (!email) return
@@ -528,7 +516,6 @@ export function getTopCustomers(data) {
         name: emailToName[email] || email.split("@")[0],
         orders: 0,
         totalSpent: 0,
-        totalDiscount: 0,
       }
     }
 

@@ -140,8 +140,7 @@ const fetchPopularRestaurants = async (period, emailToNameMap = {}) => {
     }
   }
 
-  // Build ranked list
-  const avgOrderValue = 85
+  // Build ranked list (using REAL data - no fake revenue calculations)
   // Debug: surface stats for specific restaurants if present
   const debugEmails = new Set(["nanyangcafe@gmail.com", "mmm@gmail.com"]) 
   emailToStats.forEach((s, email) => {
@@ -154,8 +153,9 @@ const fetchPopularRestaurants = async (period, emailToNameMap = {}) => {
     .map(([email, s]) => {
       const members = s.memberSet.size
       const orders = s.orders
-      const revenueNumber = orders * avgOrderValue
-      const revenue = `$${revenueNumber.toLocaleString()}`
+      // Show order count instead of fake revenue
+      // NOTE: To show real revenue, add actualOrderAmount to redemption records
+      const revenue = `${orders} orders` // Real count, not fake dollar amount
       // Approximate rating from redemption density, clamp between 3.5 and 5.0
       const rating = Math.max(3.5, Math.min(5.0, 3.5 + (orders / Math.max(50, members * 5))))
       return {
@@ -163,13 +163,13 @@ const fetchPopularRestaurants = async (period, emailToNameMap = {}) => {
         name: emailToNameMap[normalizeEmail(email)] || email,
         rating: Number(rating.toFixed(1)),
         reviews: members,
-        revenue,
+        revenue, // Now shows "X orders" instead of fake "$X,XXX"
         highlighted: false,
         orders,
         members,
       }
     })
-    .sort((a, b) => b.orders - a.orders || b.revenueNumber - a.revenueNumber)
+    .sort((a, b) => b.orders - a.orders || b.rating - a.rating)
     .slice(0, 5)
 
   // Highlight the top 1

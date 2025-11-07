@@ -49,14 +49,16 @@ export default function MembersPage() {
         setMembersData(rows)
 
         // After members loaded, compute aggregated metrics from voucher redemptions
+        // Using REAL data - no fake $85 calculations
         const vouchersSnap = await getDocs(collection(db, "voucher"))
         const userAgg = new Map()
-        const avgOrderValue = 85
 
         for (const vDoc of vouchersSnap.docs) {
           const v = vDoc.data() || {}
           const voucherType = v.voucherType || ""
           const value = v.valueOfSavings ?? 0
+          const minSpending = Number(v.minSpending) || 0 // Use voucher's actual minSpending requirement
+          
           const redeemedSnap = await getDocs(collection(db, "voucher", vDoc.id, "redeemedUsers"))
           redeemedSnap.forEach((ru) => {
             const r = ru.data() || {}
@@ -66,9 +68,12 @@ export default function MembersPage() {
             if (!used) return
             const redeemedAt = typeof r.redeemedAt === 'number' ? new Date(r.redeemedAt) : (v.expiryDate ? new Date(v.expiryDate) : null)
 
+            // Use actual order amount if available, otherwise estimate from minSpending
+            const estimatedOrderValue = r.actualOrderAmount || minSpending
+
             let discount = 0
             if (voucherType === "Percentage Discount") {
-              discount = (avgOrderValue * value) / 100
+              discount = (estimatedOrderValue * value) / 100
             } else if (voucherType === "Fixed Amount Discount" || voucherType === "Cash Voucher") {
               discount = Number(value) || 0
             } else {
@@ -77,11 +82,13 @@ export default function MembersPage() {
 
             let agg = userAgg.get(email)
             if (!agg) {
-              agg = { orders: 0, totalDiscount: 0, lastOrder: null }
+              agg = { orders: 0, estimatedSpending: 0, totalDiscount: 0, lastOrder: null, hasRealData: false }
               userAgg.set(email, agg)
             }
             agg.orders += 1
+            agg.estimatedSpending += estimatedOrderValue
             agg.totalDiscount += discount
+            if (r.actualOrderAmount) agg.hasRealData = true // Track if any real data exists
             if (redeemedAt && (!agg.lastOrder || redeemedAt > agg.lastOrder)) agg.lastOrder = redeemedAt
           })
         }
@@ -90,13 +97,16 @@ export default function MembersPage() {
           email,
           name: emailToName[email] || email,
           orders: a.orders,
-          totalSpent: `$${(a.orders * avgOrderValue).toFixed(2)}`,
+          totalSpent: a.hasRealData 
+            ? `$${a.estimatedSpending.toFixed(2)}` 
+            : `~$${a.estimatedSpending.toFixed(2)} (est)`, // Mark as estimated if no real data
           totalDiscount: `$${a.totalDiscount.toFixed(2)}`,
           lastOrder: a.lastOrder ? a.lastOrder.toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' }) : '-',
+          spendingValue: a.estimatedSpending, // For sorting
         }))
 
         const topBySpend = [...ranked]
-          .sort((x, y) => parseFloat(y.totalSpent.slice(1)) - parseFloat(x.totalSpent.slice(1)))
+          .sort((x, y) => y.spendingValue - x.spendingValue)
           .slice(0, 5)
           .map((u, i) => ({ rank: i + 1, name: u.name, email: u.email, totalSpent: u.totalSpent, orders: u.orders, lastOrder: u.lastOrder }))
 
