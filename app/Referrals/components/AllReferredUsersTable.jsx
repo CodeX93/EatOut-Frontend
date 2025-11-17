@@ -1,12 +1,14 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import {
   Box,
   Typography,
   FormControl,
   Select,
   MenuItem,
+  TextField,
+  InputAdornment,
   Table,
   TableBody,
   TableCell,
@@ -14,15 +16,20 @@ import {
   TableHead,
   TableRow,
   Paper,
+  TableSortLabel,
 } from "@mui/material"
-import { KeyboardArrowDown } from "@mui/icons-material"
+import { KeyboardArrowDown, Search as SearchIcon } from "@mui/icons-material"
 import { collection, getDocs } from "firebase/firestore"
 import { db } from "../../../firebaseConfig"
 
+const TIMELINE_OPTIONS = ["All", "Last 24h", "Last Week", "Last Month"]
+
 export default function AllReferredUsersTable() {
-  const [filter, setFilter] = useState("Last 24h")
+  const [timelineFilter, setTimelineFilter] = useState("All")
+  const [searchTerm, setSearchTerm] = useState("")
   const [allReferredUsers, setAllReferredUsers] = useState([])
   const [loading, setLoading] = useState(true)
+  const [sortConfig, setSortConfig] = useState({ orderBy: "createdAtValue", order: "desc" })
 
   useEffect(() => {
     const fetchReferrals = async () => {
@@ -31,7 +38,26 @@ export default function AllReferredUsersTable() {
         const querySnapshot = await getDocs(collection(db, "referrals"))
         const users = []
         querySnapshot.forEach((doc) => {
-          users.push(doc.data())
+          const data = doc.data() || {}
+          const createdTimestamp =
+            (typeof data.createdAtValue === "number" && data.createdAtValue) ||
+            (data.createdAt?.seconds ? data.createdAt.seconds * 1000 : null) ||
+            (data.createdAt?.toDate ? data.createdAt.toDate().getTime() : null) ||
+            (typeof doc.createTime?.toMillis === "function" ? doc.createTime.toMillis() : null)
+
+          users.push({
+            ...data,
+            createdAtValue: createdTimestamp || 0,
+            createdAtDisplay: createdTimestamp
+              ? new Date(createdTimestamp).toLocaleString("en-US", {
+                  day: "2-digit",
+                  month: "short",
+                  year: "numeric",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })
+              : "-",
+          })
         })
         setAllReferredUsers(users)
       } catch (error) {
@@ -42,6 +68,69 @@ export default function AllReferredUsersTable() {
     fetchReferrals()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  const filteredUsers = useMemo(() => {
+    const normalizedTerm = searchTerm.trim().toLowerCase()
+    const now = Date.now()
+
+    return allReferredUsers.filter((user) => {
+      const matchesSearch = normalizedTerm
+        ? [user.email, user.referralCode]
+            .filter((field) => typeof field === "string" && field.length > 0)
+            .some((field) => field.toLowerCase().includes(normalizedTerm))
+        : true
+
+      const matchesTimeline =
+        timelineFilter === "All" ||
+        (user.createdAtValue &&
+          ((timelineFilter === "Last 24h" && user.createdAtValue >= now - 24 * 60 * 60 * 1000) ||
+            (timelineFilter === "Last Week" && user.createdAtValue >= now - 7 * 24 * 60 * 60 * 1000) ||
+            (timelineFilter === "Last Month" && user.createdAtValue >= now - 30 * 24 * 60 * 60 * 1000)))
+
+      return matchesSearch && matchesTimeline
+    })
+  }, [allReferredUsers, searchTerm, timelineFilter])
+
+  const sortedUsers = useMemo(() => {
+    const sorted = [...filteredUsers].sort((a, b) => {
+      const getValue = (user) => {
+        switch (sortConfig.orderBy) {
+          case "email":
+            return user.email || ""
+          case "referredUsers":
+            return Array.isArray(user.referredUsers) ? user.referredUsers.length : 0
+          case "totalRewardsEarned":
+            return Number(user.totalRewardsEarned || 0)
+          case "referralCode":
+            return user.referralCode || ""
+          case "createdAtValue":
+            return user.createdAtValue || 0
+          default:
+            return ""
+        }
+      }
+
+      const valueA = getValue(a)
+      const valueB = getValue(b)
+
+      if (typeof valueA === "number" && typeof valueB === "number") {
+        return sortConfig.order === "asc" ? valueA - valueB : valueB - valueA
+      }
+
+      return sortConfig.order === "asc"
+        ? String(valueA).localeCompare(String(valueB))
+        : String(valueB).localeCompare(String(valueA))
+    })
+    return sorted
+  }, [filteredUsers, sortConfig])
+
+  const handleSortChange = (field) => {
+    setSortConfig((prev) => {
+      const isSameField = prev.orderBy === field
+      const nextOrder = isSameField && prev.order === "asc" ? "desc" : "asc"
+      return { orderBy: field, order: nextOrder }
+    })
+  }
 
   return (
     <>
@@ -57,34 +146,81 @@ export default function AllReferredUsersTable() {
           <Typography variant="h6" sx={{ fontWeight: 600, color: "#000000", fontSize: { xs: "16px", sm: "18px" } }}>
             All Referred Users
           </Typography>
-          <FormControl size="small">
-            <Select
-              value={filter}
-              onChange={(e) => setFilter(e.target.value)}
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: { xs: "1fr", sm: "1fr auto" },
+              gap: { xs: 1, sm: 1.5 },
+              alignItems: "center",
+              width: "100%",
+            }}
+          >
+            <TextField
+              size="small"
+              placeholder="Search email or code"
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
               sx={{
-                minWidth: { xs: 80, sm: 100 },
-                borderRadius: "8px",
-                fontSize: { xs: "12px", sm: "14px" },
-                ".MuiOutlinedInput-notchedOutline": {
-                  borderColor: "#dadada",
-                },
-                "&:hover .MuiOutlinedInput-notchedOutline": {
-                  borderColor: "#dadada",
-                },
-                "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                  borderColor: "#dadada",
-                },
-                ".MuiSvgIcon-root": {
-                  color: "#666666",
+                width: "100%",
+                "& .MuiOutlinedInput-root": {
+                  borderRadius: "8px",
+                  border: "1px solid #dadada",
+                  fontSize: { xs: "12px", sm: "13px" },
+                  "&:hover": {
+                    borderColor: "#cfcfcf",
+                  },
+                  "&.Mui-focused": {
+                    borderColor: "#da1818",
+                    boxShadow: "0 0 0 2px rgba(218, 24, 24, 0.08)",
+                  },
                 },
               }}
-              IconComponent={KeyboardArrowDown}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon sx={{ color: "#8a8a8f", fontSize: "16px" }} />
+                  </InputAdornment>
+                ),
+              }}
+            />
+            <FormControl
+              size="small"
+              sx={{
+                minWidth: { xs: "100%", sm: 140 },
+                maxWidth: { xs: "100%", sm: 160 },
+                justifySelf: { xs: "stretch", sm: "end" },
+              }}
             >
-              <MenuItem value="Last 24h">Last 24h</MenuItem>
-              <MenuItem value="Last Week">Last Week</MenuItem>
-              <MenuItem value="Last Month">Last Month</MenuItem>
-            </Select>
-          </FormControl>
+              <Select
+                value={timelineFilter}
+                onChange={(e) => setTimelineFilter(e.target.value)}
+                sx={{
+                  borderRadius: "8px",
+                  fontSize: { xs: "12px", sm: "14px" },
+                  ".MuiOutlinedInput-notchedOutline": {
+                    borderColor: "#dadada",
+                  },
+                  "&:hover .MuiOutlinedInput-notchedOutline": {
+                    borderColor: "#cfcfcf",
+                  },
+                  "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                    borderColor: "#da1818",
+                    boxShadow: "0 0 0 2px rgba(218, 24, 24, 0.08)",
+                  },
+                  ".MuiSvgIcon-root": {
+                    color: "#666666",
+                  },
+                }}
+                IconComponent={KeyboardArrowDown}
+              >
+                {TIMELINE_OPTIONS.map((option) => (
+                  <MenuItem key={option} value={option}>
+                    {option}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Box>
         </Box>
       </Box>
 
@@ -106,9 +242,15 @@ export default function AllReferredUsersTable() {
             <Table>
               <TableHead>
                 <TableRow sx={{ bgcolor: "#f9f9f9" }}>
-                  {["Email", "Referred Users", "Total Rewards Earned", "Referral Code", "Created At"].map((header) => (
+                  {[
+                    { label: "Email", field: "email" },
+                    { label: "Referred Users", field: "referredUsers" },
+                    { label: "Total Rewards Earned", field: "totalRewardsEarned" },
+                    { label: "Referral Code", field: "referralCode" },
+                    { label: "Created At", field: "createdAtValue" },
+                  ].map((column) => (
                     <TableCell
-                      key={header}
+                      key={column.field}
                       sx={{
                         color: "#8a8a8f",
                         fontWeight: 500,
@@ -117,13 +259,28 @@ export default function AllReferredUsersTable() {
                         py: 1.5,
                       }}
                     >
-                      {header}
+                      <TableSortLabel
+                        active={sortConfig.orderBy === column.field}
+                        direction={sortConfig.orderBy === column.field ? sortConfig.order : "asc"}
+                        onClick={() => handleSortChange(column.field)}
+                        sx={{
+                          "& .MuiTableSortLabel-icon": {
+                            opacity: 1,
+                            color: "#da1818",
+                          },
+                          "&.Mui-active": {
+                            color: "#da1818",
+                          },
+                        }}
+                      >
+                        {column.label}
+                      </TableSortLabel>
                     </TableCell>
                   ))}
                 </TableRow>
               </TableHead>
               <TableBody>
-                {allReferredUsers.map((user, index) => (
+                {sortedUsers.map((user, index) => (
                   <TableRow
                     key={index}
                     sx={{
@@ -144,9 +301,7 @@ export default function AllReferredUsersTable() {
                       {user.referralCode || "-"}
                     </TableCell>
                     <TableCell sx={{ fontSize: { xs: "12px", sm: "14px" }, py: 1.5 }}>
-                      {user.createdAt && user.createdAt.seconds
-                        ? new Date(user.createdAt.seconds * 1000).toLocaleString()
-                        : "-"}
+                      {user.createdAtDisplay}
                     </TableCell>
                   </TableRow>
                 ))}

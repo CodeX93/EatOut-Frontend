@@ -12,11 +12,41 @@ import TopSpenders from "./components/TopSpenders"
 import MostFrequentUsers from "./components/MostFrequentUsers"
 import VoucherRedemptions from "./components/VoucherRedemptions"
 
+const toMillis = (value) => {
+  if (!value) return null
+  if (typeof value === "number") {
+    return value > 1e12 ? value : value * 1000
+  }
+  if (value instanceof Date) {
+    return value.getTime()
+  }
+  if (typeof value === "string") {
+    const parsed = Date.parse(value)
+    return Number.isNaN(parsed) ? null : parsed
+  }
+  if (typeof value === "object") {
+    // Handle Firestore Timestamp with toMillis method
+    if (typeof value.toMillis === "function") {
+      return value.toMillis()
+    }
+    // Handle Firestore Timestamp with toDate method
+    if (typeof value.toDate === "function") {
+      return value.toDate().getTime()
+    }
+    // Handle Firestore Timestamp with seconds property
+    if (typeof value.seconds === "number") {
+      const milliseconds = value.seconds * 1000
+      // Also check for nanoseconds if available
+      const nanoseconds = value.nanoseconds || 0
+      return milliseconds + Math.floor(nanoseconds / 1000000)
+    }
+  }
+  return null
+}
+
 const drawerWidth = 240
 
 export default function MembersPage() {
-  const [sortBy, setSortBy] = useState("Name")
-  const [relevantFilter, setRelevantFilter] = useState("Relevant")
   const [membersData, setMembersData] = useState([])
   const [loading, setLoading] = useState(true)
   const [topSpenders, setTopSpenders] = useState([])
@@ -28,23 +58,217 @@ export default function MembersPage() {
     const loadMembers = async () => {
       setLoading(true)
       try {
+        // Fetch referrals first to create email to userId map
+        const referralsSnap = await getDocs(collection(db, "referrals"))
+        const emailToReferralId = new Map()
+        referralsSnap.forEach((referralDoc) => {
+          const referralData = referralDoc.data() || {}
+          const referralEmail = (referralData.email || "").toLowerCase().trim()
+          if (referralEmail) {
+            emailToReferralId.set(referralEmail, referralDoc.id)
+          }
+        })
+
+        // Fetch all bowls data for all referrals
+        const emailToGoldenBowlCount = new Map()
+        for (const referralDoc of referralsSnap.docs) {
+          const referralId = referralDoc.id
+          const referralData = referralDoc.data() || {}
+          const referralEmail = (referralData.email || "").toLowerCase().trim()
+          
+          if (referralEmail) {
+            try {
+              // Check if there's a direct balance field in the referral document FIRST
+              const directBalance = Number(
+                referralData.bowls || 
+                referralData.bowlBalance || 
+                referralData.currentBalance ||
+                referralData.totalBowls ||
+                referralData.goldenBowls ||
+                referralData.goldenBowlCount ||
+                0
+              )
+              
+              // Always check the referral document balance first
+              if (directBalance > 0) {
+                emailToGoldenBowlCount.set(referralEmail, directBalance)
+                continue
+              }
+              
+              // If no direct balance, check the bowls subcollection
+              const bowlsSnap = await getDocs(collection(db, "referrals", referralId, "bowls"))
+              let totalEarned = 0
+              let totalRedeemed = 0
+              
+              if (bowlsSnap.size === 0) {
+                // No bowls subcollection and no direct balance, set to 0
+                emailToGoldenBowlCount.set(referralEmail, 0)
+                continue
+              }
+              
+              // Check if there's a single balance document (some structures store balance in one doc)
+              if (bowlsSnap.size === 1) {
+                const singleDoc = bowlsSnap.docs[0]
+                const singleDocData = singleDoc.data() || {}
+                
+                const singleBalance = Number(
+                  singleDocData.balance ||
+                  singleDocData.currentBalance ||
+                  singleDocData.total ||
+                  singleDocData.bowls ||
+                  singleDocData.amount ||
+                  0
+                )
+                
+                if (singleBalance > 0) {
+                  emailToGoldenBowlCount.set(referralEmail, singleBalance)
+                  continue
+                }
+              }
+              
+              // Process multiple transaction documents
+              bowlsSnap.forEach((bowlDoc) => {
+                const bowlData = bowlDoc.data() || {}
+                
+                // Check for direct balance field first
+                const balance = Number(
+                  bowlData.balance ||
+                  bowlData.currentBalance ||
+                  bowlData.total ||
+                  0
+                )
+                
+                if (balance > 0) {
+                  // If there's a balance field, use it directly
+                  totalEarned = balance
+                  totalRedeemed = 0
+                  return
+                }
+                
+                // Try multiple field names for the amount
+                const bowlsAmount = Number(
+                  bowlData.bowls || 
+                  bowlData.amount || 
+                  bowlData.quantity ||
+                  bowlData.value ||
+                  bowlData.count ||
+                  0
+                )
+                
+                // Try multiple field names for the type
+                const type = (
+                  bowlData.type || 
+                  bowlData.transactionType ||
+                  bowlData.action ||
+                  ""
+                ).toLowerCase()
+                
+                if (type === "earned" || type === "earn" || !type || type === "") {
+                  totalEarned += bowlsAmount
+                } else if (type === "redeemed" || type === "redeem" || type === "used") {
+                  totalRedeemed += bowlsAmount
+                }
+              })
+              
+              const currentBalance = Math.max(0, totalEarned - totalRedeemed)
+              emailToGoldenBowlCount.set(referralEmail, currentBalance)
+            } catch (error) {
+              console.error(`Error fetching bowls for referral ${referralId}:`, error)
+              emailToGoldenBowlCount.set(referralEmail, 0)
+            }
+          }
+        }
+        
+
         const snap = await getDocs(collection(db, "members"))
         const rows = []
         const emailToName = {}
         snap.forEach((doc) => {
           const data = doc.data() || {}
           const redeemedList = Array.isArray(data.redeemedvouchers) ? data.redeemedvouchers : []
-          const joinDate = data.timestamp?.toDate ? data.timestamp.toDate().toISOString().slice(0, 10) : (data.updatedAt ? String(data.updatedAt).slice(0, 10) : "-")
+
+          const createdTimestamp =
+            toMillis(data.timestamp) ??
+            toMillis(data.createdAt) ??
+            toMillis(data.createdDate) ??
+            (typeof doc.createTime?.toMillis === "function" ? doc.createTime.toMillis() : null)
+
+          // Extract lastSubscription data if available
+          const lastSubscription = data.lastSubscription || {}
+          
+
+          // Use lastSubscription.expiryDate if available, otherwise fall back to other fields
+          const membershipExpiryTimestamp =
+            (lastSubscription.expiryDate ? toMillis(lastSubscription.expiryDate) : null) ??
+            toMillis(data.membershipExpiryDate) ??
+            toMillis(data.membershipExpiry) ??
+            toMillis(data.subscriptionExpiryDate)
+
+          // Extract dateOfSubscription from lastSubscription if available
+          const dateOfSubscriptionTimestamp = lastSubscription.dateOfSubscription 
+            ? toMillis(lastSubscription.dateOfSubscription) 
+            : null
+          
+          const dateOfSubscriptionDisplay = dateOfSubscriptionTimestamp
+            ? new Date(dateOfSubscriptionTimestamp).toLocaleDateString("en-US", {
+                day: "2-digit",
+                month: "short",
+                year: "numeric",
+              })
+            : "-"
+
+          const dateJoinedDisplay = createdTimestamp
+            ? new Date(createdTimestamp).toLocaleDateString("en-US", {
+                day: "2-digit",
+                month: "short",
+                year: "numeric",
+              })
+            : "-"
+
+          const membershipExpiryDisplay = membershipExpiryTimestamp
+            ? new Date(membershipExpiryTimestamp).toLocaleDateString("en-US", {
+                day: "2-digit",
+                month: "short",
+                year: "numeric",
+              })
+            : "-"
+
+          // Use lastSubscription.typeOfSubscription if available, otherwise fall back to other fields
+          const membershipPlan = (lastSubscription.typeOfSubscription && lastSubscription.typeOfSubscription.trim()) 
+            ? lastSubscription.typeOfSubscription 
+            : (data.membershipPlan || data.subscriptionPlan || "N/A")
+
+          const email = data.email || doc.id || "-"
+          const name = data.name || "-"
+          
+          // Get Golden Bowl count from referrals/{userId}/bowls
+          const memberEmailLower = (email || "").toLowerCase().trim()
+          const goldenBowlCount = emailToGoldenBowlCount.has(memberEmailLower) 
+            ? emailToGoldenBowlCount.get(memberEmailLower) 
+            : 0
+
           rows.push({
-            id: doc.id || data.email || "-",
-            name: data.name || "-",
+            id: doc.id || email,
+            name,
+            gender: data.gender || data.memberGender || "N/A",
+            email,
+            mobile: data.mobileNumber || data.phone || "-",
             phone: data.mobileNumber || data.phone || "-",
             vouchers: redeemedList.length || 0,
             redeemed: redeemedList.length || 0,
-            joinDate,
-            status: "Active",
+            dateJoinedDisplay,
+            dateJoinedValue: createdTimestamp || 0,
+            joinDate: dateJoinedDisplay,
+            membershipPlan,
+            membershipExpiryDisplay,
+            membershipExpiryValue: membershipExpiryTimestamp || 0,
+            dateOfSubscriptionDisplay,
+            dateOfSubscriptionValue: dateOfSubscriptionTimestamp || 0,
+            transactionId: lastSubscription.transactionId || "-",
+            goldenBowl: goldenBowlCount,
+            status: data.status || "Active",
           })
-          if (data.email) emailToName[data.email] = data.name || data.email
+          if (data.email) emailToName[data.email] = name || data.email
         })
         setMembersData(rows)
 
@@ -209,13 +433,7 @@ export default function MembersPage() {
                   minHeight: 0,
                 }}
               >
-                <MembersTable
-                  members={membersData}
-                  sortBy={sortBy}
-                  setSortBy={setSortBy}
-                  relevantFilter={relevantFilter}
-                  setRelevantFilter={setRelevantFilter}
-                />
+                <MembersTable members={membersData} />
               </Box>
             </Box>
 

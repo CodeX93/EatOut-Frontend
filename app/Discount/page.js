@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { Box, Typography, Paper, Button, TextField, Dialog, DialogTitle, DialogContent, DialogActions, CircularProgress, Snackbar, Alert, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, IconButton, FormControl, InputLabel, Select, MenuItem, InputAdornment } from "@mui/material"
 import AppLayout from "../components/AppLayout"
 import { db } from "../../firebaseConfig"
@@ -18,6 +18,8 @@ export default function DiscountPage() {
   const [success, setSuccess] = useState(false)
   const [editingDiscount, setEditingDiscount] = useState(null)
   const [searchTerm, setSearchTerm] = useState("")
+  const [typeFilter, setTypeFilter] = useState("All")
+  const [validForFilter, setValidForFilter] = useState("All")
 
   const [form, setForm] = useState({
     code: "",
@@ -29,6 +31,37 @@ export default function DiscountPage() {
     quantity: "",
     validityDate: "",
   })
+
+  const validForOptions = useMemo(() => {
+    const values = new Set()
+    discounts.forEach((d) => {
+      const value = (d["Valid For"] || "").trim()
+      if (value) values.add(value)
+    })
+    return ["All", ...Array.from(values).sort((a, b) => a.localeCompare(b))]
+  }, [discounts])
+
+  const filteredDiscounts = useMemo(() => {
+    const term = searchTerm.trim().toLowerCase()
+    return discounts
+      .filter((d) => {
+        if (!term) return true
+        return (
+          (d.id || "").toLowerCase().includes(term) ||
+          (d.Purpose || "").toLowerCase().includes(term) ||
+          (d["Valid For"] || "").toLowerCase().includes(term) ||
+          (d.type || "").toLowerCase().includes(term)
+        )
+      })
+      .filter((d) => {
+        if (typeFilter === "All") return true
+        return (d.type || "").toLowerCase() === typeFilter.toLowerCase()
+      })
+      .filter((d) => {
+        if (validForFilter === "All") return true
+        return (d["Valid For"] || "").toLowerCase() === validForFilter.toLowerCase()
+      })
+  }, [discounts, searchTerm, typeFilter, validForFilter])
 
   useEffect(() => {
     const load = async () => {
@@ -250,7 +283,7 @@ export default function DiscountPage() {
                   mt: 0.5,
                 }}
               >
-                Total: {discounts.length} discount coupons available
+                Showing {filteredDiscounts.length} of {discounts.length} discount coupons
               </Typography>
             </Box>
             <Button
@@ -275,8 +308,17 @@ export default function DiscountPage() {
             </Button>
           </Box>
 
-          {/* Search Bar */}
-          <Box sx={{ mb: { xs: 2.5, sm: 3 }, width: "100%" }}>
+          {/* Search & Filters */}
+          <Box
+            sx={{
+              mb: { xs: 2.5, sm: 3 },
+              width: "100%",
+              display: "grid",
+              gridTemplateColumns: { xs: "1fr", sm: "1fr auto auto" },
+              gap: { xs: 1.5, sm: 1.5 },
+              alignItems: "center",
+            }}
+          >
             <TextField
               fullWidth
               placeholder="Search discounts..."
@@ -305,6 +347,49 @@ export default function DiscountPage() {
                 },
               }}
             />
+            <FormControl
+              size="small"
+              sx={{
+                minWidth: { xs: "100%", sm: 140 },
+                justifySelf: { xs: "stretch", sm: "end" },
+              }}
+            >
+              <InputLabel>Type</InputLabel>
+              <Select
+                value={typeFilter}
+                label="Type"
+                onChange={(event) => setTypeFilter(event.target.value)}
+                sx={{ borderRadius: "8px" }}
+              >
+                <MenuItem value="All">All Types</MenuItem>
+                <MenuItem value="amount">Fixed Amount</MenuItem>
+                <MenuItem value="percentage">Percentage</MenuItem>
+              </Select>
+            </FormControl>
+            <FormControl
+              size="small"
+              sx={{
+                minWidth: { xs: "100%", sm: 160 },
+                justifySelf: { xs: "stretch", sm: "end" },
+              }}
+            >
+              <InputLabel>Valid For</InputLabel>
+              <Select
+                value={validForFilter}
+                label="Valid For"
+                onChange={(event) => setValidForFilter(event.target.value)}
+                sx={{ borderRadius: "8px" }}
+              >
+                {validForOptions.map((option) => (
+                  <MenuItem
+                    key={option === "All" ? "valid-all-option" : `valid-${option}`}
+                    value={option}
+                  >
+                    {option === "All" ? "All Durations" : option}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
           </Box>
 
           {error && (
@@ -470,17 +555,7 @@ export default function DiscountPage() {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {discounts
-                    .filter((d) => {
-                      const term = searchTerm.trim().toLowerCase()
-                      if (!term) return true
-                      return (
-                        (d.id || "").toLowerCase().includes(term) ||
-                        (d.Purpose || "").toLowerCase().includes(term) ||
-                        (d["Valid For"] || "").toLowerCase().includes(term) ||
-                        (d.type || "").toLowerCase().includes(term)
-                      )
-                    })
+                  {filteredDiscounts
                     .map((d, idx) => {
                     console.log("Rendering discount:", d)
                     // Format discount display based on type
@@ -650,7 +725,7 @@ export default function DiscountPage() {
                     </TableRow>
                     )
                   })}
-                  {discounts.length === 0 && (
+                  {filteredDiscounts.length === 0 && (
                     <TableRow>
                       <TableCell colSpan={10} sx={{ textAlign: "center", py: 4, color: "#666" }}>
                         No discount coupons found

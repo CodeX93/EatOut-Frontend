@@ -12,11 +12,18 @@ import {
   FormControl,
   Select,
   MenuItem,
+  TextField,
+  InputAdornment,
+  InputLabel,
 } from "@mui/material"
-import { KeyboardArrowDown } from "@mui/icons-material"
+import { KeyboardArrowDown, Search } from "@mui/icons-material"
 import ScrollableTable from "./ScrollableTable"
+import { useState } from "react"
 
 export default function UserBowlBalanceTable() {
+  const [searchTerm, setSearchTerm] = useState("")
+  const [membershipFilter, setMembershipFilter] = useState("All")
+
   const users = [
     {
       name: "Emily Johnson",
@@ -26,6 +33,7 @@ export default function UserBowlBalanceTable() {
       usedForSub: 60,
       currentBalance: 20,
       lastAction: "13 May 2025",
+      membershipPlan: "Monthly",
     },
     {
       name: "Noah Miller",
@@ -35,6 +43,7 @@ export default function UserBowlBalanceTable() {
       usedForSub: 0,
       currentBalance: 0,
       lastAction: "10 May 2025",
+      membershipPlan: "Annually",
     },
     {
       name: "Ava Williams",
@@ -44,6 +53,7 @@ export default function UserBowlBalanceTable() {
       usedForSub: 50,
       currentBalance: 50,
       lastAction: "12 May 2025",
+      membershipPlan: "Semi Annually",
     },
     {
       name: "Mason Davis",
@@ -53,8 +63,23 @@ export default function UserBowlBalanceTable() {
       usedForSub: 150,
       currentBalance: 0,
       lastAction: "11 May 2025",
+      membershipPlan: "Monthly",
     },
   ]
+
+  const membershipOptions = ["All", "Monthly", "Semi Annually", "Annually"]
+
+  const filteredUsers = users.filter((user) => {
+    const term = searchTerm.trim().toLowerCase()
+    const matchesSearch =
+      !term ||
+      (user.name || "").toLowerCase().includes(term) ||
+      (user.email || "").toLowerCase().includes(term)
+    const matchesMembership =
+      membershipFilter === "All" ||
+      (user.membershipPlan || "").toLowerCase() === membershipFilter.toLowerCase()
+    return matchesSearch && matchesMembership
+  })
 
   return (
     <Card
@@ -86,30 +111,72 @@ export default function UserBowlBalanceTable() {
         >
           User Bowl Balance
         </Typography>
-        <FormControl size="small">
-          <Select
-            defaultValue="Last 24h"
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: { xs: "1fr", sm: "1fr auto" },
+            gap: { xs: 1, sm: 1.5 },
+            width: { xs: "100%", sm: "auto" },
+            alignItems: "center",
+          }}
+        >
+          <TextField
+            size="small"
+            placeholder="Search by user name or email"
+            value={searchTerm}
+            onChange={(event) => setSearchTerm(event.target.value)}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <Search sx={{ color: "#8a8a8f", fontSize: "16px" }} />
+                </InputAdornment>
+              ),
+            }}
             sx={{
-              minWidth: { xs: 80, sm: 100 },
-              borderRadius: "8px",
-              fontSize: { xs: "0.75rem", sm: "0.875rem" },
-              "& .MuiOutlinedInput-notchedOutline": {
-                borderColor: "#d1d5db",
-              },
-              "&:hover .MuiOutlinedInput-notchedOutline": {
-                borderColor: "#9ca3af",
-              },
-              "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                borderColor: "#6366f1",
+              width: { xs: "100%", sm: 220 },
+              "& .MuiOutlinedInput-root": {
+                borderRadius: "8px",
+                border: "1px solid #d1d5db",
+                fontSize: { xs: "0.75rem", sm: "0.875rem" },
+                "&:hover": {
+                  borderColor: "#9ca3af",
+                },
+                "&.Mui-focused": {
+                  borderColor: "#da1818",
+                  boxShadow: "0 0 0 2px rgba(218, 24, 24, 0.08)",
+                },
               },
             }}
-            IconComponent={KeyboardArrowDown}
-          >
-            <MenuItem value="Last 24h">Last 24h</MenuItem>
-            <MenuItem value="Last 7d">Last 7d</MenuItem>
-            <MenuItem value="Last 30d">Last 30d</MenuItem>
-          </Select>
-        </FormControl>
+          />
+
+          <FormControl size="small" sx={{ minWidth: { xs: "100%", sm: 160 } }}>
+            <InputLabel>Membership Plan</InputLabel>
+            <Select
+              value={membershipFilter}
+              label="Membership Plan"
+              onChange={(event) => setMembershipFilter(event.target.value)}
+              IconComponent={KeyboardArrowDown}
+              sx={{
+                borderRadius: "8px",
+                "& .MuiOutlinedInput-notchedOutline": {
+                  borderColor: "#d1d5db",
+                },
+                "&:hover .MuiOutlinedInput-notchedOutline": {
+                  borderColor: "#9ca3af",
+                },
+                "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                  borderColor: "#da1818",
+                },
+              }}
+            >
+              {membershipOptions.map((option) => (
+                <MenuItem key={option} value={option}>
+                  {option === "All" ? "All Plans" : option}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Box>
       </Box>
 
       {/* Table */}
@@ -201,7 +268,7 @@ export default function UserBowlBalanceTable() {
             </TableRow>
           </TableHead>
           <TableBody>
-            {users.map((user, index) => (
+            {filteredUsers.map((user, index) => (
               <TableRow
                 key={index}
                 sx={{
@@ -310,6 +377,13 @@ export default function UserBowlBalanceTable() {
                 </TableCell>
               </TableRow>
             ))}
+            {filteredUsers.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={7} sx={{ textAlign: "center", py: 3, color: "#6b7280" }}>
+                  No members found.
+                </TableCell>
+              </TableRow>
+            )}
           </TableBody>
         </Table>
       </ScrollableTable>

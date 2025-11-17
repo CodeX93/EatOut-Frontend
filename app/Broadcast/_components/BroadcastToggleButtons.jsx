@@ -33,8 +33,8 @@ export default function BroadcastToggleButtons({ toggleValue, onToggleChange }) 
           },
         }}
       >
-        <ToggleButton value="members">All Members</ToggleButton>
-        <ToggleButton value="merchants">All Merchants</ToggleButton>
+        <ToggleButton value="individual">Individual</ToggleButton>
+        <ToggleButton value="restaurant">Restaurant</ToggleButton>
       </ToggleButtonGroup>
     </Box>
   )

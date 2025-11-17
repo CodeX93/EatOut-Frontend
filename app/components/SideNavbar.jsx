@@ -66,8 +66,8 @@ const SideNavbar = forwardRef((props, ref) => {
     { name: "Members", icon: <PeopleIcon />, path: "/members" },
     { name: "Vouchers", icon: <ConfirmationNumberIcon />, path: "/vouchers" },
     { name: "Referrals", icon: <ShareIcon />, path: "/Referrals" },
-    { name: "Discount", icon: <LocalOfferIcon />, path: "/Discount" },
-    { name: "Bowls", icon: <RamenDiningIcon />, path: "/Bowls" },
+    { name: "Discount Coupons", icon: <LocalOfferIcon />, path: "/Discount" },
+    { name: "Golden Bowls", icon: <RamenDiningIcon />, path: "/Bowls" },
     { name: "Cuisines", icon: <RestaurantMenuIcon />, path: "/cuisines" },
     { name: "Broadcast", icon: <CampaignIcon />, path: "/Broadcast" },
   ]

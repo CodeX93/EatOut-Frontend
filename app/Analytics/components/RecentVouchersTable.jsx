@@ -39,7 +39,7 @@ export default function RecentVouchersTable({ redemptions = [], onPeriodChange }
   }
 
   return (
-    <Card sx={{ bgcolor: "#ffffff", border: "1px solid #dadada", borderRadius: "12px", overflow: "hidden", width: "100%", maxWidth: "100%", minWidth: "100%" }}>
+    <Card sx={{ bgcolor: "#ffffff", border: "1px solid #dadada", borderRadius: "12px", overflow: "hidden", width: "100%", maxWidth: "100%" }}>
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", p: 2 }}>
         <Typography variant="h6" sx={{ fontWeight: 600 }}>
           Recent redeemed vouchers
@@ -63,8 +63,15 @@ export default function RecentVouchersTable({ redemptions = [], onPeriodChange }
           </Typography>
         </Box>
       ) : (
-        <TableContainer sx={{ height: "400px", overflow: "auto", width: "100%", maxWidth: "100%", minWidth: "100%", pb: 2 }}>
-          <Table sx={{ width: "100%", minWidth: "100%" }}>
+        <TableContainer
+          sx={{
+            maxHeight: 400,
+            overflowY: "auto",
+            overflowX: "auto",
+            width: "100%",
+          }}
+        >
+          <Table sx={{ width: "100%", minWidth: 560 }}>
             <TableHead>
               <TableRow sx={{ bgcolor: "#f9f9f9" }}>
                 <TableCell sx={{ color: "#8a8a8f", fontWeight: 500, fontSize: "10px", borderBottom: "1px solid #dadada" }}>

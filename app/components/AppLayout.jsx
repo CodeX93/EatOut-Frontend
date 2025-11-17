@@ -22,9 +22,8 @@ export default function AppLayout({ children }) {
         display: "flex",
         backgroundColor: "#f9f9f9",
         minHeight: "100vh",
-        height: "100vh",
         width: "100vw",
-        overflow: "hidden",
+        overflowX: "hidden",
       }}
     >
       {/* Header */}
@@ -38,13 +37,14 @@ export default function AppLayout({ children }) {
         component="main"
         sx={{
           flexGrow: 1,
-          height: "100vh",
           width: "100%",
           display: "flex",
           flexDirection: "column",
           ml: { xs: 0, md: `${drawerWidth}px` },
-          mt: { xs: "56px", sm: "64px" },
-          overflow: "auto",
+          mt: { xs: "calc(56px + 8px)", sm: "calc(64px + 8px)" },
+          minHeight: { xs: "calc(100vh - 56px - 8px)", sm: "calc(100vh - 64px - 8px)" },
+          overflowY: "auto",
+          overflowX: "hidden",
         }}
       >
         {children}

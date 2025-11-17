@@ -267,9 +267,14 @@ export default function Analytics() {
       <Box
         sx={{
           flex: 1,
-          p: { xs: 1, sm: 2, md: 3 },
-          overflow: "auto",
-          height: "100%",
+          width: "100%",
+          maxWidth: "100%",
+          pt: { xs: 6, sm: 4, md: 5 },
+          pb: { xs: 6, sm: 4, md: 4 },
+          px: { xs: 1.5, sm: 2, md: 3 },
+          overflowX: "hidden",
+          overflowY: "visible",
+          minHeight: "100vh",
         }}
       >
         <Box
@@ -277,6 +282,8 @@ export default function Analytics() {
             display: "flex",
             flexDirection: { xs: "column", lg: "row" },
             gap: { xs: 2, md: 3 },
+            width: "100%",
+            minWidth: 0,
           }}
         >
           {/* Left Column */}
@@ -284,9 +291,12 @@ export default function Analytics() {
             sx={{
               flex: { lg: "1 1 66%" },
               width: { xs: "100%", lg: "66%" },
+              minWidth: 0,
+              display: "flex",
+              flexDirection: "column",
             }}
           >
-            <Box sx={{ mb: { xs: 2, md: 3 } }}>
+            <Box sx={{ mb: { xs: 2, md: 3 }, pt: { xs: 1, sm: 1.5, md: 2 } }}>
               <Typography
                 variant="h4"
                 sx={{
@@ -310,6 +320,7 @@ export default function Analytics() {
                 },
                 gap: { xs: 1, sm: 1.5, md: 2 },
                 mb: { xs: 2, md: 3 },
+                width: "100%",
               }}
             >
               {topMetrics.map((metric, index) => (
@@ -330,6 +341,7 @@ export default function Analytics() {
               sx={{
                 mb: { xs: 2, md: 3 },
                 overflow: "hidden", // Prevent horizontal scroll on mobile
+                width: "100%",
               }}
             >
               <MonthlyRevenueChart data={monthlyRevenueData} />
@@ -346,6 +358,7 @@ export default function Analytics() {
                 },
                 gap: { xs: 1, sm: 1.5, md: 2 },
                 mb: { xs: 2, md: 3 },
+                width: "100%",
               }}
             >
               {bottomMetrics.map((metric, index) => (
@@ -362,7 +375,7 @@ export default function Analytics() {
             </Box>
 
             {/* Earned Vouchers */}
-            <Box sx={{ overflow: "hidden" }}>
+            <Box sx={{ overflow: "hidden", width: "100%" }}>
               <EarnedVouchersChart
                 data={earnedVouchersData.data}
                 totalEarned={earnedVouchersData.totalEarned}
@@ -378,6 +391,9 @@ export default function Analytics() {
             sx={{
               flex: { lg: "1 1 33%" },
               width: { xs: "100%", lg: "33%" },
+              minWidth: 0,
+              display: "flex",
+              flexDirection: "column",
             }}
           >
             {/* Top Customers */}
@@ -385,6 +401,8 @@ export default function Analytics() {
               sx={{
                 mb: { xs: 2, md: 3 },
                 overflow: "hidden",
+                width: "100%",
+                minWidth: 0,
               }}
             >
               <TopCustomersTable customers={topCustomers} />
@@ -397,6 +415,7 @@ export default function Analytics() {
                 display: "grid",
                 gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr", lg: "1fr" },
                 gap: { xs: 1, sm: 2 },
+                width: "100%",
               }}
             >
               <CustomerStatusCards
@@ -410,13 +429,14 @@ export default function Analytics() {
               sx={{
                 mb: { xs: 2, md: 3 },
                 overflow: "hidden",
+                width: "100%",
               }}
             >
               <TotalCustomersChart data={customersGrowth} />
             </Box>
 
             {/* Recent Redeemed Vouchers */}
-            <Box>
+            <Box sx={{ width: "100%", minWidth: 0 }}>
               <RecentVouchersTable redemptions={recentRedemptions} />
             </Box>
           </Box>

@@ -1,6 +1,6 @@
 "use client"
 
-import { Box, Card, CardContent, TextField, Button } from "@mui/material"
+import { Box, Card, CardContent, TextField, Button, Typography } from "@mui/material"
 
 export default function BroadcastForm({
   broadcastTitle,
@@ -8,6 +8,8 @@ export default function BroadcastForm({
   broadcastMessage,
   setBroadcastMessage,
   onSendMessage,
+  selectedCount = 0,
+  disabled = false,
 }) {
   return (
     <Card
@@ -65,11 +67,18 @@ export default function BroadcastForm({
               },
             }}
           />
+          {selectedCount > 0 && (
+            <Box sx={{ mb: 1 }}>
+              <Typography sx={{ color: "#6b7280", fontSize: "0.875rem" }}>
+                {selectedCount} recipient{selectedCount !== 1 ? "s" : ""} selected
+              </Typography>
+            </Box>
+          )}
           <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
             <Button
               variant="contained"
               onClick={onSendMessage}
-              disabled={!broadcastTitle.trim() || !broadcastMessage.trim()}
+              disabled={!broadcastTitle.trim() || !broadcastMessage.trim() || disabled}
               sx={{
                 bgcolor: "#da1818",
                 color: "white",
@@ -88,7 +97,7 @@ export default function BroadcastForm({
                 },
               }}
             >
-              Send message
+              Send message {selectedCount > 0 && `(${selectedCount})`}
             </Button>
           </Box>
         </Box>

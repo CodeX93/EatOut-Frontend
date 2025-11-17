@@ -1,11 +1,12 @@
 import { Box, Typography, TableRow, TableCell, Button } from "@mui/material"
 
-export default function RestaurantTableRow({ 
-  restaurant, 
-  index, 
+export default function RestaurantTableRow({
+  restaurant,
+  index,
   onView,
-  onEdit, 
-  onDelete 
+  onEdit,
+  onDelete,
+  onBroadcast,
 }) {
   const handleView = () => {
     if (onView) {
@@ -25,9 +26,15 @@ export default function RestaurantTableRow({
     }
   }
 
+  const handleBroadcast = () => {
+    if (onBroadcast) {
+      onBroadcast(restaurant, index)
+    }
+  }
+
   return (
     <TableRow>
-      <TableCell sx={{ minWidth: { xs: 120, sm: 150 } }}>
+      <TableCell sx={{ minWidth: { xs: 160, sm: 200 } }}>
         <Box>
           <Typography
             variant="body2"
@@ -44,55 +51,63 @@ export default function RestaurantTableRow({
           >
             {restaurant.name}
           </Typography>
-          <Typography 
-            variant="caption" 
-            sx={{ 
-              color: "#8a8a8f", 
-              fontSize: { xs: "0.5rem", sm: "11px" },
-              lineHeight: 1.2,
-              display: "block",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
-              maxWidth: { xs: "100px", sm: "140px" },
-            }}
-          >
-            {restaurant.address}
-          </Typography>
         </Box>
       </TableCell>
-      <TableCell sx={{ 
-        fontSize: { xs: "0.625rem", sm: "12px" },
-        minWidth: { xs: 80, sm: 100 },
-      }}>
+      <TableCell
+        sx={{
+          fontSize: { xs: "0.625rem", sm: "12px" },
+          minWidth: { xs: 160, sm: 200 },
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          whiteSpace: "nowrap",
+        }}
+      >
+        {restaurant.email || "-"}
+      </TableCell>
+      <TableCell
+        sx={{
+          fontSize: { xs: "0.625rem", sm: "12px" },
+          minWidth: { xs: 140, sm: 160 },
+        }}
+      >
+        {Array.isArray(restaurant.cuisines) && restaurant.cuisines.length > 0
+          ? restaurant.cuisines.join(", ")
+          : "-"}
+      </TableCell>
+      <TableCell
+        sx={{
+          fontSize: { xs: "0.625rem", sm: "12px" },
+          minWidth: { xs: 120, sm: 140 },
+        }}
+      >
         {restaurant.location}
       </TableCell>
-      <TableCell sx={{ 
-        fontSize: { xs: "0.625rem", sm: "12px" }, 
-        color: "#da1818",
-        minWidth: { xs: 100, sm: 120 },
-      }}>
+      <TableCell
+        sx={{
+          fontSize: { xs: "0.625rem", sm: "12px" },
+          minWidth: { xs: 130, sm: 150 },
+          color: "#da1818",
+        }}
+      >
         {restaurant.phone}
       </TableCell>
-      <TableCell sx={{ 
-        fontSize: { xs: "0.625rem", sm: "12px" },
-        minWidth: { xs: 70, sm: 80 },
-      }}>
+      <TableCell
+        sx={{
+          fontSize: { xs: "0.625rem", sm: "12px" },
+          minWidth: { xs: 120, sm: 140 },
+        }}
+      >
         {restaurant.vouchers}
       </TableCell>
-      <TableCell sx={{ 
-        fontSize: { xs: "0.625rem", sm: "12px" },
-        minWidth: { xs: 70, sm: 80 },
-      }}>
-        {restaurant.redeemed}
-      </TableCell>
-      <TableCell sx={{ minWidth: { xs: 100, sm: 120 } }}>
-        <Box sx={{ 
-          display: "flex", 
-          gap: { xs: 0.25, sm: 0.5 }, 
-          alignItems: "center",
-          flexWrap: "wrap",
-        }}>
+      <TableCell sx={{ minWidth: { xs: 140, sm: 180 } }}>
+        <Box
+          sx={{
+            display: "flex",
+            gap: { xs: 0.5, sm: 1 },
+            alignItems: "center",
+            flexWrap: "wrap",
+          }}
+        >
           <Button
             size="small"
             onClick={handleView}
@@ -143,6 +158,27 @@ export default function RestaurantTableRow({
             }}
           >
             Delete
+          </Button>
+          <Typography
+            sx={{
+              color: "#8a8a8f",
+              fontSize: { xs: "0.5rem", sm: "10px" },
+            }}
+          >
+            /
+          </Typography>
+          <Button
+            size="small"
+            onClick={handleBroadcast}
+            sx={{
+              fontSize: { xs: "0.5rem", sm: "10px" },
+              color: "#da1818",
+              textTransform: "none",
+              minWidth: "auto",
+              p: 0,
+            }}
+          >
+            Broadcast
           </Button>
         </Box>
       </TableCell>

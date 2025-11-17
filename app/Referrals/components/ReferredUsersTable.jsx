@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import {
   Box,
   Typography,
@@ -8,6 +8,8 @@ import {
   FormControl,
   Select,
   MenuItem,
+  TextField,
+  InputAdornment,
   Table,
   TableBody,
   TableCell,
@@ -15,15 +17,19 @@ import {
   TableHead,
   TableRow,
   Chip,
+  TableSortLabel,
 } from "@mui/material"
-import { KeyboardArrowDown, Groups } from "@mui/icons-material"
+import { KeyboardArrowDown, Groups, Search as SearchIcon } from "@mui/icons-material"
 import { collection, getDocs } from "firebase/firestore"
 import { db } from "../../../firebaseConfig"
 
 export default function ReferredUsersTable() {
-  const [filter, setFilter] = useState("Last Month")
+  const [timelineFilter, setTimelineFilter] = useState("All")
+  const [statusFilter, setStatusFilter] = useState("All")
+  const [searchTerm, setSearchTerm] = useState("")
   const [referredUsers, setReferredUsers] = useState([])
   const [loading, setLoading] = useState(true)
+  const [sortConfig, setSortConfig] = useState({ orderBy: "joinedOnValue", order: "desc" })
 
   useEffect(() => {
     const fetchReferredUsers = async () => {
@@ -35,9 +41,22 @@ export default function ReferredUsersTable() {
           const data = doc.data()
           if (Array.isArray(data.referredUsers)) {
             data.referredUsers.forEach((ru) => {
+              const timestamp =
+                (typeof ru.joinedOnValue === "number" && ru.joinedOnValue) ||
+                (ru.joinedOn && !Number.isNaN(Date.parse(ru.joinedOn)) ? Date.parse(ru.joinedOn) : null) ||
+                (ru.createdAt?.seconds ? ru.createdAt.seconds * 1000 : null)
               users.push({
                 ...ru,
                 referrer: data.email || "-",
+                joinedOnValue: timestamp || 0,
+                joinedOnDisplay: timestamp
+                  ? new Date(timestamp).toLocaleDateString("en-US", {
+                      day: "2-digit",
+                      month: "short",
+                      year: "numeric",
+                    })
+                  : "-",
+                status: ru.status || "Pending",
               })
             })
           }
@@ -50,6 +69,82 @@ export default function ReferredUsersTable() {
     }
     fetchReferredUsers()
   }, [])
+
+  const statusOptions = useMemo(() => {
+    const unique = new Set(
+      referredUsers
+        .map((user) => user.status)
+        .filter((status) => typeof status === "string" && status.trim().length > 0)
+    )
+    return ["All", ...Array.from(unique)]
+  }, [referredUsers])
+
+  const filteredUsers = useMemo(() => {
+    const normalizedTerm = searchTerm.trim().toLowerCase()
+    const now = Date.now()
+
+    return referredUsers.filter((user) => {
+      const matchesSearch = normalizedTerm
+        ? [user.name, user.referred, user.email, user.referrer]
+            .filter((field) => typeof field === "string" && field.length > 0)
+            .some((field) => field.toLowerCase().includes(normalizedTerm))
+        : true
+
+      const matchesStatus =
+        statusFilter === "All" ||
+        (user.status || "").toLowerCase() === statusFilter.toLowerCase()
+
+      const matchesTimeline =
+        timelineFilter === "All" ||
+        (user.joinedOnValue &&
+          ((timelineFilter === "Last Week" && user.joinedOnValue >= now - 7 * 24 * 60 * 60 * 1000) ||
+            (timelineFilter === "Last Month" && user.joinedOnValue >= now - 30 * 24 * 60 * 60 * 1000) ||
+            (timelineFilter === "Last Year" && user.joinedOnValue >= now - 365 * 24 * 60 * 60 * 1000)))
+
+      return matchesSearch && matchesStatus && matchesTimeline
+    })
+  }, [referredUsers, searchTerm, statusFilter, timelineFilter])
+
+  const sortedUsers = useMemo(() => {
+    const sorted = [...filteredUsers].sort((a, b) => {
+      const getValue = (user) => {
+        switch (sortConfig.orderBy) {
+          case "referred":
+            return user.name || user.referred || user.email || ""
+          case "email":
+            return user.email || ""
+          case "referrer":
+            return user.referrer || ""
+          case "joinedOnValue":
+            return user.joinedOnValue || 0
+          case "status":
+            return user.status || ""
+          default:
+            return ""
+        }
+      }
+
+      const valueA = getValue(a)
+      const valueB = getValue(b)
+
+      if (typeof valueA === "number" && typeof valueB === "number") {
+        return sortConfig.order === "asc" ? valueA - valueB : valueB - valueA
+      }
+
+      return sortConfig.order === "asc"
+        ? String(valueA).localeCompare(String(valueB))
+        : String(valueB).localeCompare(String(valueA))
+    })
+    return sorted
+  }, [filteredUsers, sortConfig])
+
+  const handleSortChange = (field) => {
+    setSortConfig((prev) => {
+      const isSameField = prev.orderBy === field
+      const nextOrder = isSameField && prev.order === "asc" ? "desc" : "asc"
+      return { orderBy: field, order: nextOrder }
+    })
+  }
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -91,53 +186,162 @@ export default function ReferredUsersTable() {
             Referred Users
           </Typography>
         </Box>
-        <FormControl size="small">
-          <Select
-            value={filter}
-            onChange={(e) => setFilter(e.target.value)}
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: { xs: 1, sm: 1.5 },
+            flexWrap: "wrap",
+            width: "100%",
+          }}
+        >
+          <TextField
+            size="small"
+            placeholder="Search referred user"
+            value={searchTerm}
+            onChange={(event) => setSearchTerm(event.target.value)}
             sx={{
-              minWidth: { xs: 80, sm: 100 },
-              borderRadius: "8px",
-              fontSize: { xs: "11px", sm: "12px" },
-              ".MuiOutlinedInput-notchedOutline": {
-                borderColor: "#dadada",
-              },
-              "&:hover .MuiOutlinedInput-notchedOutline": {
-                borderColor: "#dadada",
-              },
-              "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                borderColor: "#dadada",
-              },
-              ".MuiSvgIcon-root": {
-                color: "#666666",
+              width: { xs: "100%", sm: 200 },
+              "& .MuiOutlinedInput-root": {
+                borderRadius: "8px",
+                fontSize: { xs: "11px", sm: "12px" },
+                border: "1px solid #dadada",
+                "&:hover": {
+                  borderColor: "#cfcfcf",
+                },
+                "&.Mui-focused": {
+                  borderColor: "#da1818",
+                  boxShadow: "0 0 0 2px rgba(218, 24, 24, 0.08)",
+                },
               },
             }}
-            IconComponent={KeyboardArrowDown}
-          >
-            <MenuItem value="Last Month">Last Month</MenuItem>
-            <MenuItem value="Last Week">Last Week</MenuItem>
-            <MenuItem value="Last Year">Last Year</MenuItem>
-          </Select>
-        </FormControl>
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon sx={{ color: "#8a8a8f", fontSize: "16px" }} />
+                </InputAdornment>
+              ),
+            }}
+          />
+          <FormControl size="small">
+            <Select
+              value={statusFilter}
+              onChange={(event) => setStatusFilter(event.target.value)}
+              sx={{
+                minWidth: { xs: 110, sm: 120 },
+                borderRadius: "8px",
+                fontSize: { xs: "11px", sm: "12px" },
+                border: "1px solid #dadada",
+                "& .MuiOutlinedInput-notchedOutline": {
+                  borderColor: "#dadada",
+                },
+                "&:hover .MuiOutlinedInput-notchedOutline": {
+                  borderColor: "#cfcfcf",
+                },
+                "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                  borderColor: "#da1818",
+                  boxShadow: "0 0 0 2px rgba(218, 24, 24, 0.08)",
+                },
+                ".MuiSvgIcon-root": {
+                  color: "#666666",
+                },
+              }}
+              IconComponent={KeyboardArrowDown}
+            >
+              {statusOptions.map((status) => (
+                <MenuItem key={status} value={status}>
+                  Status: {status}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <FormControl size="small">
+            <Select
+              value={timelineFilter}
+              onChange={(event) => setTimelineFilter(event.target.value)}
+              sx={{
+                minWidth: { xs: 110, sm: 120 },
+                borderRadius: "8px",
+                fontSize: { xs: "11px", sm: "12px" },
+                border: "1px solid #dadada",
+                "& .MuiOutlinedInput-notchedOutline": {
+                  borderColor: "#dadada",
+                },
+                "&:hover .MuiOutlinedInput-notchedOutline": {
+                  borderColor: "#cfcfcf",
+                },
+                "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                  borderColor: "#da1818",
+                  boxShadow: "0 0 0 2px rgba(218, 24, 24, 0.08)",
+                },
+                ".MuiSvgIcon-root": {
+                  color: "#666666",
+                },
+              }}
+              IconComponent={KeyboardArrowDown}
+            >
+              {["All", "Last Week", "Last Month", "Last Year"].map((option) => (
+                <MenuItem key={option} value={option}>
+                  {option}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Box>
       </Box>
-      <TableContainer sx={{ maxHeight: "350px", overflow: "auto" }}>
-        <Table size="small">
+      <TableContainer
+        sx={{
+          maxHeight: { xs: 320, sm: 360 },
+          overflowY: "auto",
+          overflowX: "auto",
+          width: "100%",
+          position: "relative",
+        }}
+      >
+        <Table
+          size="small"
+          stickyHeader
+          sx={{
+            width: "100%",
+            minWidth: 640,
+          }}
+        >
           <TableHead>
             <TableRow sx={{ bgcolor: "#f9f9f9" }}>
-              {["Referred", "Email", "Referrer", "Joined On", "Status"].map((header) => (
+              {[
+                { label: "Referred", field: "referred", hideOnXs: false },
+                { label: "Email", field: "email", hideOnXs: false },
+                { label: "Referrer", field: "referrer", hideOnXs: true },
+                { label: "Joined On", field: "joinedOnValue", hideOnXs: true },
+                { label: "Status", field: "status", hideOnXs: false },
+              ].map((column) => (
                 <TableCell
-                  key={header}
+                  key={column.field}
                   sx={{
                     color: "#8a8a8f",
                     fontWeight: 500,
-                    fontSize: { xs: "10px", sm: "11px" },
-                    py: 1,
-                    borderBottom: "1px solid #dadada",
-                    display:
-                      header === "Referrer" || header === "Joined On" ? { xs: "none", sm: "table-cell" } : "table-cell",
+                      fontSize: { xs: "9px", sm: "10px" },
+                      py: 0.6,
+                      borderBottom: "1px solid #dadada",
+                    display: column.hideOnXs ? { xs: "none", sm: "table-cell" } : "table-cell",
                   }}
                 >
-                  {header}
+                  <TableSortLabel
+                    active={sortConfig.orderBy === column.field}
+                    direction={sortConfig.orderBy === column.field ? sortConfig.order : "asc"}
+                    onClick={() => handleSortChange(column.field)}
+                    sx={{
+                      "& .MuiTableSortLabel-icon": {
+                        opacity: 1,
+                        color: "#da1818",
+                      },
+                      "&.Mui-active": {
+                        color: "#da1818",
+                      },
+                    }}
+                  >
+                    {column.label}
+                  </TableSortLabel>
                 </TableCell>
               ))}
             </TableRow>
@@ -149,14 +353,14 @@ export default function ReferredUsersTable() {
                   Loading...
                 </TableCell>
               </TableRow>
-            ) : referredUsers.length === 0 ? (
+            ) : sortedUsers.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={5} align="center">
                   No referred users found.
                 </TableCell>
               </TableRow>
             ) : (
-              referredUsers.map((user, index) => (
+              sortedUsers.map((user, index) => (
                 <TableRow
                   key={index}
                   sx={{
@@ -178,7 +382,7 @@ export default function ReferredUsersTable() {
                   <TableCell
                     sx={{ fontSize: { xs: "10px", sm: "11px" }, py: 0.8, display: { xs: "none", sm: "table-cell" } }}
                   >
-                    {user.joinedOn || (user.createdAt && user.createdAt.seconds ? new Date(user.createdAt.seconds * 1000).toLocaleDateString() : "-")}
+                    {user.joinedOnDisplay}
                   </TableCell>
                   <TableCell sx={{ py: 0.8 }}>
                     <Chip

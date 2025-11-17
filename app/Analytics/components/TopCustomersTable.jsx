@@ -27,7 +27,7 @@ export default function TopCustomersTable({ customers = [] }) {
   }
 
   return (
-    <Card sx={{ bgcolor: "#ffffff", border: "1px solid #dadada", borderRadius: "12px" }}>
+    <Card sx={{ bgcolor: "#ffffff", border: "1px solid #dadada", borderRadius: "12px", width: "100%" }}>
       <Box sx={{ p: 2 }}>
         <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
           Top 5 Customers
@@ -39,7 +39,7 @@ export default function TopCustomersTable({ customers = [] }) {
             </Typography>
           </Box>
         ) : (
-          <TableContainer>
+          <TableContainer sx={{ overflowX: "auto" }}>
             <Table>
               <TableHead>
                 <TableRow>

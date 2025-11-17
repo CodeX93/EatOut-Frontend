@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import {
   Box,
   Typography,
@@ -12,11 +13,17 @@ import {
   FormControl,
   Select,
   MenuItem,
+  Chip,
+  TextField,
+  InputAdornment,
 } from "@mui/material"
-import { KeyboardArrowDown } from "@mui/icons-material"
+import { KeyboardArrowDown, Search } from "@mui/icons-material"
 import ScrollableTable from "./ScrollableTable"
 
 export default function BowlTransactionHistoryTable() {
+  const [searchTerm, setSearchTerm] = useState("")
+  const [typeFilter, setTypeFilter] = useState("All")
+
   const transactions = [
     {
       txnId: "TXN-1201",
@@ -70,6 +77,24 @@ export default function BowlTransactionHistoryTable() {
     },
   ]
 
+  const typeOptions = ["All", "Earned", "Redeemed", "Used for Subscription", "Used for Cash"]
+
+  const filteredTransactions = transactions.filter((transaction) => {
+    const term = searchTerm.trim().toLowerCase()
+    const matchesSearch =
+      !term ||
+      (transaction.userName || "").toLowerCase().includes(term) ||
+      (transaction.email || "").toLowerCase().includes(term) ||
+      (transaction.reference || transaction.txnId || "").toLowerCase().includes(term)
+
+    const matchesType =
+      typeFilter === "All" ||
+      (transaction.type || "").toLowerCase() === typeFilter.toLowerCase()
+
+    return matchesSearch && matchesType
+  })
+
+
   return (
     <Card
       sx={{
@@ -83,30 +108,49 @@ export default function BowlTransactionHistoryTable() {
       {/* Header */}
       <Box
         sx={{
-          display: "flex",
-          justifyContent: "space-between",
+          display: "grid",
+          gridTemplateColumns: { xs: "1fr", sm: "1fr auto" },
+          gap: { xs: 1, sm: 1.5 },
+          width: { xs: "100%", sm: "auto" },
           alignItems: "center",
-          p: { xs: 2, sm: 3 },
-          borderBottom: "1px solid #f3f4f6",
         }}
       >
-        <Typography
-          variant="h6"
-          sx={{
-            fontWeight: 600,
-            color: "#111827",
-            fontSize: { xs: "1rem", sm: "1.125rem" },
+        <TextField
+          size="small"
+          placeholder="Search transactions"
+          value={searchTerm}
+          onChange={(event) => setSearchTerm(event.target.value)}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <Search sx={{ color: "#8a8a8f", fontSize: "16px" }} />
+              </InputAdornment>
+            ),
           }}
-        >
-          Bowl Transaction History
-        </Typography>
-        <FormControl size="small">
-          <Select
-            defaultValue="Last 24h"
-            sx={{
-              minWidth: { xs: 80, sm: 100 },
+          sx={{
+            width: { xs: "100%", sm: 220 },
+            "& .MuiOutlinedInput-root": {
               borderRadius: "8px",
+              border: "1px solid #d1d5db",
               fontSize: { xs: "0.75rem", sm: "0.875rem" },
+              "&:hover": {
+                borderColor: "#9ca3af",
+              },
+              "&.Mui-focused": {
+                borderColor: "#da1818",
+                boxShadow: "0 0 0 2px rgba(218, 24, 24, 0.08)",
+              },
+            },
+          }}
+        />
+
+        <FormControl size="small" sx={{ minWidth: { xs: "100%", sm: 170 } }}>
+          <Select
+            value={typeFilter}
+            onChange={(event) => setTypeFilter(event.target.value)}
+            IconComponent={KeyboardArrowDown}
+            sx={{
+              borderRadius: "8px",
               "& .MuiOutlinedInput-notchedOutline": {
                 borderColor: "#d1d5db",
               },
@@ -114,14 +158,15 @@ export default function BowlTransactionHistoryTable() {
                 borderColor: "#9ca3af",
               },
               "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                borderColor: "#6366f1",
+                borderColor: "#da1818",
               },
             }}
-            IconComponent={KeyboardArrowDown}
           >
-            <MenuItem value="Last 24h">Last 24h</MenuItem>
-            <MenuItem value="Last 7d">Last 7d</MenuItem>
-            <MenuItem value="Last 30d">Last 30d</MenuItem>
+            {typeOptions.map((option) => (
+              <MenuItem key={option} value={option}>
+                {option === "All" ? "All Types" : option}
+              </MenuItem>
+            ))}
           </Select>
         </FormControl>
       </Box>
@@ -226,7 +271,7 @@ export default function BowlTransactionHistoryTable() {
             </TableRow>
           </TableHead>
           <TableBody>
-            {transactions.map((transaction, index) => (
+            {filteredTransactions.map((transaction, index) => (
               <TableRow
                 key={index}
                 sx={{
@@ -340,11 +385,18 @@ export default function BowlTransactionHistoryTable() {
                       color: "#6b7280",
                     }}
                   >
-                    {transaction.notes}
+                    {transaction.notes || "—"}
                   </Typography>
                 </TableCell>
               </TableRow>
             ))}
+            {filteredTransactions.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={8} sx={{ textAlign: "center", py: 3, color: "#6b7280" }}>
+                  No transactions found.
+                </TableCell>
+              </TableRow>
+            )}
           </TableBody>
         </Table>
       </ScrollableTable>

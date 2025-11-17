@@ -1,51 +1,67 @@
 "use client"
 
-import { Box, Card, CardContent, Typography, IconButton, Link } from "@mui/material"
+import { useMemo } from "react"
+import { Box, Card, CardContent, Typography, IconButton } from "@mui/material"
 import { MoreVert } from "@mui/icons-material"
 
-export default function RecentBroadcastsList() {
-  const recentBroadcasts = [
-    {
-      title: "Broadcast Title",
-      time: "2 hours ago",
-      sentTo: "Sent to: All Users",
-    },
-    {
-      title: "Important Announcement",
-      time: "1 day ago",
-      sentTo: "Sent to: All Subscribers",
-    },
-    {
-      title: "Product Update",
-      time: "3 weeks ago",
-      sentTo: "Sent to: Premium Users",
-    },
-    {
-      title: "Event Reminder",
-      time: "4 hours ago",
-      sentTo: "Sent to: Attendees",
-    },
-    {
-      title: "Holiday Sale",
-      time: "1 week ago",
-      sentTo: "Sent to: Subscribers",
-    },
-    {
-      title: "New Feature Alert",
-      time: "2 days ago",
-      sentTo: "Sent to: Beta Testers",
-    },
-    {
-      title: "Webinar Invitation",
-      time: "6 hours ago",
-      sentTo: "Sent to: Registrants",
-    },
-    {
-      title: "Survey Request",
-      time: "3 days ago",
-      sentTo: "Sent to: Participants",
-    },
-  ]
+const formatTimeAgo = (timestamp) => {
+  if (!timestamp) return "Unknown time"
+
+  // Handle Firestore Timestamp
+  let date
+  if (timestamp.toDate) {
+    date = timestamp.toDate()
+  } else if (timestamp.seconds) {
+    date = new Date(timestamp.seconds * 1000)
+  } else if (timestamp instanceof Date) {
+    date = timestamp
+  } else {
+    return "Unknown time"
+  }
+
+  const now = new Date()
+  const diffMs = now - date
+  const diffSecs = Math.floor(diffMs / 1000)
+  const diffMins = Math.floor(diffSecs / 60)
+  const diffHours = Math.floor(diffMins / 60)
+  const diffDays = Math.floor(diffHours / 24)
+  const diffWeeks = Math.floor(diffDays / 7)
+  const diffMonths = Math.floor(diffDays / 30)
+
+  if (diffSecs < 60) {
+    return `${diffSecs} second${diffSecs !== 1 ? "s" : ""} ago`
+  } else if (diffMins < 60) {
+    return `${diffMins} minute${diffMins !== 1 ? "s" : ""} ago`
+  } else if (diffHours < 24) {
+    return `${diffHours} hour${diffHours !== 1 ? "s" : ""} ago`
+  } else if (diffDays < 7) {
+    return `${diffDays} day${diffDays !== 1 ? "s" : ""} ago`
+  } else if (diffWeeks < 4) {
+    return `${diffWeeks} week${diffWeeks !== 1 ? "s" : ""} ago`
+  } else if (diffMonths < 12) {
+    return `${diffMonths} month${diffMonths !== 1 ? "s" : ""} ago`
+  } else {
+    return date.toLocaleDateString("en-US", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    })
+  }
+}
+
+export default function RecentBroadcastsList({ broadcasts = [] }) {
+  const formattedBroadcasts = useMemo(() => {
+    return broadcasts.map((broadcast) => {
+      const audienceLabel = broadcast.audience === "individual" ? "Members" : "Restaurants"
+      const sentToText = `Sent to: ${broadcast.recipientCount} ${audienceLabel}`
+      
+      return {
+        ...broadcast,
+        time: formatTimeAgo(broadcast.createdAt),
+        sentTo: sentToText,
+      }
+    })
+  }, [broadcasts])
 
   return (
     <Card
@@ -68,59 +84,56 @@ export default function RecentBroadcastsList() {
         </Box>
 
         <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
-          {recentBroadcasts.map((broadcast, index) => (
-            <Box key={index}>
+          {formattedBroadcasts.length === 0 ? (
+            <Box sx={{ textAlign: "center", py: 2 }}>
               <Typography
                 variant="body2"
                 sx={{
-                  fontWeight: 600,
-                  color: "#000000",
-                  mb: 0.5,
+                  color: "#8a8a8f",
                   fontSize: { xs: "13px", sm: "14px" },
-                  lineHeight: 1.4,
                 }}
               >
-                {broadcast.title}
-              </Typography>
-              <Typography
-                variant="caption"
-                sx={{
-                  color: "#8a8a8f",
-                  display: "block",
-                  mb: 0.5,
-                  fontSize: { xs: "11px", sm: "12px" },
-                }}
-              >
-                {broadcast.time}
-              </Typography>
-              <Typography
-                variant="caption"
-                sx={{
-                  color: "#8a8a8f",
-                  fontSize: { xs: "10px", sm: "11px" },
-                }}
-              >
-                {broadcast.sentTo}
+                No broadcasts yet
               </Typography>
             </Box>
-          ))}
-        </Box>
-
-        <Box sx={{ mt: 3, textAlign: "center" }}>
-          <Link
-            href="#"
-            sx={{
-              color: "#da1818",
-              textDecoration: "none",
-              fontSize: { xs: "13px", sm: "14px" },
-              fontWeight: 500,
-              "&:hover": {
-                textDecoration: "underline",
-              },
-            }}
-          >
-            Show more
-          </Link>
+          ) : (
+            formattedBroadcasts.map((broadcast) => (
+              <Box key={broadcast.id}>
+                <Typography
+                  variant="body2"
+                  sx={{
+                    fontWeight: 600,
+                    color: "#000000",
+                    mb: 0.5,
+                    fontSize: { xs: "13px", sm: "14px" },
+                    lineHeight: 1.4,
+                  }}
+                >
+                  {broadcast.title}
+                </Typography>
+                <Typography
+                  variant="caption"
+                  sx={{
+                    color: "#8a8a8f",
+                    display: "block",
+                    mb: 0.5,
+                    fontSize: { xs: "11px", sm: "12px" },
+                  }}
+                >
+                  {broadcast.time}
+                </Typography>
+                <Typography
+                  variant="caption"
+                  sx={{
+                    color: "#8a8a8f",
+                    fontSize: { xs: "10px", sm: "11px" },
+                  }}
+                >
+                  {broadcast.sentTo}
+                </Typography>
+              </Box>
+            ))
+          )}
         </Box>
       </CardContent>
     </Card>

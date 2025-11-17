@@ -44,7 +44,7 @@ export default function BowlsPage() {
                 mt: { xs: 1, sm: 0, md: 0 }, // Added top margin for mobile
               }}
             >
-              Bowls Overview
+              Golden Bowls Overview
             </Typography>
           </Box>
 

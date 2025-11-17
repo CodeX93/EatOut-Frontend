@@ -24,7 +24,7 @@ import { Visibility, VisibilityOff } from "@mui/icons-material"
 export default function SignInForm() {
   const [showPassword, setShowPassword] = useState(false)
   const [keepLoggedIn, setKeepLoggedIn] = useState(false)
-  const [email, setEmail] = useState("admin@eatout.com")
+  const [email, setEmail] = useState("admin@eatofficial.com")
   const [password, setPassword] = useState("")
   const [errors, setErrors] = useState({ email: "", password: "" })
   const [isLoading, setIsLoading] = useState(false)

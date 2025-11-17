@@ -72,6 +72,29 @@ const computeTimeWindowMs = (period) => {
   }
 }
 
+const toMillis = (value) => {
+  if (!value) return null
+  if (typeof value === "number") {
+    return value > 1e12 ? value : value * 1000
+  }
+  if (value instanceof Date) {
+    return value.getTime()
+  }
+  if (typeof value === "string") {
+    const parsed = Date.parse(value)
+    return Number.isNaN(parsed) ? null : parsed
+  }
+  if (typeof value === "object") {
+    if (typeof value.seconds === "number") {
+      return value.seconds * 1000
+    }
+    if (typeof value.toDate === "function") {
+      return value.toDate().getTime()
+    }
+  }
+  return null
+}
+
 const fetchPopularRestaurants = async (period, emailToNameMap = {}) => {
   const fromTs = computeTimeWindowMs(period)
 
@@ -293,6 +316,17 @@ export default function Restaurants() {
           const location = data.city || primaryBranch.city || "-"
           const phone = data.phone || primaryBranch.telephone || "-"
 
+          const createdTimestamp =
+            toMillis(data.createdAt) ??
+            toMillis(data.createdDate) ??
+            toMillis(primaryBranch?.createdAt) ??
+            (typeof doc.createTime?.toMillis === "function" ? doc.createTime.toMillis() : null)
+
+          const membershipExpiryTimestamp =
+            toMillis(data.membershipExpiryDate) ??
+            toMillis(data.membershipExpiry) ??
+            toMillis(primaryBranch?.membershipExpiryDate)
+
           restaurants.push({
             id: doc.id,
             name: data.restaurantName || data.name || "-",
@@ -308,6 +342,26 @@ export default function Restaurants() {
             branches,
             vouchers: 0,
             redeemed: 0,
+            gender: data.primaryContactGender || data.ownerGender || "N/A",
+            mobile: data.mobileNumber || primaryBranch.telephone || phone || "-",
+            dateJoinedDisplay: createdTimestamp
+              ? new Date(createdTimestamp).toLocaleDateString("en-US", {
+                  day: "2-digit",
+                  month: "short",
+                  year: "numeric",
+                })
+              : "-",
+            dateJoinedValue: createdTimestamp || 0,
+            membershipPlan: data.membershipPlan || "N/A",
+            membershipExpiryDisplay: membershipExpiryTimestamp
+              ? new Date(membershipExpiryTimestamp).toLocaleDateString("en-US", {
+                  day: "2-digit",
+                  month: "short",
+                  year: "numeric",
+                })
+              : "-",
+            membershipExpiryValue: membershipExpiryTimestamp || 0,
+            goldenBowl: Number(data.goldenBowlCount ?? data.loyaltyPoints ?? 0),
           })
         })
         // Derive vouchers and redeemed counts per restaurant from backend

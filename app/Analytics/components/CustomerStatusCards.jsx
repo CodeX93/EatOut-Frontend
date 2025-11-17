@@ -20,7 +20,7 @@ function CustomerStatusCard({
   ]
 
   return (
-    <Card sx={{ flex: 1, bgcolor: "#ffffff", border: "1px solid #dadada", borderRadius: "12px" }}>
+    <Card sx={{ flex: 1, bgcolor: "#ffffff", border: "1px solid #dadada", borderRadius: "12px", width: "100%" }}>
       <CardContent sx={{ p: 2, textAlign: "center" }}>
         <Typography variant="h6" sx={{ fontWeight: 600, mb: 2, fontSize: "14px" }}>
           {title}
@@ -103,7 +103,14 @@ export default function CustomerStatusCards({
   const inactiveTrend = 0
 
   return (
-    <Box sx={{ display: "flex", gap: 2 }}>
+    <Box
+      sx={{
+        display: "flex",
+        flexDirection: { xs: "column", sm: "row" },
+        gap: 2,
+        width: "100%",
+      }}
+    >
       <CustomerStatusCard
         title="Active Customer"
         percentage={activePercentage}

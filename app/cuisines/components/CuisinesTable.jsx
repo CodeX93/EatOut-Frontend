@@ -15,10 +15,17 @@ import {
   useTheme,
   IconButton,
   Tooltip,
+  TableSortLabel,
 } from "@mui/material"
 import { RestaurantMenu, Edit, Delete } from "@mui/icons-material"
 
-export default function CuisinesTable({ cuisines, onEdit, onDelete }) {
+const columns = [
+  { label: "Cuisine Name", field: "name", width: "45%", align: "left" },
+  { label: "Restaurants Using", field: "numberOfRestUsing", width: "25%", align: "center" },
+  { label: "Status", field: "isActive", width: "20%", align: "center" },
+]
+
+export default function CuisinesTable({ cuisines, onEdit, onDelete, sortConfig, onSortChange }) {
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"))
 
@@ -62,44 +69,39 @@ export default function CuisinesTable({ cuisines, onEdit, onDelete }) {
         <Table sx={{ width: "100%", minWidth: "100%", tableLayout: "fixed" }}>
           <TableHead>
             <TableRow sx={{ bgcolor: "#f9f9f9" }}>
-              <TableCell
-                sx={{
-                  color: "#8a8a8f",
-                  fontWeight: 600,
-                  fontSize: { xs: "12px", sm: "14px" },
-                  borderBottom: "1px solid #dadada",
-                  py: 2,
-                  width: "45%",
-                }}
-              >
-                Cuisine Name
-              </TableCell>
-              <TableCell
-                sx={{
-                  color: "#8a8a8f",
-                  fontWeight: 600,
-                  fontSize: { xs: "12px", sm: "14px" },
-                  borderBottom: "1px solid #dadada",
-                  py: 2,
-                  textAlign: "center",
-                  width: "25%",
-                }}
-              >
-                Restaurants Using
-              </TableCell>
-              <TableCell
-                sx={{
-                  color: "#8a8a8f",
-                  fontWeight: 600,
-                  fontSize: { xs: "12px", sm: "14px" },
-                  borderBottom: "1px solid #dadada",
-                  py: 2,
-                textAlign: "center",
-                width: "20%",
-              }}
-            >
-              Status
-              </TableCell>
+              {columns.map((column) => (
+                <TableCell
+                  key={column.field}
+                  sx={{
+                    color: "#8a8a8f",
+                    fontWeight: 600,
+                    fontSize: { xs: "12px", sm: "14px" },
+                    borderBottom: "1px solid #dadada",
+                    py: 2,
+                    textAlign: column.align,
+                    width: column.width,
+                  }}
+                >
+                  <TableSortLabel
+                    active={sortConfig?.orderBy === column.field}
+                    direction={sortConfig?.orderBy === column.field ? sortConfig?.order : "asc"}
+                    onClick={() => onSortChange && onSortChange(column.field)}
+                    sx={{
+                      "& .MuiTableSortLabel-icon": {
+                        opacity: 1,
+                        color: "#da1818",
+                      },
+                      "&.Mui-active": {
+                        color: "#da1818",
+                      },
+                      fontSize: { xs: "12px", sm: "14px" },
+                      fontWeight: 600,
+                    }}
+                  >
+                    {column.label}
+                  </TableSortLabel>
+                </TableCell>
+              ))}
               <TableCell
                 sx={{
                   color: "#8a8a8f",

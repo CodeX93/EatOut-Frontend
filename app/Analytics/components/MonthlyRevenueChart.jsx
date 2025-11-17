@@ -14,7 +14,7 @@ import {
 
 export default function MonthlyRevenueChart({ data = [] }) {
   return (
-    <Card sx={{ bgcolor: "#ffffff", border: "1px solid #dadada", borderRadius: "12px" }}>
+    <Card sx={{ bgcolor: "#ffffff", border: "1px solid #dadada", borderRadius: "12px", width: "100%" }}>
       <CardContent sx={{ p: 3 }}>
         <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
           Monthly Revenue

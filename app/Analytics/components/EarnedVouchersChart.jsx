@@ -15,7 +15,7 @@ export default function EarnedVouchersChart({
   changePercentage = 0 
 }) {
   return (
-    <Card sx={{ bgcolor: "#ffffff", border: "1px solid #dadada", borderRadius: "12px" }}>
+    <Card sx={{ bgcolor: "#ffffff", border: "1px solid #dadada", borderRadius: "12px", width: "100%" }}>
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", p: 2 }}>
         <Typography variant="h6" sx={{ fontWeight: 600 }}>
           Earned Vouchers

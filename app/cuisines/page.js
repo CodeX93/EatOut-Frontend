@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { Box, Typography, Button, CircularProgress, Alert, TextField, InputAdornment } from "@mui/material"
+import { useState, useEffect, useMemo } from "react"
+import { Box, Typography, Button, CircularProgress, Alert, TextField, InputAdornment, Paper } from "@mui/material"
 import { Add, Search } from "@mui/icons-material"
 
 // Firebase imports
@@ -28,6 +28,7 @@ export default function CuisinesPage() {
   const [editModalOpen, setEditModalOpen] = useState(false)
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
   const [selectedCuisine, setSelectedCuisine] = useState(null)
+  const [sortConfig, setSortConfig] = useState({ orderBy: "name", order: "asc" })
 
   useEffect(() => {
     const loadCuisines = async () => {
@@ -237,6 +238,36 @@ export default function CuisinesPage() {
     setDeleteModalOpen(true)
   }
 
+  const totalCuisines = cuisines.length
+  const activeCuisines = useMemo(() => cuisines.filter((cuisine) => cuisine.isActive).length, [cuisines])
+  const inactiveCuisines = totalCuisines - activeCuisines
+
+  const sortedCuisines = useMemo(() => {
+    const data = [...filteredCuisines]
+    const { orderBy, order } = sortConfig
+    data.sort((a, b) => {
+      const direction = order === "asc" ? 1 : -1
+      if (orderBy === "numberOfRestUsing") {
+        return (a.numberOfRestUsing - b.numberOfRestUsing) * direction
+      }
+      if (orderBy === "isActive") {
+        if (a.isActive === b.isActive) return 0
+        return (a.isActive ? -1 : 1) * direction
+      }
+      return a.name.localeCompare(b.name) * direction
+    })
+    return data
+  }, [filteredCuisines, sortConfig])
+
+  const handleSortChange = (field) => {
+    setSortConfig((prev) => {
+      if (prev.orderBy === field) {
+        return { orderBy: field, order: prev.order === "asc" ? "desc" : "asc" }
+      }
+      return { orderBy: field, order: "asc" }
+    })
+  }
+
   if (loading) {
     return (
       <AppLayout>
@@ -309,7 +340,7 @@ export default function CuisinesPage() {
                     mt: 0.5,
                   }}
                 >
-                  Total: {cuisines.length} cuisines available
+                  Total: {totalCuisines} cuisines available
                 </Typography>
               </Box>
               <Button
@@ -334,6 +365,41 @@ export default function CuisinesPage() {
                 Add Cuisine
               </Button>
             </Box>
+
+            <Paper
+              elevation={0}
+              sx={{
+                bgcolor: "#ffffff",
+                border: "1px solid #dadada",
+                borderRadius: "12px",
+                p: { xs: 2, sm: 2.5 },
+                mb: { xs: 2, sm: 3 },
+                display: "flex",
+                flexDirection: { xs: "column", sm: "row" },
+                gap: { xs: 1, sm: 2 },
+                alignItems: { xs: "flex-start", sm: "center" },
+              }}
+            >
+              <Typography
+                variant="h6"
+                sx={{
+                  fontWeight: 600,
+                  color: "#1f1f23",
+                  fontSize: { xs: "1rem", sm: "1.1rem" },
+                }}
+              >
+                Total Cuisines: {totalCuisines}
+              </Typography>
+              <Typography
+                variant="body2"
+                sx={{
+                  color: "#666",
+                  fontSize: { xs: "0.85rem", sm: "0.9rem" },
+                }}
+              >
+                (Active: {activeCuisines}, Inactive: {inactiveCuisines})
+              </Typography>
+            </Paper>
 
             {/* Search Bar */}
             <Box sx={{ mb: { xs: 2.5, sm: 3 }, width: "100%" }}>
@@ -375,7 +441,9 @@ export default function CuisinesPage() {
 
           {/* Cuisines Table */}
           <CuisinesTable
-            cuisines={filteredCuisines}
+            cuisines={sortedCuisines}
+            sortConfig={sortConfig}
+            onSortChange={handleSortChange}
             onEdit={handleEditClick}
             onDelete={handleDeleteClick}
           />

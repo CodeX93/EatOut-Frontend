@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import {
   Box,
@@ -13,6 +13,13 @@ import {
   TableHead,
   TableRow,
   Button,
+  TableSortLabel,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+  TextField as MuiTextField,
 } from "@mui/material"
 
 import RestaurantFilters from "./RestaurantFilters"
@@ -24,42 +31,122 @@ export default function RestaurantsTable({
   subtitle = "51 Restaurants from 6 Categories"
 }) {
   const router = useRouter()
-  const [filteredRestaurants, setFilteredRestaurants] = useState(restaurants)
+  const [searchTerm, setSearchTerm] = useState("")
+  const [selectedLocation, setSelectedLocation] = useState("All")
+  const [selectedCuisine, setSelectedCuisine] = useState("All")
+  const [sortConfig, setSortConfig] = useState({ orderBy: "name", order: "asc" })
+  const [broadcastOpen, setBroadcastOpen] = useState(false)
+  const [broadcastRecipients, setBroadcastRecipients] = useState([])
+  const [broadcastMessage, setBroadcastMessage] = useState({ subject: "", body: "" })
 
-  const handleSearchChange = (searchTerm) => {
-    if (!searchTerm) {
-      setFilteredRestaurants(restaurants)
-      return
-    }
-    
-    const filtered = restaurants.filter(restaurant =>
-      restaurant.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      restaurant.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      restaurant.address.toLowerCase().includes(searchTerm.toLowerCase())
+  const locationOptions = useMemo(() => {
+    const unique = new Set(
+      restaurants
+        .map((r) => r.location)
+        .filter((loc) => typeof loc === "string" && loc.trim().length > 0)
     )
-    setFilteredRestaurants(filtered)
-  }
+    return ["All", ...Array.from(unique).sort((a, b) => a.localeCompare(b))]
+  }, [restaurants])
 
-  const handleSortChange = (sortBy) => {
-    const sorted = [...filteredRestaurants].sort((a, b) => {
-      switch (sortBy) {
-        case "Name":
-          return a.name.localeCompare(b.name)
-        case "Location":
-          return a.location.localeCompare(b.location)
-        case "Vouchers":
-          return b.vouchers - a.vouchers
-        default:
-          return 0
+  const cuisineOptions = useMemo(() => {
+    const unique = new Set()
+    restaurants.forEach((r) => {
+      if (Array.isArray(r.cuisines)) {
+        r.cuisines.forEach((c) => {
+          if (typeof c === "string" && c.trim()) {
+            unique.add(c.trim())
+          }
+        })
       }
     })
-    setFilteredRestaurants(sorted)
+    return ["All", ...Array.from(unique).sort((a, b) => a.localeCompare(b))]
+  }, [restaurants])
+
+  const filteredRestaurants = useMemo(() => {
+    const normalizedTerm = searchTerm.trim().toLowerCase()
+    return restaurants.filter((restaurant) => {
+      const matchesSearch = normalizedTerm
+        ? [restaurant.name, restaurant.email, restaurant.location, restaurant.phone]
+            .concat(Array.isArray(restaurant.cuisines) ? restaurant.cuisines : [])
+            .filter((field) => typeof field === "string" && field.length > 0)
+            .some((field) => field.toLowerCase().includes(normalizedTerm))
+        : true
+
+      const matchesLocation =
+        selectedLocation === "All" ||
+        (restaurant.location || "").toLowerCase() === selectedLocation.toLowerCase()
+
+      const matchesCuisine =
+        selectedCuisine === "All" ||
+        (Array.isArray(restaurant.cuisines) &&
+          restaurant.cuisines.some(
+            (cuisine) => cuisine.toLowerCase() === selectedCuisine.toLowerCase()
+          ))
+
+      return matchesSearch && matchesLocation && matchesCuisine
+    })
+  }, [restaurants, searchTerm, selectedLocation, selectedCuisine])
+
+  const applySort = (items, orderBy, order) => {
+    const sorted = [...items].sort((a, b) => {
+      const getValue = (restaurant) => {
+        switch (orderBy) {
+          case "name":
+            return restaurant.name || ""
+          case "email":
+            return restaurant.email || ""
+          case "cuisine":
+            return Array.isArray(restaurant.cuisines) && restaurant.cuisines.length > 0
+              ? restaurant.cuisines.join(", ")
+              : ""
+          case "location":
+            return restaurant.location || ""
+          case "phone":
+            return restaurant.phone || ""
+          case "vouchers":
+            return Number(restaurant.vouchers || 0)
+          default:
+            return ""
+        }
+      }
+
+      const valueA = getValue(a)
+      const valueB = getValue(b)
+
+      if (typeof valueA === "number" && typeof valueB === "number") {
+        return order === "asc" ? valueA - valueB : valueB - valueA
+      }
+
+      return order === "asc"
+        ? valueA.localeCompare(valueB)
+        : valueB.localeCompare(valueA)
+    })
+    return sorted
   }
 
-  const handleFilterChange = (filter) => {
-    // Handle filter logic based on the filter type
-    console.log('Filter changed to:', filter)
-    // You can implement specific filtering logic here
+  const sortedRestaurants = useMemo(
+    () => applySort(filteredRestaurants, sortConfig.orderBy, sortConfig.order),
+    [filteredRestaurants, sortConfig]
+  )
+
+  const handleSearchChange = (searchTerm) => {
+    setSearchTerm(searchTerm)
+  }
+
+  const handleSortChange = (field) => {
+    setSortConfig((prev) => {
+      const isSameField = prev.orderBy === field
+      const nextOrder = isSameField && prev.order === "asc" ? "desc" : "asc"
+      return { orderBy: field, order: nextOrder }
+    })
+  }
+
+  const handleLocationChange = (value) => {
+    setSelectedLocation(value)
+  }
+
+  const handleCuisineChange = (value) => {
+    setSelectedCuisine(value)
   }
 
   const handleView = (restaurant, index) => {
@@ -74,13 +161,30 @@ export default function RestaurantsTable({
     router.push(`/Restaurants/resturant-sub/delete?id=${restaurant.id}&name=${encodeURIComponent(restaurant.name)}&action=delete`)
   }
 
+  const openBroadcastDialog = (recipients) => {
+    setBroadcastRecipients(recipients)
+    setBroadcastMessage({ subject: "", body: "" })
+    setBroadcastOpen(true)
+  }
+
+  const handleBroadcastSingle = (restaurant) => {
+    openBroadcastDialog([restaurant])
+  }
+
   return (
     <Box sx={{ width: "100%", overflow: "hidden" }}>
       {/* Filters */}
       <RestaurantFilters
         onSearchChange={handleSearchChange}
+        searchTerm={searchTerm}
+        locations={locationOptions}
+        selectedLocation={selectedLocation}
+        onLocationChange={handleLocationChange}
+        cuisines={cuisineOptions}
+        selectedCuisine={selectedCuisine}
+        onCuisineChange={handleCuisineChange}
+        sortConfig={sortConfig}
         onSortChange={handleSortChange}
-        onFilterChange={handleFilterChange}
       />
 
       {/* Table Header */}
@@ -140,71 +244,64 @@ export default function RestaurantsTable({
           },
         }}>
           <Table sx={{ 
-            minWidth: { xs: 700, sm: 750, md: 800 },
+            minWidth: { xs: 900, sm: 950, md: 1000 },
             "& .MuiTableCell-root": {
               padding: { xs: "8px 6px", sm: "12px 8px", md: "16px 12px" },
             },
           }}>
             <TableHead>
               <TableRow sx={{ bgcolor: "#fafafa" }}>
-                <TableCell sx={{ 
-                  color: "#8a8a8f", 
-                  fontWeight: 600, 
-                  fontSize: { xs: "0.625rem", sm: "0.6875rem", md: "0.75rem" },
-                  minWidth: { xs: 140, sm: 160, md: 180 },
-                  borderBottom: "2px solid #e0e0e0",
-                }}>
-                  Name & Address
-                </TableCell>
-                <TableCell sx={{ 
-                  color: "#8a8a8f", 
-                  fontWeight: 600, 
-                  fontSize: { xs: "0.625rem", sm: "0.6875rem", md: "0.75rem" },
-                  minWidth: { xs: 90, sm: 110, md: 130 },
-                  borderBottom: "2px solid #e0e0e0",
-                }}>
-                  Location
-                </TableCell>
-                <TableCell sx={{ 
-                  color: "#8a8a8f", 
-                  fontWeight: 600, 
-                  fontSize: { xs: "0.625rem", sm: "0.6875rem", md: "0.75rem" },
-                  minWidth: { xs: 110, sm: 130, md: 150 },
-                  borderBottom: "2px solid #e0e0e0",
-                }}>
-                  Telephone
-                </TableCell>
-                <TableCell sx={{ 
-                  color: "#8a8a8f", 
-                  fontWeight: 600, 
-                  fontSize: { xs: "0.625rem", sm: "0.6875rem", md: "0.75rem" },
-                  minWidth: { xs: 80, sm: 90, md: 100 },
-                  borderBottom: "2px solid #e0e0e0",
-                }}>
-                  Vouchers
-                </TableCell>
-                <TableCell sx={{ 
-                  color: "#8a8a8f", 
-                  fontWeight: 600, 
-                  fontSize: { xs: "0.625rem", sm: "0.6875rem", md: "0.75rem" },
-                  minWidth: { xs: 80, sm: 90, md: 100 },
-                  borderBottom: "2px solid #e0e0e0",
-                }}>
-                  Redeemed
-                </TableCell>
-                <TableCell sx={{ 
-                  color: "#8a8a8f", 
-                  fontWeight: 600, 
-                  fontSize: { xs: "0.625rem", sm: "0.6875rem", md: "0.75rem" },
-                  minWidth: { xs: 110, sm: 130, md: 150 },
-                  borderBottom: "2px solid #e0e0e0",
-                }}>
+                {[
+                  { label: "Restaurant Name", field: "name", minWidth: { xs: 160, sm: 180, md: 200 } },
+                  { label: "Email Address", field: "email", minWidth: { xs: 160, sm: 180, md: 200 } },
+                  { label: "Cuisine", field: "cuisine", minWidth: { xs: 140, sm: 150, md: 180 } },
+                  { label: "Location", field: "location", minWidth: { xs: 120, sm: 140, md: 160 } },
+                  { label: "Telephone No.", field: "phone", minWidth: { xs: 120, sm: 140, md: 160 } },
+                  { label: "No. Of Active Vouchers", field: "vouchers", minWidth: { xs: 140, sm: 160, md: 180 } },
+                ].map((column) => (
+                  <TableCell
+                    key={column.field}
+                    sx={{
+                      color: "#8a8a8f",
+                      fontWeight: 600,
+                      fontSize: { xs: "0.625rem", sm: "0.6875rem", md: "0.75rem" },
+                      minWidth: column.minWidth,
+                      borderBottom: "2px solid #e0e0e0",
+                    }}
+                  >
+                    <TableSortLabel
+                      active={sortConfig.orderBy === column.field}
+                      direction={sortConfig.orderBy === column.field ? sortConfig.order : "asc"}
+                      onClick={() => handleSortChange(column.field)}
+                      sx={{
+                        "& .MuiTableSortLabel-icon": {
+                          opacity: 1,
+                          color: "#da1818",
+                        },
+                        "&.Mui-active": {
+                          color: "#da1818",
+                        },
+                      }}
+                    >
+                      {column.label}
+                    </TableSortLabel>
+                  </TableCell>
+                ))}
+                <TableCell
+                  sx={{
+                    color: "#8a8a8f",
+                    fontWeight: 600,
+                    fontSize: { xs: "0.625rem", sm: "0.6875rem", md: "0.75rem" },
+                    minWidth: { xs: 110, sm: 130, md: 150 },
+                    borderBottom: "2px solid #e0e0e0",
+                  }}
+                >
                   Actions
                 </TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {filteredRestaurants.map((restaurant, index) => (
+              {sortedRestaurants.map((restaurant, index) => (
                 <RestaurantTableRow
                   key={index}
                   restaurant={restaurant}
@@ -212,18 +309,35 @@ export default function RestaurantsTable({
                   onView={handleView}
                   onEdit={handleViewEdit}
                   onDelete={handleDelete}
+                  onBroadcast={handleBroadcastSingle}
                 />
               ))}
             </TableBody>
           </Table>
         </TableContainer>
-        <Box sx={{ 
-          display: "flex", 
-          justifyContent: "center", 
-          p: { xs: 1.5, sm: 2 },
-        }}>
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: { xs: "column", sm: "row" },
+            justifyContent: "space-between",
+            alignItems: { xs: "stretch", sm: "center" },
+            gap: { xs: 1, sm: 2 },
+            p: { xs: 1.5, sm: 2 },
+          }}
+        >
+          <Typography
+            variant="body2"
+            sx={{
+              color: "#8a8a8f",
+              fontSize: { xs: "0.75rem", sm: "0.875rem" },
+            }}
+          >
+            Showing {sortedRestaurants.length} restaurants
+          </Typography>
           <Button
             variant="contained"
+            onClick={() => openBroadcastDialog(sortedRestaurants)}
+            disabled={sortedRestaurants.length === 0}
             sx={{
               bgcolor: "#da1818",
               color: "white",
@@ -234,12 +348,79 @@ export default function RestaurantsTable({
               "&:hover": {
                 bgcolor: "#c41515",
               },
+              "&.Mui-disabled": {
+                bgcolor: "#f0b9b9",
+              },
             }}
           >
-            {filteredRestaurants.length} Accounts
+            Broadcast Message
           </Button>
         </Box>
       </Card>
+
+      <Dialog
+        open={broadcastOpen}
+        onClose={() => {
+          setBroadcastOpen(false)
+          setBroadcastRecipients([])
+          setBroadcastMessage({ subject: "", body: "" })
+        }}
+        fullWidth
+        maxWidth="sm"
+      >
+        <DialogTitle>Broadcast Message</DialogTitle>
+        <DialogContent>
+          <DialogContentText sx={{ mb: 2 }}>
+            {broadcastRecipients.length === 1
+              ? `Send a message to ${broadcastRecipients[0]?.name || "the selected restaurant"}.`
+              : `Send a message to ${broadcastRecipients.length} selected restaurants.`}
+          </DialogContentText>
+          <MuiTextField
+            label="Subject"
+            fullWidth
+            sx={{ mb: 2 }}
+            value={broadcastMessage.subject}
+            onChange={(event) =>
+              setBroadcastMessage((prev) => ({ ...prev, subject: event.target.value }))
+            }
+          />
+          <MuiTextField
+            label="Message"
+            fullWidth
+            multiline
+            minRows={4}
+            value={broadcastMessage.body}
+            onChange={(event) =>
+              setBroadcastMessage((prev) => ({ ...prev, body: event.target.value }))
+            }
+          />
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={() => setBroadcastOpen(false)} sx={{ textTransform: "none" }}>
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            onClick={() => {
+              console.log("Broadcast message", {
+                recipients: broadcastRecipients.map((r) => r.email).filter(Boolean),
+                ...broadcastMessage,
+              })
+              setBroadcastOpen(false)
+              setBroadcastRecipients([])
+              setBroadcastMessage({ subject: "", body: "" })
+            }}
+            disabled={!broadcastMessage.subject || !broadcastMessage.body}
+            sx={{
+              textTransform: "none",
+              bgcolor: "#da1818",
+              "&:hover": { bgcolor: "#c41515" },
+            }}
+          >
+            Send
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   )
 }
