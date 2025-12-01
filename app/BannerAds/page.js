@@ -17,9 +17,8 @@ import {
   CardMedia,
   IconButton,
 } from "@mui/material"
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage"
 import { collection, getDocs, doc, setDoc, serverTimestamp } from "firebase/firestore"
-import { db, storage } from "../../firebaseConfig"
+import { db } from "../../firebaseConfig"
 import AppLayout from "../components/AppLayout"
 import { Delete, CloudUpload } from "@mui/icons-material"
 
@@ -33,6 +32,10 @@ const COLOR_OPTIONS = [
   { label: "White", value: "#ffffff" },
   { label: "Gray", value: "#757575" },
 ]
+
+// Cloudinary config (unsigned upload)
+const CLOUDINARY_UPLOAD_PRESET = "eat_app_unsigned"
+const CLOUDINARY_CLOUD_NAME = "di14lhy0f"
 
 export default function BannerAdsPage() {
   const [loading, setLoading] = useState(true)
@@ -153,16 +156,24 @@ export default function BannerAdsPage() {
     setError("")
 
     try {
-      // Create a unique filename
-      const timestamp = Date.now()
-      const fileName = `banner-ads/${timestamp}-${imageFile.name}`
-      const storageRef = ref(storage, fileName)
+      const formDataToUpload = new FormData()
+      formDataToUpload.append("file", imageFile)
+      formDataToUpload.append("upload_preset", CLOUDINARY_UPLOAD_PRESET)
 
-      // Upload file
-      await uploadBytes(storageRef, imageFile)
+      const response = await fetch(
+        `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`,
+        {
+          method: "POST",
+          body: formDataToUpload,
+        }
+      )
 
-      // Get download URL
-      const downloadURL = await getDownloadURL(storageRef)
+      if (!response.ok) {
+        throw new Error("Cloudinary upload failed")
+      }
+
+      const data = await response.json()
+      const downloadURL = data.secure_url
 
       setFormData((prev) => ({
         ...prev,
