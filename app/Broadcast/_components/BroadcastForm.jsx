@@ -1,6 +1,17 @@
 "use client"
 
-import { Box, Card, CardContent, TextField, Button, Typography } from "@mui/material"
+import {
+  Box,
+  Card,
+  CardContent,
+  TextField,
+  Button,
+  Typography,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+} from "@mui/material"
 
 export default function BroadcastForm({
   broadcastTitle,
@@ -10,6 +21,8 @@ export default function BroadcastForm({
   onSendMessage,
   selectedCount = 0,
   disabled = false,
+  channel = "inApp",
+  setChannel,
 }) {
   return (
     <Card
@@ -67,13 +80,30 @@ export default function BroadcastForm({
               },
             }}
           />
-          {selectedCount > 0 && (
-            <Box sx={{ mb: 1 }}>
-              <Typography sx={{ color: "#6b7280", fontSize: "0.875rem" }}>
-                {selectedCount} recipient{selectedCount !== 1 ? "s" : ""} selected
-              </Typography>
-            </Box>
-          )}
+
+          <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, gap: 2, alignItems: "center" }}>
+            <FormControl size="small" sx={{ minWidth: 200 }}>
+              <InputLabel>Notification type</InputLabel>
+              <Select
+                label="Notification type"
+                value={channel}
+                onChange={(e) => setChannel && setChannel(e.target.value)}
+              >
+                <MenuItem value="inApp">In-app notification</MenuItem>
+                <MenuItem value="push">Push notification</MenuItem>
+                <MenuItem value="both">In-app + Push</MenuItem>
+              </Select>
+            </FormControl>
+
+            {selectedCount > 0 && (
+              <Box sx={{ flexGrow: 1 }}>
+                <Typography sx={{ color: "#6b7280", fontSize: "0.875rem" }}>
+                  {selectedCount} recipient{selectedCount !== 1 ? "s" : ""} selected
+                </Typography>
+              </Box>
+            )}
+          </Box>
+
           <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
             <Button
               variant="contained"
