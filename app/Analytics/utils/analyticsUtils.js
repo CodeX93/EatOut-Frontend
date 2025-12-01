@@ -173,7 +173,7 @@ export async function fetchAnalyticsData() {
 function calculateRedemptionRevenue(redemption) {
   // Use the estimated order value stored in the redemption (based on minSpending)
   const estimatedRevenue = redemption.estimatedOrderValue || 0
-  
+
   return {
     revenue: estimatedRevenue,
     isEstimate: true, // Flag to indicate this is estimated data

@@ -70,23 +70,23 @@ export default function CuisinesTable({ cuisines, onEdit, onDelete, sortConfig, 
           <TableHead>
             <TableRow sx={{ bgcolor: "#f9f9f9" }}>
               {columns.map((column) => (
-                <TableCell
+              <TableCell
                   key={column.field}
-                  sx={{
-                    color: "#8a8a8f",
-                    fontWeight: 600,
-                    fontSize: { xs: "12px", sm: "14px" },
-                    borderBottom: "1px solid #dadada",
-                    py: 2,
+                sx={{
+                  color: "#8a8a8f",
+                  fontWeight: 600,
+                  fontSize: { xs: "12px", sm: "14px" },
+                  borderBottom: "1px solid #dadada",
+                  py: 2,
                     textAlign: column.align,
                     width: column.width,
-                  }}
-                >
+                }}
+              >
                   <TableSortLabel
                     active={sortConfig?.orderBy === column.field}
                     direction={sortConfig?.orderBy === column.field ? sortConfig?.order : "asc"}
                     onClick={() => onSortChange && onSortChange(column.field)}
-                    sx={{
+                sx={{
                       "& .MuiTableSortLabel-icon": {
                         opacity: 1,
                         color: "#da1818",
@@ -94,13 +94,13 @@ export default function CuisinesTable({ cuisines, onEdit, onDelete, sortConfig, 
                       "&.Mui-active": {
                         color: "#da1818",
                       },
-                      fontSize: { xs: "12px", sm: "14px" },
-                      fontWeight: 600,
-                    }}
-                  >
+                  fontSize: { xs: "12px", sm: "14px" },
+                  fontWeight: 600,
+              }}
+            >
                     {column.label}
                   </TableSortLabel>
-                </TableCell>
+              </TableCell>
               ))}
               <TableCell
                 sx={{

@@ -25,6 +25,8 @@ export default function VouchersTable({ vouchers }) {
     { key: "type", label: "Type", minWidth: 70 },
     { key: "value", label: "Value", minWidth: 60 },
     { key: "validity", label: "Validity", minWidth: 100 },
+    { key: "restaurantName", label: "Restaurant Name", minWidth: 120 },
+    { key: "balance", label: "Balance/Total Quantity", minWidth: 140 },
     { key: "merchants", label: "Merchant(s)", minWidth: 80, hideOnMobile: true },
     { key: "usage", label: "Usage (Used/Limit)", minWidth: 120, hideOnMobile: true },
     { key: "status", label: "Status", minWidth: 70 },
@@ -46,7 +48,7 @@ export default function VouchersTable({ vouchers }) {
         width: "100%",
       }}
     >
-      <ScrollableTable minWidth={700}>
+      <ScrollableTable minWidth={1000}>
         <Table>
           <TableHead>
             <TableRow sx={{ bgcolor: "#f9f9f9" }}>
@@ -101,6 +103,12 @@ export default function VouchersTable({ vouchers }) {
                   </TableCell>
                   <TableCell sx={{ fontSize: { xs: "0.625rem", sm: "14px" }, py: { xs: 1, sm: 1.5 } }}>
                     {voucher.validity}
+                  </TableCell>
+                  <TableCell sx={{ fontSize: { xs: "0.625rem", sm: "14px" }, py: { xs: 1, sm: 1.5 } }}>
+                    {voucher.restaurantName || "N/A"}
+                  </TableCell>
+                  <TableCell sx={{ fontSize: { xs: "0.625rem", sm: "14px" }, py: { xs: 1, sm: 1.5 } }}>
+                    {voucher.balance || "N/A"}
                   </TableCell>
                   <TableCell
                     sx={{

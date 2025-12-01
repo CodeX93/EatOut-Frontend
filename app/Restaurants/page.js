@@ -14,6 +14,8 @@ import PopularRestaurantsCard from "./components/PopularRestaurantsCard"
 import PopularVouchersCard from "./components/PopularVouchersCard"
 import RatingReviewsCard from "./components/RatingReviewsCard"
 import TopVouchersCard from "./components/TopVouchersCard"
+import CategoriesManagement from "./components/CategoriesManagement"
+import MerchantPermissions from "./components/MerchantPermissions"
 
 const drawerWidth = 240
 
@@ -684,6 +686,16 @@ export default function Restaurants() {
                 </Box>
               </Box>
             </Box>
+          </Box>
+
+          {/* Categories Management Section */}
+          <Box sx={{ mt: 4 }}>
+            <CategoriesManagement restaurantsData={restaurantsData} />
+          </Box>
+
+          {/* Merchant Permissions Section */}
+          <Box sx={{ mt: 4 }}>
+            <MerchantPermissions restaurantsData={restaurantsData} />
           </Box>
         </Box>
       </Box>

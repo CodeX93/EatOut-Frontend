@@ -11,9 +11,9 @@ import {
 } from "@mui/material"
 import { Search as SearchIcon } from "@mui/icons-material"
 
-export default function RestaurantFilters({
+export default function RestaurantFilters({ 
   searchTerm = "",
-  onSearchChange,
+  onSearchChange, 
   locations = [],
   selectedLocation = "All",
   onLocationChange,
@@ -21,7 +21,7 @@ export default function RestaurantFilters({
   selectedCuisine = "All",
   onCuisineChange,
   sortConfig = { orderBy: "name", order: "asc" },
-  onSortChange,
+  onSortChange, 
 }) {
   const [internalSearch, setInternalSearch] = useState(searchTerm)
 
@@ -38,12 +38,12 @@ export default function RestaurantFilters({
   return (
     <Box
       sx={{
-        display: "flex",
-        flexDirection: { xs: "column", sm: "row" },
-        alignItems: { xs: "stretch", sm: "center" },
-        gap: { xs: 1.5, sm: 2, md: 2.5 },
-        mb: { xs: 2, sm: 2.5, md: 3 },
-        px: { xs: 0.5, sm: 0 },
+      display: "flex", 
+      flexDirection: { xs: "column", sm: "row" },
+      alignItems: { xs: "stretch", sm: "center" }, 
+      gap: { xs: 1.5, sm: 2, md: 2.5 }, 
+      mb: { xs: 2, sm: 2.5, md: 3 },
+      px: { xs: 0.5, sm: 0 },
         flexWrap: "wrap",
       }}
     >
@@ -77,7 +77,7 @@ export default function RestaurantFilters({
             <InputAdornment position="start" sx={{ ml: { xs: 0.5, sm: 1 } }}>
               <SearchIcon
                 sx={{
-                  color: "#8a8a8f",
+                color: "#8a8a8f",
                   fontSize: { xs: "18px", sm: "20px" },
                 }}
               />
@@ -85,25 +85,25 @@ export default function RestaurantFilters({
           ),
         }}
       />
-
+      
       <FormControl
         size="small"
-        sx={{
+          sx={{ 
           minWidth: { xs: "100%", sm: 150, md: 170 },
         }}
       >
-        <Select
+          <Select
           value={selectedLocation}
           onChange={(event) => onLocationChange?.(event.target.value)}
-          sx={{
-            borderRadius: { xs: "6px", sm: "8px" },
-            fontSize: { xs: "0.75rem", sm: "0.8125rem", md: "0.875rem" },
-            height: { xs: "36px", sm: "38px", md: "40px" },
-            "& .MuiSelect-select": {
-              padding: { xs: "8px 12px", sm: "10px 14px" },
-            },
-          }}
-        >
+            sx={{ 
+              borderRadius: { xs: "6px", sm: "8px" },
+              fontSize: { xs: "0.75rem", sm: "0.8125rem", md: "0.875rem" },
+              height: { xs: "36px", sm: "38px", md: "40px" },
+              "& .MuiSelect-select": {
+                padding: { xs: "8px 12px", sm: "10px 14px" },
+              },
+            }}
+          >
           {(locations.length > 0 ? locations : ["All"]).map((location) => (
             <MenuItem
               key={location}
@@ -113,27 +113,27 @@ export default function RestaurantFilters({
               {location}
             </MenuItem>
           ))}
-        </Select>
-      </FormControl>
-
+          </Select>
+        </FormControl>
+        
       <FormControl
         size="small"
         sx={{
           minWidth: { xs: "100%", sm: 150, md: 170 },
         }}
       >
-        <Select
+          <Select
           value={selectedCuisine}
           onChange={(event) => onCuisineChange?.(event.target.value)}
-          sx={{
-            borderRadius: { xs: "6px", sm: "8px" },
-            fontSize: { xs: "0.75rem", sm: "0.8125rem", md: "0.875rem" },
-            height: { xs: "36px", sm: "38px", md: "40px" },
-            "& .MuiSelect-select": {
-              padding: { xs: "8px 12px", sm: "10px 14px" },
-            },
-          }}
-        >
+            sx={{ 
+              borderRadius: { xs: "6px", sm: "8px" },
+              fontSize: { xs: "0.75rem", sm: "0.8125rem", md: "0.875rem" },
+              height: { xs: "36px", sm: "38px", md: "40px" },
+              "& .MuiSelect-select": {
+                padding: { xs: "8px 12px", sm: "10px 14px" },
+              },
+            }}
+          >
           {(cuisines.length > 0 ? cuisines : ["All"]).map((cuisine) => (
             <MenuItem
               key={cuisine}
@@ -143,11 +143,11 @@ export default function RestaurantFilters({
               {cuisine}
             </MenuItem>
           ))}
-        </Select>
-      </FormControl>
-
+          </Select>
+        </FormControl>
+        
       <FormControl
-        size="small"
+          size="small"
         sx={{
           minWidth: { xs: "100%", sm: 160, md: 180 },
         }}

@@ -219,31 +219,31 @@ export default function MembersTable({ members = [] }) {
         </FormControl>
 
         <FormControl size="small" sx={{ minWidth: { xs: "100%", sm: 170 }, flex: { xs: "0 0 auto" } }}>
-          <Select
+            <Select
             value={selectedPlan}
             onChange={(event) => setSelectedPlan(event.target.value)}
-            sx={{
-              borderRadius: "8px",
-              fontSize: { xs: "0.75rem", sm: "0.875rem" },
-            }}
-          >
+              sx={{
+                borderRadius: "8px",
+                fontSize: { xs: "0.75rem", sm: "0.875rem" },
+              }}
+            >
             {planOptions.map((plan) => (
               <MenuItem key={plan} value={plan}>
                 Plan: {plan}
               </MenuItem>
             ))}
-          </Select>
-        </FormControl>
+            </Select>
+          </FormControl>
 
         <FormControl size="small" sx={{ minWidth: { xs: "100%", sm: 170 }, flex: { xs: "0 0 auto" } }}>
-          <Select
+            <Select
             value={sortConfig.orderBy}
             onChange={(event) => handleSortChange(event.target.value)}
-            sx={{
-              borderRadius: "8px",
-              fontSize: { xs: "0.75rem", sm: "0.875rem" },
-            }}
-          >
+              sx={{
+                borderRadius: "8px",
+                fontSize: { xs: "0.75rem", sm: "0.875rem" },
+              }}
+            >
             <MenuItem value="name">Sort by: Name</MenuItem>
             <MenuItem value="gender">Sort by: Gender</MenuItem>
             <MenuItem value="email">Sort by: Email</MenuItem>
@@ -253,8 +253,8 @@ export default function MembersTable({ members = [] }) {
             <MenuItem value="dateOfSubscription">Sort by: Date of Subscription</MenuItem>
             <MenuItem value="membershipExpiry">Sort by: Membership Expiry</MenuItem>
             <MenuItem value="goldenBowl">Sort by: Golden Bowl</MenuItem>
-          </Select>
-        </FormControl>
+            </Select>
+          </FormControl>
       </Box>
 
       <Box sx={{ mb: 2 }}>
@@ -302,21 +302,21 @@ export default function MembersTable({ members = [] }) {
                   },
                   { label: "No. Of Golden Bowl", field: "goldenBowl", minWidth: { xs: 150, sm: 170 } },
                 ].map((column) => (
-                  <TableCell
+                <TableCell
                     key={column.field}
-                    sx={{
-                      color: "#8a8a8f",
+                  sx={{
+                    color: "#8a8a8f",
                       fontWeight: 600,
                       fontSize: { xs: "0.625rem", sm: "0.6875rem", md: "0.75rem" },
                       minWidth: column.minWidth,
                       borderBottom: "2px solid #e0e0e0",
-                    }}
-                  >
+                  }}
+                >
                     <TableSortLabel
                       active={sortConfig.orderBy === column.field}
                       direction={sortConfig.orderBy === column.field ? sortConfig.order : "asc"}
                       onClick={() => handleSortChange(column.field)}
-                      sx={{
+                  sx={{
                         "& .MuiTableSortLabel-icon": {
                           opacity: 1,
                           color: "#da1818",
@@ -324,11 +324,11 @@ export default function MembersTable({ members = [] }) {
                         "&.Mui-active": {
                           color: "#da1818",
                         },
-                      }}
-                    >
+                  }}
+                >
                       {column.label}
                     </TableSortLabel>
-                  </TableCell>
+                </TableCell>
                 ))}
                 <TableCell
                   sx={{
@@ -353,14 +353,14 @@ export default function MembersTable({ members = [] }) {
                     {member.gender || "N/A"}
                   </TableCell>
                   <TableCell
-                    sx={{
+                      sx={{
                       fontSize: { xs: "0.625rem", sm: "14px" },
                       overflow: "hidden",
                       textOverflow: "ellipsis",
                       whiteSpace: "nowrap",
                       maxWidth: { xs: 180, sm: 220 },
-                    }}
-                  >
+                      }}
+                    >
                     {member.email}
                   </TableCell>
                   <TableCell sx={{ fontSize: { xs: "0.625rem", sm: "14px" }, color: "#da1818" }}>

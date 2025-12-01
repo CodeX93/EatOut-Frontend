@@ -131,8 +131,8 @@ export default function RestaurantsTable({
 
   const handleSearchChange = (searchTerm) => {
     setSearchTerm(searchTerm)
-  }
-
+    }
+    
   const handleSortChange = (field) => {
     setSortConfig((prev) => {
       const isSameField = prev.orderBy === field
@@ -262,11 +262,11 @@ export default function RestaurantsTable({
                   <TableCell
                     key={column.field}
                     sx={{
-                      color: "#8a8a8f",
-                      fontWeight: 600,
-                      fontSize: { xs: "0.625rem", sm: "0.6875rem", md: "0.75rem" },
+                  color: "#8a8a8f", 
+                  fontWeight: 600, 
+                  fontSize: { xs: "0.625rem", sm: "0.6875rem", md: "0.75rem" },
                       minWidth: column.minWidth,
-                      borderBottom: "2px solid #e0e0e0",
+                  borderBottom: "2px solid #e0e0e0",
                     }}
                   >
                     <TableSortLabel
@@ -285,15 +285,15 @@ export default function RestaurantsTable({
                     >
                       {column.label}
                     </TableSortLabel>
-                  </TableCell>
+                </TableCell>
                 ))}
                 <TableCell
                   sx={{
-                    color: "#8a8a8f",
-                    fontWeight: 600,
-                    fontSize: { xs: "0.625rem", sm: "0.6875rem", md: "0.75rem" },
-                    minWidth: { xs: 110, sm: 130, md: 150 },
-                    borderBottom: "2px solid #e0e0e0",
+                  color: "#8a8a8f", 
+                  fontWeight: 600, 
+                  fontSize: { xs: "0.625rem", sm: "0.6875rem", md: "0.75rem" },
+                  minWidth: { xs: 110, sm: 130, md: 150 },
+                  borderBottom: "2px solid #e0e0e0",
                   }}
                 >
                   Actions
@@ -317,12 +317,12 @@ export default function RestaurantsTable({
         </TableContainer>
         <Box
           sx={{
-            display: "flex",
+          display: "flex", 
             flexDirection: { xs: "column", sm: "row" },
             justifyContent: "space-between",
             alignItems: { xs: "stretch", sm: "center" },
             gap: { xs: 1, sm: 2 },
-            p: { xs: 1.5, sm: 2 },
+          p: { xs: 1.5, sm: 2 },
           }}
         >
           <Typography

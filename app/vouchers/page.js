@@ -72,7 +72,7 @@ export default function VouchersPage() {
   }
 
   // Map Firestore voucher to table format for active vouchers
-  const mapToTableFormat = (voucher) => {
+  const mapToTableFormat = (voucher, restaurantNameMap = {}) => {
     const { 
       voucherCode, 
       voucherType, 
@@ -80,14 +80,20 @@ export default function VouchersPage() {
       expiryDate, 
       quantity, 
       usedCount = 0,
-      status = "active"
+      status = "active",
+      restaurantEmail = ""
     } = voucher
+
+    const balance = Math.max(0, quantity - usedCount)
+    const restaurantName = restaurantNameMap[restaurantEmail] || restaurantEmail || "N/A"
 
     return {
       code: voucherCode,
       type: voucherType.replace(" Discount", "").replace(" Voucher", ""),
       value: voucherType === "Percentage Discount" ? `${valueOfSavings}%` : `$${valueOfSavings}`,
       validity: formatDate(expiryDate),
+      restaurantName: restaurantName,
+      balance: `${balance} / ${quantity}`,
       merchants: "All", // You might want to add this field to your schema
       usage: `${usedCount} / ${quantity}`,
       status: status.charAt(0).toUpperCase() + status.slice(1),
@@ -139,9 +145,9 @@ export default function VouchersPage() {
       setLoading(true)
       setError(null)
 
-      // Fetch all vouchers from `voucher` collection (matches Firestore structure)
+      // Fetch all vouchers from `vouchers` collection (matches Firestore structure)
       const vouchersQuery = query(
-        collection(db, "voucher"),
+        collection(db, "vouchers"),
         orderBy("createdAt", "desc")
       )
 
@@ -151,31 +157,53 @@ export default function VouchersPage() {
       querySnapshot.forEach((doc) => {
         const data = doc.data() || {}
         const quantity = Number(data.quantity ?? 0)
-        const available = Number(data.available ?? 0)
-        const usedCount = Math.max(0, quantity - available)
+        const usedCount = Number(data.usedCount ?? 0)
+        const available = Number(data.available ?? (quantity - usedCount))
 
-        // Normalize to UI-expected fields
+        // Normalize to UI-expected fields - matching actual Firebase structure
         const normalized = {
           id: doc.id,
-          voucherCode: data.voucherId || doc.id,
+          voucherCode: data.voucherCode || doc.id,
           voucherType: data.voucherType || "Unknown",
           valueOfSavings: data.valueOfSavings ?? 0,
-          voucherTitle: data.title || "",
+          voucherTitle: data.voucherTitle || "",
+          voucherDescription: data.voucherDescription || "",
           expiryDate: data.expiryDate ?? null,
           quantity: quantity,
           usedCount: usedCount,
-          status: data.isActive ? "active" : "inactive",
+          status: data.status || (data.isActive ? "active" : "inactive"),
+          isActive: data.isActive !== undefined ? data.isActive : true,
           createdAt: data.createdAt ?? null,
           minSpending: data.minSpending ?? 0,
           restaurantEmail: data.restaurantEmail ?? "",
-          termsAndConditions: Array.isArray(data.termsAndConditions) ? data.termsAndConditions : [],
-          description: data.description ?? "",
+          termsAndConditions: typeof data.termsAndConditions === "string" 
+            ? data.termsAndConditions 
+            : (Array.isArray(data.termsAndConditions) ? data.termsAndConditions.join("\n") : ""),
+          description: data.voucherDescription || "",
           available: available,
-          voucherId: data.voucherId ?? doc.id,
+          voucherId: data.voucherCode || doc.id,
         }
 
         allVouchers.push(normalized)
       })
+
+      // Fetch restaurant names for mapping
+      const restaurantNameMap = {}
+      try {
+        const restaurantsSnap = await getDocs(collection(db, "registeredRestaurants"))
+        restaurantsSnap.forEach((doc) => {
+          const restaurantData = doc.data() || {}
+          const email = restaurantData.email || doc.id
+          if (email) {
+            restaurantNameMap[email.toLowerCase().trim()] = 
+              restaurantData.restaurantName || 
+              restaurantData.name || 
+              email
+          }
+        })
+      } catch (error) {
+        console.error("Error fetching restaurants:", error)
+      }
 
       // Categorize vouchers
       const active = []
@@ -207,7 +235,7 @@ export default function VouchersPage() {
           review.push(reviewVoucher)
         } else {
           // Active vouchers: not expired, not marked for review, and available for use
-          active.push(mapToTableFormat(voucher))
+          active.push(mapToTableFormat(voucher, restaurantNameMap))
         }
       })
 
@@ -248,7 +276,7 @@ export default function VouchersPage() {
       for (const voucher of vouchers) {
         try {
           const redeemedSnap = await getDocs(
-            collection(db, "voucher", voucher.id, "redeemedUsers")
+            collection(db, "vouchers", voucher.id, "redeemedUsers")
           )
 
           let voucherUsedCount = 0

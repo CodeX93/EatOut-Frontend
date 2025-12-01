@@ -1,10 +1,10 @@
 import { Box, Typography, TableRow, TableCell, Button } from "@mui/material"
 
-export default function RestaurantTableRow({
-  restaurant,
-  index,
+export default function RestaurantTableRow({ 
+  restaurant, 
+  index, 
   onView,
-  onEdit,
+  onEdit, 
   onDelete,
   onBroadcast,
 }) {
@@ -54,12 +54,12 @@ export default function RestaurantTableRow({
         </Box>
       </TableCell>
       <TableCell
-        sx={{
+            sx={{ 
           fontSize: { xs: "0.625rem", sm: "12px" },
           minWidth: { xs: 160, sm: 200 },
-          overflow: "hidden",
-          textOverflow: "ellipsis",
-          whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
         }}
       >
         {restaurant.email || "-"}
@@ -68,15 +68,15 @@ export default function RestaurantTableRow({
         sx={{
           fontSize: { xs: "0.625rem", sm: "12px" },
           minWidth: { xs: 140, sm: 160 },
-        }}
-      >
+            }}
+          >
         {Array.isArray(restaurant.cuisines) && restaurant.cuisines.length > 0
           ? restaurant.cuisines.join(", ")
           : "-"}
       </TableCell>
       <TableCell
         sx={{
-          fontSize: { xs: "0.625rem", sm: "12px" },
+        fontSize: { xs: "0.625rem", sm: "12px" },
           minWidth: { xs: 120, sm: 140 },
         }}
       >
@@ -84,16 +84,16 @@ export default function RestaurantTableRow({
       </TableCell>
       <TableCell
         sx={{
-          fontSize: { xs: "0.625rem", sm: "12px" },
+        fontSize: { xs: "0.625rem", sm: "12px" }, 
           minWidth: { xs: 130, sm: 150 },
-          color: "#da1818",
+        color: "#da1818",
         }}
       >
         {restaurant.phone}
       </TableCell>
       <TableCell
         sx={{
-          fontSize: { xs: "0.625rem", sm: "12px" },
+        fontSize: { xs: "0.625rem", sm: "12px" },
           minWidth: { xs: 120, sm: 140 },
         }}
       >
@@ -102,10 +102,10 @@ export default function RestaurantTableRow({
       <TableCell sx={{ minWidth: { xs: 140, sm: 180 } }}>
         <Box
           sx={{
-            display: "flex",
+          display: "flex", 
             gap: { xs: 0.5, sm: 1 },
-            alignItems: "center",
-            flexWrap: "wrap",
+          alignItems: "center",
+          flexWrap: "wrap",
           }}
         >
           <Button

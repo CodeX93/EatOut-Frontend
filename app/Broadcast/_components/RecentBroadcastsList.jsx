@@ -99,39 +99,39 @@ export default function RecentBroadcastsList({ broadcasts = [] }) {
           ) : (
             formattedBroadcasts.map((broadcast) => (
               <Box key={broadcast.id}>
-                <Typography
-                  variant="body2"
-                  sx={{
-                    fontWeight: 600,
-                    color: "#000000",
-                    mb: 0.5,
-                    fontSize: { xs: "13px", sm: "14px" },
-                    lineHeight: 1.4,
-                  }}
-                >
-                  {broadcast.title}
-                </Typography>
-                <Typography
-                  variant="caption"
-                  sx={{
-                    color: "#8a8a8f",
-                    display: "block",
-                    mb: 0.5,
-                    fontSize: { xs: "11px", sm: "12px" },
-                  }}
-                >
-                  {broadcast.time}
-                </Typography>
-                <Typography
-                  variant="caption"
-                  sx={{
-                    color: "#8a8a8f",
-                    fontSize: { xs: "10px", sm: "11px" },
-                  }}
-                >
-                  {broadcast.sentTo}
-                </Typography>
-              </Box>
+              <Typography
+                variant="body2"
+                sx={{
+                  fontWeight: 600,
+                  color: "#000000",
+                  mb: 0.5,
+                  fontSize: { xs: "13px", sm: "14px" },
+                  lineHeight: 1.4,
+                }}
+              >
+                {broadcast.title}
+              </Typography>
+              <Typography
+                variant="caption"
+                sx={{
+                  color: "#8a8a8f",
+                  display: "block",
+                  mb: 0.5,
+                  fontSize: { xs: "11px", sm: "12px" },
+                }}
+              >
+                {broadcast.time}
+              </Typography>
+              <Typography
+                variant="caption"
+                sx={{
+                  color: "#8a8a8f",
+                  fontSize: { xs: "10px", sm: "11px" },
+                }}
+              >
+                {broadcast.sentTo}
+              </Typography>
+            </Box>
             ))
           )}
         </Box>

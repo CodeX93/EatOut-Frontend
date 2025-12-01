@@ -203,8 +203,8 @@ export default function ReferredUsersTable() {
             sx={{
               width: { xs: "100%", sm: 200 },
               "& .MuiOutlinedInput-root": {
-                borderRadius: "8px",
-                fontSize: { xs: "11px", sm: "12px" },
+              borderRadius: "8px",
+              fontSize: { xs: "11px", sm: "12px" },
                 border: "1px solid #dadada",
                 "&:hover": {
                   borderColor: "#cfcfcf",
@@ -233,21 +233,21 @@ export default function ReferredUsersTable() {
                 fontSize: { xs: "11px", sm: "12px" },
                 border: "1px solid #dadada",
                 "& .MuiOutlinedInput-notchedOutline": {
-                  borderColor: "#dadada",
-                },
+                borderColor: "#dadada",
+              },
                 "&:hover .MuiOutlinedInput-notchedOutline": {
                   borderColor: "#cfcfcf",
                 },
-                "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+              "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
                   borderColor: "#da1818",
                   boxShadow: "0 0 0 2px rgba(218, 24, 24, 0.08)",
-                },
-                ".MuiSvgIcon-root": {
-                  color: "#666666",
-                },
-              }}
-              IconComponent={KeyboardArrowDown}
-            >
+              },
+              ".MuiSvgIcon-root": {
+                color: "#666666",
+              },
+            }}
+            IconComponent={KeyboardArrowDown}
+          >
               {statusOptions.map((status) => (
                 <MenuItem key={status} value={status}>
                   Status: {status}
@@ -285,8 +285,8 @@ export default function ReferredUsersTable() {
                   {option}
                 </MenuItem>
               ))}
-            </Select>
-          </FormControl>
+          </Select>
+        </FormControl>
         </Box>
       </Box>
       <TableContainer
@@ -322,7 +322,7 @@ export default function ReferredUsersTable() {
                     fontWeight: 500,
                       fontSize: { xs: "9px", sm: "10px" },
                       py: 0.6,
-                      borderBottom: "1px solid #dadada",
+                    borderBottom: "1px solid #dadada",
                     display: column.hideOnXs ? { xs: "none", sm: "table-cell" } : "table-cell",
                   }}
                 >

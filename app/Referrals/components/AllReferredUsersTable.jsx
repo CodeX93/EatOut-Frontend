@@ -195,31 +195,31 @@ export default function AllReferredUsersTable() {
                 value={timelineFilter}
                 onChange={(e) => setTimelineFilter(e.target.value)}
                 sx={{
-                  borderRadius: "8px",
-                  fontSize: { xs: "12px", sm: "14px" },
-                  ".MuiOutlinedInput-notchedOutline": {
-                    borderColor: "#dadada",
-                  },
-                  "&:hover .MuiOutlinedInput-notchedOutline": {
+                borderRadius: "8px",
+                fontSize: { xs: "12px", sm: "14px" },
+                ".MuiOutlinedInput-notchedOutline": {
+                  borderColor: "#dadada",
+                },
+                "&:hover .MuiOutlinedInput-notchedOutline": {
                     borderColor: "#cfcfcf",
-                  },
-                  "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                },
+                "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
                     borderColor: "#da1818",
                     boxShadow: "0 0 0 2px rgba(218, 24, 24, 0.08)",
-                  },
-                  ".MuiSvgIcon-root": {
-                    color: "#666666",
-                  },
-                }}
-                IconComponent={KeyboardArrowDown}
-              >
+                },
+                ".MuiSvgIcon-root": {
+                  color: "#666666",
+                },
+              }}
+              IconComponent={KeyboardArrowDown}
+            >
                 {TIMELINE_OPTIONS.map((option) => (
                   <MenuItem key={option} value={option}>
                     {option}
                   </MenuItem>
                 ))}
-              </Select>
-            </FormControl>
+            </Select>
+          </FormControl>
           </Box>
         </Box>
       </Box>

@@ -2,8 +2,9 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { auth } from '../../firebaseConfig';
+import { auth, db } from '../../firebaseConfig';
 import { signInWithEmailAndPassword } from 'firebase/auth';
+import { getDoc, doc } from 'firebase/firestore';
 import Image from "next/image"
 import {
   Box,
@@ -75,20 +76,70 @@ export default function SignInForm() {
     setIsLoading(true)
 
     try {
-      // Simulate API call
+      const userCredential = await signInWithEmailAndPassword(auth, email, password)
+      const user = userCredential.user
+
+      // Check if user is a sub-admin and get their access rights
       try {
-        await signInWithEmailAndPassword(auth, email, password);
-        // alert("Logged in!");
-        router.push("/dashboard")
-      } catch (error) {
-        console.error(error);
-        alert("Login failed");
+        const subAdminDoc = await getDoc(doc(db, "subAdmins", user.uid))
+        if (subAdminDoc.exists()) {
+          const subAdminData = subAdminDoc.data()
+          // Store sub-admin data in localStorage for access control
+          localStorage.setItem("user", JSON.stringify({
+            uid: user.uid,
+            email: user.email,
+            isSubAdmin: true,
+            accessRights: subAdminData.accessRights || [],
+            name: subAdminData.name || "",
+          }))
+        } else {
+          // Check if it's the main admin
+          const adminDoc = await getDoc(doc(db, "admins", user.uid))
+          if (adminDoc.exists()) {
+            const adminData = adminDoc.data()
+            localStorage.setItem("user", JSON.stringify({
+              uid: user.uid,
+              email: user.email,
+              isSubAdmin: false,
+              isAdmin: true,
+              accessRights: ["all"], // Admin has all access
+              name: adminData.name || "",
+            }))
+          } else {
+            // Default admin (if no document exists, assume full access)
+            localStorage.setItem("user", JSON.stringify({
+              uid: user.uid,
+              email: user.email,
+              isSubAdmin: false,
+              isAdmin: true,
+              accessRights: ["all"],
+            }))
+          }
+        }
+      } catch (dbError) {
+        console.error("Error checking user permissions:", dbError)
+        // Default to admin access if check fails
+        localStorage.setItem("user", JSON.stringify({
+          uid: user.uid,
+          email: user.email,
+          isSubAdmin: false,
+          isAdmin: true,
+          accessRights: ["all"],
+        }))
       }
 
-      // Navigate to dashboard on successful sign in
-      
+      router.push("/dashboard")
     } catch (error) {
-      setGeneralError("Sign in failed. Please try again.")
+      console.error(error)
+      if (error.code === "auth/user-not-found") {
+        setGeneralError("No account found with this email address.")
+      } else if (error.code === "auth/wrong-password") {
+        setGeneralError("Incorrect password. Please try again.")
+      } else if (error.code === "auth/invalid-email") {
+        setGeneralError("Invalid email address.")
+      } else {
+        setGeneralError("Login failed. Please check your credentials and try again.")
+      }
     } finally {
       setIsLoading(false)
     }

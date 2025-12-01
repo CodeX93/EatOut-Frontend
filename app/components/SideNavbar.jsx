@@ -1,5 +1,5 @@
 "use client"
-import { useState, forwardRef, useImperativeHandle } from "react"
+import { useState, useEffect, forwardRef, useImperativeHandle } from "react"
 import { Box, Drawer, useMediaQuery, useTheme } from "@mui/material"
 import { useRouter, usePathname } from "next/navigation"
 import { useAuth } from "../context/AuthContext"
@@ -21,6 +21,8 @@ import CampaignIcon from "@mui/icons-material/Campaign"
 import RestaurantMenuIcon from "@mui/icons-material/RestaurantMenu"
 import LocalOfferIcon from "@mui/icons-material/LocalOffer"
 import LogoutIcon from "@mui/icons-material/Logout"
+import AdUnitsIcon from "@mui/icons-material/AdUnits"
+import PersonIcon from "@mui/icons-material/Person"
 import Image from "next/image"
 
 const SideNavbar = forwardRef((props, ref) => {
@@ -59,18 +61,54 @@ const SideNavbar = forwardRef((props, ref) => {
     }
   }
 
-  const menuItems = [
-    { name: "Dashboard", icon: <GridViewIcon />, path: "/dashboard" },
-    { name: "Analytics", icon: <InsightsIcon />, path: "/Analytics" },
-    { name: "Restaurants", icon: <RestaurantIcon />, path: "/Restaurants" },
-    { name: "Members", icon: <PeopleIcon />, path: "/members" },
-    { name: "Vouchers", icon: <ConfirmationNumberIcon />, path: "/vouchers" },
-    { name: "Referrals", icon: <ShareIcon />, path: "/Referrals" },
-    { name: "Discount Coupons", icon: <LocalOfferIcon />, path: "/Discount" },
-    { name: "Golden Bowls", icon: <RamenDiningIcon />, path: "/Bowls" },
-    { name: "Cuisines", icon: <RestaurantMenuIcon />, path: "/cuisines" },
-    { name: "Broadcast", icon: <CampaignIcon />, path: "/Broadcast" },
+  const allMenuItems = [
+    { name: "Dashboard", icon: <GridViewIcon />, path: "/dashboard", accessRight: "dashboard" },
+    { name: "Analytics", icon: <InsightsIcon />, path: "/Analytics", accessRight: "analytics" },
+    { name: "Restaurants", icon: <RestaurantIcon />, path: "/Restaurants", accessRight: "restaurants" },
+    { name: "Members", icon: <PeopleIcon />, path: "/members", accessRight: "members" },
+    { name: "Vouchers", icon: <ConfirmationNumberIcon />, path: "/vouchers", accessRight: "vouchers" },
+    { name: "Referrals", icon: <ShareIcon />, path: "/Referrals", accessRight: "referrals" },
+    { name: "Discount Coupons", icon: <LocalOfferIcon />, path: "/Discount", accessRight: "discount" },
+    { name: "Golden Bowls", icon: <RamenDiningIcon />, path: "/Bowls", accessRight: "bowls" },
+    { name: "Cuisines", icon: <RestaurantMenuIcon />, path: "/cuisines", accessRight: "cuisines" },
+    { name: "Broadcast", icon: <CampaignIcon />, path: "/Broadcast", accessRight: "broadcast" },
+    { name: "Banner Ads", icon: <AdUnitsIcon />, path: "/BannerAds", accessRight: "bannerAds" },
+    { name: "Admin Profile", icon: <PersonIcon />, path: "/AdminProfile", accessRight: "adminProfile" },
   ]
+
+  // Filter menu items based on user access rights
+  const [menuItems, setMenuItems] = useState(allMenuItems)
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem("user")
+    if (storedUser) {
+      try {
+        const user = JSON.parse(storedUser)
+        // If user has "all" access or is admin, show all items
+        if (user.accessRights?.includes("all") || user.isAdmin) {
+          setMenuItems(allMenuItems)
+        } else if (user.isSubAdmin && user.accessRights) {
+          // Filter menu items based on sub-admin access rights
+          const filteredItems = allMenuItems.filter((item) => {
+            // Admin Profile should only be visible to main admin
+            if (item.accessRight === "adminProfile") {
+              return false
+            }
+            return user.accessRights.includes(item.accessRight)
+          })
+          setMenuItems(filteredItems)
+        } else {
+          // Default: show all items if no access rights specified
+          setMenuItems(allMenuItems)
+        }
+      } catch (e) {
+        console.error("Error parsing user data:", e)
+        setMenuItems(allMenuItems)
+      }
+    } else {
+      setMenuItems(allMenuItems)
+    }
+  }, [])
 
   // Dynamic width based on screen size
   const getDrawerWidth = () => {

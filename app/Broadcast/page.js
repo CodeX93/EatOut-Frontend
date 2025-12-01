@@ -181,21 +181,21 @@ export default function BroadcastPage() {
         })
         setBroadcasts(broadcastsData)
 
-        console.log("Sending broadcast:", {
-          title: broadcastTitle,
-          message: broadcastMessage,
-          audience: toggleValue,
+      console.log("Sending broadcast:", {
+        title: broadcastTitle,
+        message: broadcastMessage,
+        audience: toggleValue,
           recipients: recipientEmails,
           recipientCount: selectedRecipients.length,
-          tab: tabValue,
-        })
+        tab: tabValue,
+      })
 
         // Show success message
         alert(`Broadcast sent successfully to ${selectedRecipients.length} ${toggleValue === "individual" ? "member(s)" : "restaurant(s)"}!`)
 
-        // Reset form
-        setBroadcastTitle("")
-        setBroadcastMessage("")
+      // Reset form
+      setBroadcastTitle("")
+      setBroadcastMessage("")
         setSelectedRecipients([])
       } catch (error) {
         console.error("Error sending broadcast:", error)
