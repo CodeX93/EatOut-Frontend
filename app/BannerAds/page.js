@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import {
   Box,
   Typography,
@@ -16,11 +16,37 @@ import {
   Card,
   CardMedia,
   IconButton,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Autocomplete,
+  Chip,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  RadioGroup,
+  Radio,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemButton,
+  Checkbox,
+  Divider,
 } from "@mui/material"
-import { collection, getDocs, doc, setDoc, serverTimestamp } from "firebase/firestore"
+import {
+  collection,
+  getDocs,
+  doc,
+  setDoc,
+  deleteDoc,
+  serverTimestamp,
+  addDoc,
+} from "firebase/firestore"
 import { db } from "../../firebaseConfig"
 import AppLayout from "../components/AppLayout"
-import { Delete, CloudUpload } from "@mui/icons-material"
+import { Delete, CloudUpload, Add, Edit } from "@mui/icons-material"
 
 const COLOR_OPTIONS = [
   { label: "Red", value: "#da1818" },
@@ -33,6 +59,9 @@ const COLOR_OPTIONS = [
   { label: "Gray", value: "#757575" },
 ]
 
+const BANNER_TYPES = ["External Link", "Specific Page", "Specific Restaurant"]
+const PAGE_OPTIONS = ["Medal", "Referral", "Search"]
+
 // Cloudinary config (unsigned upload)
 const CLOUDINARY_UPLOAD_PRESET = "eat_app_unsigned"
 const CLOUDINARY_CLOUD_NAME = "di14lhy0f"
@@ -43,53 +72,80 @@ export default function BannerAdsPage() {
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState("")
   const [success, setSuccess] = useState(false)
-  const [bannerData, setBannerData] = useState(null)
+  const [banners, setBanners] = useState([])
+  const [restaurants, setRestaurants] = useState([])
+  const [openDialog, setOpenDialog] = useState(false)
+  const [editingBanner, setEditingBanner] = useState(null)
 
+  // Form state for new/edit banner
   const [formData, setFormData] = useState({
     firstLineTitle: "",
     secondLineDescription: "",
     thirdLineTitle: "",
     fourthLineDescription: "",
     color: "#da1818",
+    textColor: "#ffffff",
     backgroundImageUrl: "",
     enabled: false,
+    imageSource: "", // "template" or "image"
+    bannerType: "", // "External Link", "Specific Page", "Specific Restaurant"
+    externalLink: "",
+    pageType: "", // "Medal", "Referral", "Search"
+    selectedRestaurants: [], // For Search page type (multiple)
+    selectedRestaurant: null, // For Specific Restaurant type (single)
   })
 
   const [imageFile, setImageFile] = useState(null)
   const [imagePreview, setImagePreview] = useState("")
+  const [restaurantSearchTerm, setRestaurantSearchTerm] = useState("")
 
-  // Load existing banner data
+  // Load existing banners and restaurants
   useEffect(() => {
-    const loadBannerData = async () => {
+    const loadData = async () => {
       setLoading(true)
       try {
-        const snap = await getDocs(collection(db, "bannerAds"))
-        if (!snap.empty) {
-          const doc = snap.docs[0]
-          const data = doc.data()
-          setBannerData({ id: doc.id, ...data })
-          setFormData({
-            firstLineTitle: data.firstLineTitle || "",
-            secondLineDescription: data.secondLineDescription || "",
-            thirdLineTitle: data.thirdLineTitle || "",
-            fourthLineDescription: data.fourthLineDescription || "",
-            color: data.color || "#da1818",
-            backgroundImageUrl: data.backgroundImageUrl || "",
-            enabled: data.enabled !== undefined ? data.enabled : false,
+        // Load banners
+        const bannersSnap = await getDocs(collection(db, "bannerAds"))
+        const bannersList = []
+        bannersSnap.forEach((doc) => {
+          bannersList.push({ id: doc.id, ...doc.data() })
+        })
+        setBanners(bannersList)
+
+        // Load restaurants
+        const restaurantsSnap = await getDocs(collection(db, "registeredRestaurants"))
+        const restaurantsList = []
+        restaurantsSnap.forEach((doc) => {
+          const data = doc.data() || {}
+          restaurantsList.push({
+            id: doc.id,
+            name: data.restaurantName || data.name || "-",
+            email: data.email || doc.id,
+            location: data.city || data.location || "-",
           })
-          if (data.backgroundImageUrl) {
-            setImagePreview(data.backgroundImageUrl)
-          }
-        }
+        })
+        setRestaurants(restaurantsList)
       } catch (e) {
-        console.error("Error loading banner data:", e)
-        setError("Failed to load banner data")
+        console.error("Error loading data:", e)
+        setError("Failed to load data")
       } finally {
         setLoading(false)
       }
     }
-    loadBannerData()
+    loadData()
   }, [])
+
+  // Filter restaurants based on search
+  const filteredRestaurants = useMemo(() => {
+    const term = restaurantSearchTerm.trim().toLowerCase()
+    if (!term) return restaurants
+    return restaurants.filter(
+      (r) =>
+        r.name?.toLowerCase().includes(term) ||
+        r.email?.toLowerCase().includes(term) ||
+        r.location?.toLowerCase().includes(term)
+    )
+  }, [restaurants, restaurantSearchTerm])
 
   const handleInputChange = (field, value) => {
     // Apply character limits
@@ -199,6 +255,96 @@ export default function BannerAdsPage() {
     }))
   }
 
+  const handleOpenAddDialog = () => {
+    setEditingBanner(null)
+    setFormData({
+      firstLineTitle: "",
+      secondLineDescription: "",
+      thirdLineTitle: "",
+      fourthLineDescription: "",
+      color: "#da1818",
+      textColor: "#ffffff",
+      backgroundImageUrl: "",
+      enabled: false,
+      imageSource: "",
+      bannerType: "",
+      externalLink: "",
+      pageType: "",
+      selectedRestaurants: [],
+      selectedRestaurant: null,
+    })
+    setImageFile(null)
+    setImagePreview("")
+    setRestaurantSearchTerm("")
+    setOpenDialog(true)
+  }
+
+  const handleOpenEditDialog = (banner) => {
+    setEditingBanner(banner)
+    setFormData({
+      firstLineTitle: banner.firstLineTitle || "",
+      secondLineDescription: banner.secondLineDescription || "",
+      thirdLineTitle: banner.thirdLineTitle || "",
+      fourthLineDescription: banner.fourthLineDescription || "",
+      color: banner.color || "#da1818",
+      textColor: banner.textColor || "#ffffff",
+      backgroundImageUrl: banner.backgroundImageUrl || "",
+      enabled: banner.enabled !== undefined ? banner.enabled : false,
+      imageSource: banner.imageSource || "",
+      bannerType: banner.bannerType || "",
+      externalLink: banner.externalLink || "",
+      pageType: banner.pageType || "",
+      selectedRestaurants: banner.selectedRestaurants || [],
+      selectedRestaurant: banner.selectedRestaurant || null,
+    })
+    if (banner.backgroundImageUrl) {
+      setImagePreview(banner.backgroundImageUrl)
+    }
+    setImageFile(null)
+    setRestaurantSearchTerm("")
+    setOpenDialog(true)
+  }
+
+  const handleCloseDialog = () => {
+    setOpenDialog(false)
+    setEditingBanner(null)
+  }
+
+  const handleToggleRestaurant = (restaurantId, restaurantEmail) => {
+    if (formData.bannerType === "Specific Restaurant") {
+      // Single selection
+      setFormData((prev) => ({
+        ...prev,
+        selectedRestaurant: prev.selectedRestaurant?.id === restaurantId ? null : { id: restaurantId, email: restaurantEmail },
+      }))
+    } else if (formData.bannerType === "Specific Page" && formData.pageType === "Search") {
+      // Multiple selection
+      setFormData((prev) => {
+        const existing = prev.selectedRestaurants.find((r) => r.id === restaurantId)
+        if (existing) {
+          return {
+            ...prev,
+            selectedRestaurants: prev.selectedRestaurants.filter((r) => r.id !== restaurantId),
+          }
+        } else {
+          return {
+            ...prev,
+            selectedRestaurants: [...prev.selectedRestaurants, { id: restaurantId, email: restaurantEmail }],
+          }
+        }
+      })
+    }
+  }
+
+  const handleRemoveRestaurant = (restaurantId) => {
+    if (formData.bannerType === "Specific Page" && formData.pageType === "Search") {
+      setFormData((prev) => ({
+        ...prev,
+        selectedRestaurants: prev.selectedRestaurants.filter((r) => r.id !== restaurantId),
+      }))
+    }
+  }
+
   const handleSave = async () => {
     // Validation
     if (!formData.firstLineTitle.trim()) {
@@ -217,8 +363,32 @@ export default function BannerAdsPage() {
       setError("Please enter the 4th Line (Description)")
       return
     }
+    if (!formData.imageSource) {
+      setError("Please select image source (Template or Image)")
+      return
+    }
     if (!formData.backgroundImageUrl) {
       setError("Please upload a background image")
+      return
+    }
+    if (!formData.bannerType) {
+      setError("Please select banner type")
+      return
+    }
+    if (formData.bannerType === "External Link" && !formData.externalLink.trim()) {
+      setError("Please enter external link")
+      return
+    }
+    if (formData.bannerType === "Specific Page" && !formData.pageType) {
+      setError("Please select page type")
+      return
+    }
+    if (formData.bannerType === "Specific Page" && formData.pageType === "Search" && formData.selectedRestaurants.length === 0) {
+      setError("Please select at least one restaurant for Search page")
+      return
+    }
+    if (formData.bannerType === "Specific Restaurant" && !formData.selectedRestaurant) {
+      setError("Please select a restaurant")
       return
     }
 
@@ -232,19 +402,27 @@ export default function BannerAdsPage() {
         thirdLineTitle: formData.thirdLineTitle.trim(),
         fourthLineDescription: formData.fourthLineDescription.trim(),
         color: formData.color,
+        textColor: formData.textColor,
         backgroundImageUrl: formData.backgroundImageUrl,
         enabled: formData.enabled,
+        imageSource: formData.imageSource,
+        bannerType: formData.bannerType,
+        externalLink: formData.externalLink || "",
+        pageType: formData.pageType || "",
+        selectedRestaurants: formData.selectedRestaurants || [],
+        selectedRestaurant: formData.selectedRestaurant || null,
         updatedAt: serverTimestamp(),
       }
 
-      // If banner data exists, update it; otherwise create new
-      if (bannerData?.id) {
-        await setDoc(doc(db, "bannerAds", bannerData.id), {
+      if (editingBanner) {
+        // Update existing banner
+        await setDoc(doc(db, "bannerAds", editingBanner.id), {
           ...bannerAdData,
-          createdAt: bannerData.createdAt || serverTimestamp(),
+          createdAt: editingBanner.createdAt || serverTimestamp(),
         })
       } else {
-        await setDoc(doc(db, "bannerAds", "current"), {
+        // Create new banner
+        await addDoc(collection(db, "bannerAds"), {
           ...bannerAdData,
           createdAt: serverTimestamp(),
         })
@@ -253,18 +431,36 @@ export default function BannerAdsPage() {
       setSuccess(true)
       setTimeout(() => setSuccess(false), 3000)
 
-      // Reload data
-      const snap = await getDocs(collection(db, "bannerAds"))
-      if (!snap.empty) {
-        const doc = snap.docs[0]
-        const data = doc.data()
-        setBannerData({ id: doc.id, ...data })
-      }
+      // Reload banners
+      const bannersSnap = await getDocs(collection(db, "bannerAds"))
+      const bannersList = []
+      bannersSnap.forEach((doc) => {
+        bannersList.push({ id: doc.id, ...doc.data() })
+      })
+      setBanners(bannersList)
+
+      handleCloseDialog()
     } catch (e) {
       console.error("Error saving banner ad:", e)
       setError("Failed to save banner ad: " + e.message)
     } finally {
       setSaving(false)
+    }
+  }
+
+  const handleDelete = async (bannerId) => {
+    if (!window.confirm("Are you sure you want to delete this banner?")) {
+      return
+    }
+
+    try {
+      await deleteDoc(doc(db, "bannerAds", bannerId))
+      setBanners((prev) => prev.filter((b) => b.id !== bannerId))
+      setSuccess(true)
+      setTimeout(() => setSuccess(false), 3000)
+    } catch (e) {
+      console.error("Error deleting banner:", e)
+      setError("Failed to delete banner: " + e.message)
     }
   }
 
@@ -281,26 +477,98 @@ export default function BannerAdsPage() {
   return (
     <AppLayout>
       <Box sx={{ p: { xs: 2, sm: 3, md: 4 } }}>
+        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
         <Typography
           variant="h4"
           sx={{
             fontWeight: 600,
-            mb: 3,
             color: "#333",
             fontSize: { xs: "1.5rem", sm: "1.75rem", md: "2rem" },
           }}
         >
           Banner Ad Management
         </Typography>
-
-        <Paper
-          elevation={2}
+          <Button
+            variant="contained"
+            startIcon={<Add />}
+            onClick={handleOpenAddDialog}
           sx={{
-            p: { xs: 2, sm: 3, md: 4 },
-            borderRadius: 2,
-          }}
-        >
+              bgcolor: "#da1818",
+              "&:hover": {
+                bgcolor: "#c41515",
+              },
+            }}
+          >
+            Add Banner
+          </Button>
+        </Box>
+
+        {/* Banners List */}
           <Grid container spacing={3}>
+          {banners.map((banner) => (
+            <Grid item xs={12} md={6} lg={4} key={banner.id}>
+              <Card sx={{ position: "relative" }}>
+                <CardMedia
+                  component="img"
+                  height="200"
+                  image={banner.backgroundImageUrl}
+                  alt="Banner"
+                  sx={{ objectFit: "cover" }}
+                />
+                <Box sx={{ p: 2 }}>
+                  <Typography variant="h6" sx={{ mb: 1, fontWeight: 600 }}>
+                    {banner.firstLineTitle}
+                  </Typography>
+                  <Typography variant="body2" sx={{ mb: 1, color: "text.secondary" }}>
+                    Type: {banner.bannerType}
+                  </Typography>
+                  <Box sx={{ display: "flex", gap: 1, mt: 2 }}>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      startIcon={<Edit />}
+                      onClick={() => handleOpenEditDialog(banner)}
+                    >
+                      Edit
+                    </Button>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      color="error"
+                      startIcon={<Delete />}
+                      onClick={() => handleDelete(banner.id)}
+                    >
+                      Delete
+                    </Button>
+                  </Box>
+                </Box>
+                {banner.enabled && (
+                  <Chip
+                    label="Enabled"
+                    color="success"
+                    size="small"
+                    sx={{ position: "absolute", top: 8, right: 8 }}
+                  />
+                )}
+              </Card>
+            </Grid>
+          ))}
+          {banners.length === 0 && (
+            <Grid item xs={12}>
+              <Paper sx={{ p: 4, textAlign: "center" }}>
+                <Typography variant="body1" color="text.secondary">
+                  No banners yet. Click "Add Banner" to create your first banner.
+                </Typography>
+              </Paper>
+            </Grid>
+          )}
+        </Grid>
+
+        {/* Add/Edit Banner Dialog */}
+        <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="md" fullWidth>
+          <DialogTitle>{editingBanner ? "Edit Banner" : "Add New Banner"}</DialogTitle>
+          <DialogContent>
+            <Grid container spacing={3} sx={{ mt: 1 }}>
             {/* Text Fields */}
             <Grid item xs={12} md={6}>
               <TextField
@@ -350,10 +618,208 @@ export default function BannerAdsPage() {
               />
             </Grid>
 
-            {/* Color Selection */}
+              {/* Image Source Selection */}
             <Grid item xs={12}>
               <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 500 }}>
-                Choice of Colour
+                  Add Banner from Template or Image
+                </Typography>
+                <RadioGroup
+                  row
+                  value={formData.imageSource}
+                  onChange={(e) => handleInputChange("imageSource", e.target.value)}
+                >
+                  <FormControlLabel value="template" control={<Radio />} label="Template" />
+                  <FormControlLabel value="image" control={<Radio />} label="Image" />
+                </RadioGroup>
+              </Grid>
+
+              {/* Banner Type Selection */}
+              {formData.imageSource && (
+                <Grid item xs={12}>
+                  <FormControl fullWidth required>
+                    <InputLabel>Banner Type</InputLabel>
+                    <Select
+                      value={formData.bannerType}
+                      label="Banner Type"
+                      onChange={(e) => {
+                        handleInputChange("bannerType", e.target.value)
+                        // Reset type-specific fields
+                        setFormData((prev) => ({
+                          ...prev,
+                          externalLink: "",
+                          pageType: "",
+                          selectedRestaurants: [],
+                          selectedRestaurant: null,
+                        }))
+                      }}
+                    >
+                      {BANNER_TYPES.map((type) => (
+                        <MenuItem key={type} value={type}>
+                          {type}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+              )}
+
+              {/* External Link Field */}
+              {formData.bannerType === "External Link" && (
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    label="External Link"
+                    value={formData.externalLink}
+                    onChange={(e) => handleInputChange("externalLink", e.target.value)}
+                    placeholder="https://example.com"
+                    required
+                  />
+                </Grid>
+              )}
+
+              {/* Specific Page Options */}
+              {formData.bannerType === "Specific Page" && (
+                <>
+                  <Grid item xs={12}>
+                    <FormControl fullWidth required>
+                      <InputLabel>Page Type</InputLabel>
+                      <Select
+                        value={formData.pageType}
+                        label="Page Type"
+                        onChange={(e) => {
+                          handleInputChange("pageType", e.target.value)
+                          if (e.target.value !== "Search") {
+                            setFormData((prev) => ({
+                              ...prev,
+                              selectedRestaurants: [],
+                            }))
+                          }
+                        }}
+                      >
+                        {PAGE_OPTIONS.map((option) => (
+                          <MenuItem key={option} value={option}>
+                            {option}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  </Grid>
+
+                  {/* Search Page - Multiple Restaurants */}
+                  {formData.pageType === "Search" && (
+                    <Grid item xs={12}>
+                      <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 500 }}>
+                        Select Restaurants (Multiple)
+                      </Typography>
+                      <TextField
+                        fullWidth
+                        label="Search Restaurants"
+                        value={restaurantSearchTerm}
+                        onChange={(e) => setRestaurantSearchTerm(e.target.value)}
+                        sx={{ mb: 2 }}
+                      />
+                      <Paper sx={{ maxHeight: 300, overflow: "auto" }}>
+                        <List dense>
+                          {filteredRestaurants.map((restaurant) => (
+                            <ListItem key={restaurant.id} disablePadding>
+                              <ListItemButton
+                                onClick={() => handleToggleRestaurant(restaurant.id, restaurant.email)}
+                              >
+                                <Checkbox
+                                  checked={formData.selectedRestaurants.some((r) => r.id === restaurant.id)}
+                                />
+                                <ListItemText
+                                  primary={restaurant.name}
+                                  secondary={`${restaurant.email} • ${restaurant.location}`}
+                                />
+                              </ListItemButton>
+                            </ListItem>
+                          ))}
+                        </List>
+                      </Paper>
+                      {formData.selectedRestaurants.length > 0 && (
+                        <Box sx={{ mt: 2 }}>
+                          <Typography variant="caption" sx={{ display: "block", mb: 1 }}>
+                            Selected Restaurants:
+                          </Typography>
+                          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+                            {formData.selectedRestaurants.map((restaurant) => {
+                              const restaurantData = restaurants.find((r) => r.id === restaurant.id)
+                              return (
+                                <Chip
+                                  key={restaurant.id}
+                                  label={restaurantData?.name || restaurant.email}
+                                  onDelete={() => handleRemoveRestaurant(restaurant.id)}
+                                  size="small"
+                                />
+                              )
+                            })}
+                          </Box>
+                        </Box>
+                      )}
+                    </Grid>
+                  )}
+                </>
+              )}
+
+              {/* Specific Restaurant - Single Selection */}
+              {formData.bannerType === "Specific Restaurant" && (
+                <Grid item xs={12}>
+                  <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 500 }}>
+                    Select Restaurant (Single)
+                  </Typography>
+                  <TextField
+                    fullWidth
+                    label="Search Restaurant"
+                    value={restaurantSearchTerm}
+                    onChange={(e) => setRestaurantSearchTerm(e.target.value)}
+                    sx={{ mb: 2 }}
+                  />
+                  <Paper sx={{ maxHeight: 300, overflow: "auto" }}>
+                    <List dense>
+                      {filteredRestaurants.map((restaurant) => (
+                        <ListItem key={restaurant.id} disablePadding>
+                          <ListItemButton
+                            onClick={() => handleToggleRestaurant(restaurant.id, restaurant.email)}
+                            selected={formData.selectedRestaurant?.id === restaurant.id}
+                          >
+                            <Radio checked={formData.selectedRestaurant?.id === restaurant.id} />
+                            <ListItemText
+                              primary={restaurant.name}
+                              secondary={`${restaurant.email} • ${restaurant.location}`}
+                            />
+                          </ListItemButton>
+                        </ListItem>
+                      ))}
+                    </List>
+                  </Paper>
+                  {formData.selectedRestaurant && (
+                    <Box sx={{ mt: 2 }}>
+                      <Typography variant="caption" sx={{ display: "block", mb: 1 }}>
+                        Selected Restaurant:
+                      </Typography>
+                      <Chip
+                        label={
+                          restaurants.find((r) => r.id === formData.selectedRestaurant.id)?.name ||
+                          formData.selectedRestaurant.email
+                        }
+                        onDelete={() =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            selectedRestaurant: null,
+                          }))
+                        }
+                        color="primary"
+                      />
+                    </Box>
+                  )}
+                </Grid>
+              )}
+
+              {/* Banner Color Selection */}
+              <Grid item xs={12} md={6}>
+                <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 500 }}>
+                  Banner Color
               </Typography>
               <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2 }}>
                 {COLOR_OPTIONS.map((color) => (
@@ -380,7 +846,7 @@ export default function BannerAdsPage() {
                     {formData.color === color.value && (
                       <Typography
                         sx={{
-                          color: color.value === "#ffffff" || color.value === "#000000" ? "#fff" : "#fff",
+                            color: "#fff",
                           fontSize: "0.75rem",
                           fontWeight: "bold",
                         }}
@@ -396,6 +862,52 @@ export default function BannerAdsPage() {
               </Typography>
             </Grid>
 
+              {/* Text Color Selection */}
+              <Grid item xs={12} md={6}>
+                <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 500 }}>
+                  Text Color
+                </Typography>
+                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2 }}>
+                  {COLOR_OPTIONS.map((color) => (
+                    <Box
+                      key={color.value}
+                      onClick={() => handleInputChange("textColor", color.value)}
+                      sx={{
+                        width: 60,
+                        height: 60,
+                        borderRadius: 1,
+                        bgcolor: color.value,
+                        border: formData.textColor === color.value ? "3px solid #1976d2" : "2px solid #e0e0e0",
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        transition: "all 0.2s",
+                        "&:hover": {
+                          transform: "scale(1.1)",
+                          boxShadow: 2,
+                        },
+                      }}
+                    >
+                      {formData.textColor === color.value && (
+                        <Typography
+                          sx={{
+                            color: "#fff",
+                            fontSize: "0.75rem",
+                            fontWeight: "bold",
+                          }}
+                        >
+                          ✓
+                        </Typography>
+                      )}
+                    </Box>
+                  ))}
+                </Box>
+                <Typography variant="caption" sx={{ mt: 1, display: "block", color: "text.secondary" }}>
+                  Selected: {COLOR_OPTIONS.find((c) => c.value === formData.textColor)?.label || "Custom"}
+                </Typography>
+              </Grid>
+
             {/* Background Image Upload */}
             <Grid item xs={12}>
               <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 500 }}>
@@ -410,12 +922,7 @@ export default function BannerAdsPage() {
                     sx={{ minWidth: 150 }}
                   >
                     Select Image
-                    <input
-                      type="file"
-                      hidden
-                      accept="image/*"
-                      onChange={handleImageChange}
-                    />
+                      <input type="file" hidden accept="image/*" onChange={handleImageChange} />
                   </Button>
                   {imageFile && (
                     <Button
@@ -481,38 +988,10 @@ export default function BannerAdsPage() {
               </Typography>
             </Grid>
 
-            {/* Save Button */}
-            <Grid item xs={12}>
-              <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 2, mt: 2 }}>
-                <Button
-                  variant="contained"
-                  onClick={handleSave}
-                  disabled={saving}
-                  sx={{
-                    bgcolor: "#da1818",
-                    minWidth: 150,
-                    "&:hover": {
-                      bgcolor: "#c41515",
-                    },
-                  }}
-                >
-                  {saving ? <CircularProgress size={24} color="inherit" /> : "Save Banner Ad"}
-                </Button>
-              </Box>
-            </Grid>
-          </Grid>
-        </Paper>
-
         {/* Preview Section */}
         {formData.backgroundImageUrl && (
-          <Paper
-            elevation={2}
-            sx={{
-              p: { xs: 2, sm: 3, md: 4 },
-              borderRadius: 2,
-              mt: 3,
-            }}
-          >
+                <Grid item xs={12}>
+                  <Divider sx={{ my: 2 }} />
             <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
               Preview
             </Typography>
@@ -531,7 +1010,7 @@ export default function BannerAdsPage() {
                 justifyContent: "center",
                 alignItems: "center",
                 p: 3,
-                color: formData.color,
+                      color: formData.textColor,
               }}
             >
               <Typography
@@ -576,8 +1055,27 @@ export default function BannerAdsPage() {
                 {formData.fourthLineDescription || "4th Line (Description)"}
               </Typography>
             </Box>
-          </Paper>
-        )}
+                </Grid>
+              )}
+            </Grid>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleCloseDialog}>Cancel</Button>
+            <Button
+              onClick={handleSave}
+              disabled={saving}
+              variant="contained"
+              sx={{
+                bgcolor: "#da1818",
+                "&:hover": {
+                  bgcolor: "#c41515",
+                },
+              }}
+            >
+              {saving ? <CircularProgress size={24} color="inherit" /> : "Save"}
+            </Button>
+          </DialogActions>
+        </Dialog>
 
         {/* Error/Success Snackbars */}
         <Snackbar
@@ -598,11 +1096,10 @@ export default function BannerAdsPage() {
           anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
         >
           <Alert onClose={() => setSuccess(false)} severity="success" sx={{ width: "100%" }}>
-            Banner ad saved successfully!
+            {editingBanner ? "Banner updated successfully!" : "Banner created successfully!"}
           </Alert>
         </Snackbar>
       </Box>
     </AppLayout>
   )
 }
-
