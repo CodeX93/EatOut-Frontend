@@ -367,7 +367,8 @@ export default function BannerAdsPage() {
       setError("Please select image source (Template or Image)")
       return
     }
-    if (!formData.backgroundImageUrl) {
+    // Background image is only required when imageSource is "image", not "template"
+    if (formData.imageSource === "image" && !formData.backgroundImageUrl) {
       setError("Please upload a background image")
       return
     }
@@ -508,13 +509,28 @@ export default function BannerAdsPage() {
           {banners.map((banner) => (
             <Grid item xs={12} md={6} lg={4} key={banner.id}>
               <Card sx={{ position: "relative" }}>
-                <CardMedia
-                  component="img"
-                  height="200"
-                  image={banner.backgroundImageUrl}
-                  alt="Banner"
-                  sx={{ objectFit: "cover" }}
-                />
+                {banner.backgroundImageUrl ? (
+                  <CardMedia
+                    component="img"
+                    height="200"
+                    image={banner.backgroundImageUrl}
+                    alt="Banner"
+                    sx={{ objectFit: "cover" }}
+                  />
+                ) : (
+                  <Box
+                    sx={{
+                      height: 200,
+                      bgcolor: banner.color || "#da1818",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      color: banner.textColor || "#ffffff",
+                    }}
+                  >
+                    <Typography variant="h6">{banner.firstLineTitle || "No Image"}</Typography>
+                  </Box>
+                )}
                 <Box sx={{ p: 2 }}>
                   <Typography variant="h6" sx={{ mb: 1, fontWeight: 600 }}>
                     {banner.firstLineTitle}
@@ -908,11 +924,16 @@ export default function BannerAdsPage() {
                 </Typography>
               </Grid>
 
-            {/* Background Image Upload */}
-            <Grid item xs={12}>
-              <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 500 }}>
-                Background Image
-              </Typography>
+              {/* Background Image Upload */}
+              <Grid item xs={12}>
+                <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 500 }}>
+                  Background Image {formData.imageSource === "image" && <span style={{ color: "red" }}>*</span>}
+                </Typography>
+                {formData.imageSource === "template" && (
+                  <Typography variant="caption" sx={{ display: "block", mb: 1, color: "text.secondary" }}>
+                    Optional for templates - you can use banner color as background
+                  </Typography>
+                )}
               <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
                 <Box sx={{ display: "flex", gap: 2, alignItems: "center", flexWrap: "wrap" }}>
                   <Button
@@ -989,30 +1010,35 @@ export default function BannerAdsPage() {
             </Grid>
 
         {/* Preview Section */}
-        {formData.backgroundImageUrl && (
-                <Grid item xs={12}>
-                  <Divider sx={{ my: 2 }} />
-            <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
-              Preview
-            </Typography>
-            <Box
-              sx={{
-                position: "relative",
-                width: "100%",
-                minHeight: 200,
-                borderRadius: 2,
-                overflow: "hidden",
-                backgroundImage: `url(${formData.backgroundImageUrl})`,
-                backgroundSize: "cover",
-                backgroundPosition: "center",
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "center",
-                alignItems: "center",
-                p: 3,
-                      color: formData.textColor,
-              }}
-            >
+        <Grid item xs={12}>
+          <Divider sx={{ my: 2 }} />
+          <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+            Preview
+          </Typography>
+          <Box
+            sx={{
+              position: "relative",
+              width: "100%",
+              minHeight: 200,
+              borderRadius: 2,
+              overflow: "hidden",
+              ...(formData.backgroundImageUrl
+                ? {
+                    backgroundImage: `url(${formData.backgroundImageUrl})`,
+                    backgroundSize: "cover",
+                    backgroundPosition: "center",
+                  }
+                : {
+                    backgroundColor: formData.color,
+                  }),
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "center",
+              alignItems: "center",
+              p: 3,
+              color: formData.textColor,
+            }}
+          >
               <Typography
                 variant="h5"
                 sx={{
@@ -1055,8 +1081,7 @@ export default function BannerAdsPage() {
                 {formData.fourthLineDescription || "4th Line (Description)"}
               </Typography>
             </Box>
-                </Grid>
-              )}
+          </Grid>
             </Grid>
           </DialogContent>
           <DialogActions>
